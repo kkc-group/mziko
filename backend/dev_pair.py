@@ -16,7 +16,9 @@ from app.services import pairing, parents
 
 async def main(name: str) -> None:
     async with get_sessionmaker()() as db:
-        parent = (await db.execute(select(Parent).where(Parent.telegram_id == 1))).scalar_one_or_none()
+        parent = (
+            await db.execute(select(Parent).where(Parent.telegram_id == 1))
+        ).scalar_one_or_none()
         if parent is None:
             parent = Parent(telegram_id=1, name="dev")
             db.add(parent)
