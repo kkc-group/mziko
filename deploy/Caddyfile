@@ -16,5 +16,10 @@ handle_path /media/* {
 handle {
 	root * /srv/web
 	try_files {path} /index.html
+	# Hashed assets never change; the shell, the manifest and the service worker
+	# must be re-checked every time, or a browser keeps an old build for days.
+	@immutable path /assets/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	header Cache-Control "no-cache"
 	file_server
 }
