@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, withRetry, type AnswerBody } from '../api'
 import type { Speaker } from '../audio'
-import { flyCoins, fmtLari } from '../fx'
+import { flyCoins, fmtLari, uuid } from '../fx'
 import type { SessionSummary, Step, WordOut } from '../types'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { SpeakButton } from '../components/SpeakButton'
@@ -97,6 +97,7 @@ export function Lesson({
             step={step}
             speaker={speaker}
             showHint={showHint}
+            onError={(message) => setToast({ kind: 'offline', text: `Что-то сломалось: ${message}` })}
             onAnswer={async (chosen, attempt, el) => {
               const correct = chosen.slug === step.word.slug
               if (!correct) {
@@ -109,7 +110,7 @@ export function Lesson({
                 step_index: idx,
                 word_slug: chosen.slug,
                 attempt,
-                client_answer_id: crypto.randomUUID(),
+                client_answer_id: uuid(),
               }
               const send = async () => {
                 setToast(null)
@@ -187,11 +188,13 @@ function Quiz({
   speaker,
   showHint,
   onAnswer,
+  onError,
 }: {
   step: Step
   speaker: Speaker
   showHint: boolean
   onAnswer: (chosen: WordOut, attempt: number, el: HTMLElement) => Promise<boolean>
+  onError: (message: string) => void
 }) {
   const [wrong, setWrong] = useState<string[]>([])
   const [okSlug, setOkSlug] = useState<string | null>(null)
@@ -200,9 +203,15 @@ function Quiz({
   const pick = async (o: WordOut, el: HTMLElement) => {
     if (locked || wrong.includes(o.slug)) return
     const attempt = wrong.length + 1
-    const correct = await onAnswer(o, attempt, el)
-    if (correct) setOkSlug(o.slug)
-    else setWrong((w) => [...w, o.slug])
+    try {
+      const correct = await onAnswer(o, attempt, el)
+      if (correct) setOkSlug(o.slug)
+      else setWrong((w) => [...w, o.slug])
+    } catch (e) {
+      // Never leave the child on a frozen screen: surface the failure instead.
+      console.error(e)
+      onError(e instanceof Error ? e.message : String(e))
+    }
   }
 
   const cls = (o: WordOut, base: string) =>
