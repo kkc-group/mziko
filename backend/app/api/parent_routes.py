@@ -8,6 +8,7 @@ from app.api.deps import BotService, CurrentParent, Db, Now
 from app.core.config import get_settings
 from app.models import Child, Device, ImageKind, Week, Word
 from app.schemas.parent import (
+    ChildAttach,
     ChildCodeOut,
     ChildCreate,
     ChildInfo,
@@ -156,6 +157,31 @@ async def children(db: Db, parent: CurrentParent) -> list[ChildInfo]:
 @router.post("/children", response_model=ChildInfo)
 async def add_child(body: ChildCreate, db: Db, parent: CurrentParent) -> ChildInfo:
     return child_info(await parents.create_child(db, parent, body.name))
+
+
+@router.post("/children/attach", response_model=ChildInfo)
+async def attach_child(body: ChildAttach, db: Db, parent: CurrentParent) -> ChildInfo:
+    """Link an existing child by its login code; an unknown code is 404."""
+    child = await parents.attach_child_by_code(db, parent, body.code)
+    if child is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no child with this code")
+    return child_info(child)
+
+
+@router.delete("/children/{child_id}", response_model=list[ChildInfo])
+async def detach_child(child_id: int, db: Db, parent: CurrentParent) -> list[ChildInfo]:
+    """Unlink the child from this parent; returns the remaining children."""
+    child = await own_child(db, parent, child_id)
+    await parents.detach_child(db, parent, child)
+    return [child_info(c) for c in await parents.children_of(db, parent)]
+
+
+@router.post("/children/{child_id}/reset", response_model=ChildInfo)
+async def reset_progress(child_id: int, db: Db, parent: CurrentParent) -> ChildInfo:
+    """Wipe learned words, sessions, weeks and coins; settings, code and devices stay."""
+    child = await own_child(db, parent, child_id)
+    await parents.reset_progress(db, child)
+    return child_info(child)
 
 
 @router.get("/children/{child_id}/progress", response_model=ProgressOut)

@@ -88,6 +88,23 @@ async def test_client_round_trip_children_report_and_payout(
     assert code.code in texts.code_text(children[0], code)
     assert code.url in texts.code_text(children[0], code)
 
+    assert (await api.reset_progress(child.id)).id == child.id
+    assert (await api.report(child.id)).days_studied == 0
+    assert f"/addchild {rotated.code}" in texts.detach_confirm_text(children[0], rotated)
+    assert await api.detach_child(child.id) == []
+    assert await api.child(child.id) is None
+    assert (await api.attach_child(rotated.code)).id == child.id  # the digits were re-issued
+    assert [c.id for c in await api.children()] == [child.id]
+    try:
+        await api.attach_child("XXXX-0000")
+    except ApiError as exc:
+        assert exc.status == 404
+    else:
+        raise AssertionError("unknown code must be 404")
+    assert keyboards.reset_kb(children[0]).inline_keyboard[0][0].callback_data == (
+        f"reset:progress:{child.id}"
+    )
+
 
 async def test_client_maps_api_errors(
     db: AsyncSession, parent: Parent, child: Child, clock: Clock

@@ -1,6 +1,7 @@
 """Commands and inline-button callbacks. Every call goes to the API as the sending parent."""
 
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from html import escape
 
@@ -11,7 +12,9 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from app.schemas.parent import ChildInfo
 from bot import keyboards, texts
-from bot.api import ParentApi
+from bot.api import ApiError, ParentApi
+
+LOGIN_CODE = re.compile(r"^[A-Za-z]{4}-?\d{4}$")
 
 log = logging.getLogger(__name__)
 router = Router()
@@ -49,12 +52,17 @@ async def show_devices(message: Message, api: ParentApi, child: ChildInfo) -> No
     )
 
 
+async def show_reset(message: Message, api: ParentApi, child: ChildInfo) -> None:
+    await message.answer(texts.reset_menu_text(child), reply_markup=keyboards.reset_kb(child))
+
+
 ACTIONS: dict[str, ChildAction] = {
     "report": show_report,
     "progress": show_progress,
     "settings": show_settings,
     "code": show_code,
     "devices": show_devices,
+    "reset": show_reset,
 }
 
 
@@ -82,6 +90,16 @@ async def cmd_addchild(message: Message, command: CommandObject, api: ParentApi)
     name = (command.args or "").strip()
     if not name:
         await message.answer("Напишите имя: /addchild Сандро")
+        return
+    if LOGIN_CODE.match(name):  # an existing child's login code: attach, don't create
+        try:
+            child = await api.attach_child(name)
+        except ApiError as exc:
+            if exc.status != 404:
+                raise
+            await message.answer(texts.NO_SUCH_CODE)
+            return
+        await message.answer(texts.attached_text(child))
         return
     child = await api.add_child(name)
     await message.answer(f"Добавил: {escape(child.name)}. Код для входа: /code")
@@ -179,6 +197,44 @@ async def cb_code(callback: CallbackQuery, api: ParentApi) -> None:
     code = await api.rotate_code(child.id)
     await callback.answer("Цифры обновлены")
     await _edit(message, texts.code_text(child, code), keyboards.code_kb(child))
+
+
+@router.callback_query(F.data.startswith("reset:"))
+async def cb_reset(callback: CallbackQuery, api: ParentApi) -> None:
+    """Two-step: a menu, then a confirmation; nothing is deleted before the "yes" button."""
+    _, action, child_id = (callback.data or "").split(":")
+    message = _message_of(callback)
+    if message is None:
+        await callback.answer("Недоступно")
+        return
+    if action == "cancel":
+        await callback.answer()
+        await _edit(message, texts.CANCELLED, None)
+        return
+    child = await api.child(int(child_id))
+    if child is None:
+        await callback.answer("Недоступно")
+        return
+    if action == "progress":
+        await callback.answer()
+        kb = keyboards.confirm_kb("Да, сбросить", f"reset:progress_yes:{child.id}")
+        await _edit(message, texts.reset_progress_confirm_text(child), kb)
+    elif action == "detach":
+        await callback.answer()
+        code = await api.child_code(child.id)
+        kb = keyboards.confirm_kb("Да, отключить", f"reset:detach_yes:{child.id}")
+        await _edit(message, texts.detach_confirm_text(child, code), kb)
+    elif action == "progress_yes":
+        await api.reset_progress(child.id)
+        await callback.answer("Прогресс сброшен")
+        await _edit(message, texts.reset_progress_done_text(child), None)
+    elif action == "detach_yes":
+        code = await api.child_code(child.id)  # shown in the farewell: the way back in
+        await api.detach_child(child.id)
+        await callback.answer("Ребёнок отключён")
+        await _edit(message, texts.detach_done_text(child, code), None)
+    else:
+        await callback.answer("Недоступно")
 
 
 @router.callback_query(F.data.startswith("dev:"))

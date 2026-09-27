@@ -65,6 +65,35 @@ def code_kb(child: ChildInfo) -> InlineKeyboardMarkup:
     )
 
 
+def reset_kb(child: ChildInfo) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Сбросить прогресс", callback_data=f"reset:progress:{child.id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Отключить ребёнка", callback_data=f"reset:detach:{child.id}"
+                )
+            ],
+            [InlineKeyboardButton(text="Отмена", callback_data="reset:cancel:0")],
+        ]
+    )
+
+
+def confirm_kb(yes_text: str, yes_data: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=yes_text, callback_data=yes_data),
+                InlineKeyboardButton(text="Отмена", callback_data="reset:cancel:0"),
+            ]
+        ]
+    )
+
+
 def children_kb(children: list[ChildInfo], action: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

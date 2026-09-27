@@ -265,3 +265,86 @@ async def test_reports_due_lists_every_child_with_its_parents(
 
     ours = next(d for d in r.json() if d["report"]["child"]["id"] == child.id)
     assert ours["telegram_ids"] == [parent.telegram_id]
+
+
+async def test_reset_progress_forgets_learning_but_keeps_code_and_devices(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
+) -> None:
+    await play_day(db, child, "colors", at(DAY1))
+    clock.moment = at(DAY1, 18)
+    headers = bot_headers(parent)
+    code = (await client.get(f"/api/parent/children/{child.id}/code", headers=headers)).json()
+    assert (
+        await client.post("/api/login", json={"word": code["word"], "pin": code["pin"]})
+    ).status_code == 200
+    before = (await client.get(f"/api/parent/children/{child.id}/report", headers=headers)).json()
+    assert before["days_studied"] == 1 and before["week"]["coins"] > 0
+
+    reset = await client.post(f"/api/parent/children/{child.id}/reset", headers=headers)
+    assert reset.status_code == 200, reset.text
+
+    after = (await client.get(f"/api/parent/children/{child.id}/report", headers=headers)).json()
+    assert after["days_studied"] == 0 and after["week"]["coins"] == 0
+    progress = (
+        await client.get(f"/api/parent/children/{child.id}/progress", headers=headers)
+    ).json()
+    assert all(t["learned"] == 0 for t in progress["topics"])
+    same_code = (await client.get(f"/api/parent/children/{child.id}/code", headers=headers)).json()
+    assert same_code["code"] == code["code"]
+    assert (
+        len((await client.get(f"/api/parent/children/{child.id}/devices", headers=headers)).json())
+        == 1
+    )
+
+    stranger = Parent(telegram_id=666_000 + child.id)
+    db.add(stranger)
+    await db.flush()
+    assert (
+        await client.post(f"/api/parent/children/{child.id}/reset", headers=bot_headers(stranger))
+    ).status_code == 404
+
+
+async def test_detach_and_attach_by_code(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    headers = bot_headers(parent)
+    code = (await client.get(f"/api/parent/children/{child.id}/code", headers=headers)).json()
+
+    detached = await client.delete(f"/api/parent/children/{child.id}", headers=headers)
+    assert detached.status_code == 200, detached.text
+    assert detached.json() == []
+    assert (
+        await client.get(f"/api/parent/children/{child.id}/report", headers=headers)
+    ).status_code == 404
+    assert (
+        await client.delete(f"/api/parent/children/{child.id}", headers=headers)
+    ).status_code == 404
+
+    other = Parent(telegram_id=777_000 + child.id)
+    db.add(other)
+    await db.flush()
+    attached = await client.post(
+        "/api/parent/children/attach",
+        json={"code": code["code"].lower()},
+        headers=bot_headers(other),
+    )
+    assert attached.status_code == 200, attached.text
+    assert attached.json()["id"] == child.id
+    twice = await client.post(
+        "/api/parent/children/attach", json={"code": code["code"]}, headers=bot_headers(other)
+    )
+    assert twice.status_code == 200
+    assert [
+        c["id"]
+        for c in (await client.get("/api/parent/children", headers=bot_headers(other))).json()
+    ] == [child.id]
+
+    wrong_pin = "0000" if code["pin"] != "0000" else "1111"
+    missing = await client.post(
+        "/api/parent/children/attach", json={"code": f"{code['word']}-{wrong_pin}"}, headers=headers
+    )
+    assert missing.status_code == 404
+    malformed = await client.post(
+        "/api/parent/children/attach", json={"code": "Сандро"}, headers=headers
+    )
+    assert malformed.status_code == 422

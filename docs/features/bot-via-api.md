@@ -37,6 +37,8 @@
   | Ручка | Что делает |
   |---|---|
   | `GET/POST /children` | список детей родителя, добавить ребёнка |
+  | `POST /children/attach`, `DELETE /children/{id}` | подключить существующего по коду входа, отключить от себя |
+  | `POST /children/{id}/reset` | сбросить прогресс ребёнка |
   | `GET /children/{id}/report?week_start=` | отчёт за текущую или заданную неделю |
   | `GET /children/{id}/progress` | прогресс по темам и словам |
   | `PATCH /children/{id}/settings` | курс, лимит, подсказка; чужие значения → 422 |

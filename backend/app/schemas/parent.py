@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.lesson import Lari
 
@@ -64,6 +64,12 @@ class ChildCreate(BaseModel):
         if not stripped:
             raise ValueError("name must not be blank")
         return stripped
+
+
+class ChildAttach(BaseModel):
+    """The login code of an existing child, e.g. "LOMI-7241"."""
+
+    code: str = Field(pattern=r"^\s*[A-Za-z]{4}-?\d{4}\s*$")
 
 
 class SettingsPatch(BaseModel):

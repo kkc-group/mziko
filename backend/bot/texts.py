@@ -34,8 +34,44 @@ def start_text(children: list[ChildInfo]) -> str:
         "/settings — курс, лимит, подсказка\n"
         "/code — код для входа ребёнка\n"
         "/devices — привязанные устройства\n"
-        "/addchild Имя — добавить ребёнка"
+        "/reset — сбросить прогресс или отключить ребёнка\n"
+        "/addchild Имя — добавить ребёнка\n"
+        "/addchild LOMI-7241 — подключить ребёнка по его коду"
     )
+
+
+def reset_menu_text(child: ChildInfo) -> str:
+    return f"Что сделать с {esc(child.name)}?"
+
+
+def reset_progress_confirm_text(child: ChildInfo) -> str:
+    return (
+        f"Сбросить прогресс {esc(child.name)}? Уйдут все выученные слова, занятия и монетки "
+        "за все недели. Код и устройства останутся."
+    )
+
+
+def reset_progress_done_text(child: ChildInfo) -> str:
+    return f"Прогресс {esc(child.name)} сброшен. Следующий урок будет первым."
+
+
+def detach_confirm_text(child: ChildInfo, code: ChildCodeOut) -> str:
+    return (
+        f"Отключить {esc(child.name)} от вас? Прогресс, код и устройства сохранятся.\n"
+        f"Подключить обратно: /addchild {esc(code.code)}"
+    )
+
+
+def detach_done_text(child: ChildInfo, code: ChildCodeOut) -> str:
+    return f"{esc(child.name)} отключён. Подключить обратно: /addchild {esc(code.code)}"
+
+
+def attached_text(child: ChildInfo) -> str:
+    return f"Подключил: {esc(child.name)}. Код для входа: /code"
+
+
+NO_SUCH_CODE = "Ребёнка с таким кодом нет. Проверьте код в /code у того, кто его отключил."
+CANCELLED = "Отменено"
 
 
 def report_text(r: WeekReportOut) -> str:

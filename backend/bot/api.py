@@ -70,6 +70,18 @@ class ParentApi:
     async def add_child(self, name: str) -> ChildInfo:
         return ChildInfo.model_validate(await self._call("POST", "/children", json={"name": name}))
 
+    async def attach_child(self, code: str) -> ChildInfo:
+        """404 when no child has this login code."""
+        return ChildInfo.model_validate(
+            await self._call("POST", "/children/attach", json={"code": code})
+        )
+
+    async def detach_child(self, child_id: int) -> list[ChildInfo]:
+        return CHILDREN.validate_python(await self._call("DELETE", f"/children/{child_id}"))
+
+    async def reset_progress(self, child_id: int) -> ChildInfo:
+        return ChildInfo.model_validate(await self._call("POST", f"/children/{child_id}/reset"))
+
     async def child(self, child_id: int) -> ChildInfo | None:
         return next((c for c in await self.children() if c.id == child_id), None)
 

@@ -2,13 +2,14 @@
 
 from collections.abc import Iterable
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Child, Parent, parent_children
+from app.models import Child, CoinLedger, Parent, Session, Week, WordProgress, parent_children
 from app.schemas.parent import CAP_OPTIONS, RATE_OPTIONS
+from app.services.login_codes import normalize_word
 
 
 async def ensure_admin_parents(db: AsyncSession, telegram_ids: Iterable[int]) -> None:
@@ -64,6 +65,44 @@ async def create_child(db: AsyncSession, parent: Parent, name: str) -> Child:
     await db.execute(insert(parent_children).values(parent_id=parent.id, child_id=child.id))
     await db.flush()
     return child
+
+
+async def attach_child_by_code(db: AsyncSession, parent: Parent, code: str) -> Child | None:
+    """Link an existing child by its login code WORD-1234; knowing the code is the right.
+
+    Idempotent for a parent already linked. None when no child has that code.
+    """
+    word, _, pin = code.strip().partition("-")
+    stmt = select(Child).where(Child.code_word == normalize_word(word), Child.code_pin == pin)
+    child = (await db.execute(stmt)).scalar_one_or_none()
+    if child is None:
+        return None
+    await db.execute(
+        insert(parent_children)
+        .values(parent_id=parent.id, child_id=child.id)
+        .on_conflict_do_nothing()
+    )
+    await db.flush()
+    return child
+
+
+async def detach_child(db: AsyncSession, parent: Parent, child: Child) -> None:
+    """Drop the link only: the child, its progress, code and devices stay for a re-attach."""
+    await db.execute(
+        delete(parent_children).where(
+            parent_children.c.parent_id == parent.id, parent_children.c.child_id == child.id
+        )
+    )
+    await db.flush()
+
+
+async def reset_progress(db: AsyncSession, child: Child) -> None:
+    """Forget everything the child has learned and earned; settings, code and devices stay."""
+    await db.execute(delete(CoinLedger).where(CoinLedger.child_id == child.id))
+    await db.execute(delete(Week).where(Week.child_id == child.id))
+    await db.execute(delete(Session).where(Session.child_id == child.id))  # answers cascade
+    await db.execute(delete(WordProgress).where(WordProgress.child_id == child.id))
+    await db.flush()
 
 
 async def update_settings(
