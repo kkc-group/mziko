@@ -109,6 +109,16 @@ button:disabled { cursor: default; }
 .anchor .ka b { color: var(--word-color); font-weight: 800; }
 .anchor small { color: var(--muted); font-weight: 700; font-size: 16px; }
 
+/* ---------- proposed: listen step is locked while an answer is in flight ----------
+   The tapped letter/syllable pops up big (same .glyph.l used in .pic on the intro card,
+   ~120 px at --s:96px) centered over the tile grid; the grid and the replay button are
+   dimmed and inert until the result comes back, so a second tap cannot reach the server. */
+.grid-wrap { position: relative; }
+.grid.dim { opacity: 0.35; pointer-events: none; }
+.speak.dim { opacity: 0.35; pointer-events: none; }
+.reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.reveal .pic { box-shadow: 0 10px 20px var(--blob-edge); }
+
 /* ---------- mockup chrome (not product) ---------- */
 .mk { max-width: 1900px; margin: 0 auto; padding: 32px 28px 80px; }
 .mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
@@ -156,6 +166,14 @@ figcaption span { display: block; font-weight: 600; color: var(--muted); font-si
   <h2>5 · наклейки на главном</h2>
   <p class="lead">Тот же <code>.stk</code> 48×48 и <code>.stk.lock</code>. Буква — квадрат, слово — плашка по ширине текста в одну строку.</p>
   <div class="row" id="s5"></div>
+
+  <h2>6 · listen — экран заперт после тапа (буквы)</h2>
+  <p class="lead">Тронул плитку — она не окрашивается на месте, а буква всплывает большим кругом по центру сетки (тот же <code>.glyph.l</code>, что в <code>.pic</code> карточки знакомства, ≈120 px при <code>--s:96px</code>). Сетка и «Послушать ещё раз» приглушены и не отвечают на тап до ответа сервера: второй тап физически не долетает. Звучит «ლ».</p>
+  <div class="row" id="s6"></div>
+
+  <h2>7 · listen — то же для слога «მა»</h2>
+  <p class="lead">Слог из двух знаков в той же обёртке <code>.glyph.l</code> — проверка, что не только одна буква умещается в круг без переноса и уменьшения шрифта.</p>
+  <div class="row" id="s7"></div>
 </main>
 
 <script>
@@ -267,6 +285,39 @@ const stickers = `
 document.getElementById('s5').innerHTML = [
   fig('Светлая', 'выученные цветные, невыученные серые (.lock)', `<div class="sheet th-light">${stickers}</div>`),
   fig('Тёмная', 'глиф в --word-color: жёлтый на тёмном', `<div class="sheet th-dark">${stickers}</div>`),
+].join('');
+
+/* ---- 6 · listen locked (letter) ---- */
+const revealGlyph = (ka, ru, cls) => `<div class="reveal"><div class="pic ${cls}"><span class="glyph l ka" role="img" aria-label="${ru}">${ka}</span></div></div>`;
+const listenLocked = (items, cls, id, result) => {
+  const target = items.find(i => i[2] === id);
+  return `
+  <p class="prompt">Послушай и найди</p>
+  <button type="button" class="speak dim" aria-label="Послушать ещё раз" disabled>${SPK}</button>
+  <div class="grid-wrap">
+    <div class="grid dim">${items.map(([ka, ru, iid]) => {
+      const s = iid === id ? result : '';
+      return `<button type="button" class="tile txt ${s}" aria-label="${ru}" disabled><span class="glyph ${cls} ka">${ka}</span></button>`;
+    }).join('')}</div>
+    ${revealGlyph(target[0], target[1], result)}
+  </div>`;
+};
+
+document.getElementById('s6').innerHTML = [
+  fig('Нажал плитку — ждём ответа', 'экран заперт, второй тап не проходит: сетка и «Послушать ещё раз» не реагируют', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', ''), toast.none))),
+  fig('Ждём ответа · тёмная', '', phone('dark', lesson(43, 12, listenLocked(LET, 'l', 'l', ''), toast.none))),
+  fig('Верно', 'буква на зелёном, тронутая плитка .ok — ответ уже улетел на сервер', phone('light', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok'), toast.plain))),
+  fig('Верно · тёмная', '', phone('dark', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok'), toast.plain))),
+  fig('Неверно — в момент ответа', 'буква на красном трясётся, тронутая плитка .bad, сетка ещё заперта', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', 'bad'), toast.try))),
+  fig('Неверно — секунду спустя', 'всплывшая буква исчезла, сетка снова доступна; красная плитка остаётся заблокированной, остальные — нет', phone('light', lesson(43, 12, listen(LET, { l: 'bad' }, 'l'), toast.try))),
+].join('');
+
+/* ---- 7 · listen locked (syllable) ---- */
+const SYL = [['მა', 'слог ма', 'ma'], ['ლა', 'слог ла', 'la'], ['ბა', 'слог ба', 'ba'], ['და', 'слог да', 'da']];
+document.getElementById('s7').innerHTML = [
+  fig('Ждём ответа', 'слог в той же обёртке .glyph.l — того же размера, что одна буква', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', ''), toast.none))),
+  fig('Верно', '', phone('light', lesson(71, 13, listenLocked(SYL, 'l', 'ma', 'ok'), toast.plain))),
+  fig('Неверно', '', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', 'bad'), toast.try))),
 ].join('');
 </script>
 </body>

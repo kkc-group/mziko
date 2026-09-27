@@ -27,6 +27,20 @@ AUDIO_DIR = REPO_DIR / "media" / "audio"
 DEFAULT_VOICE = "ka-GE-EkaNeural"  # the other native voice: ka-GE-GiorgiNeural
 DEFAULT_RATE = "-15%"  # slightly slower than natural: easier for a child to repeat
 
+# Spoken feedback in the quiz, media/audio/ui/<name>.mp3. Georgian like everything else.
+PHRASES = {
+    "correct": "სწორია! ყოჩაღ!",  # "correct, well done"
+    "wrong": "არა, ეს არასწორია. სცადე კიდევ.",  # "no, that is wrong, try again"
+}
+
+
+def text_for(word: dict) -> str:
+    """A letter is read as its sound and then its anchor word: "ბ. ბურთი."."""
+    anchor = word.get("anchor")
+    if anchor:
+        return f"{word['ka']}. {anchor['ka']}."
+    return str(word["ka"])
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
@@ -60,9 +74,19 @@ async def main() -> None:
             if out.exists():
                 skipped += 1
                 continue
-            await synthesize(word["ka"], out, args.voice, args.rate)
+            text = text_for(word)
+            await synthesize(text, out, args.voice, args.rate)
             generated += 1
-            print(f"{out.relative_to(REPO_DIR)}  ←  {word['ka']}")
+            print(f"{out.relative_to(REPO_DIR)}  ←  {text}")
+
+    for name, text in PHRASES.items():
+        out = AUDIO_DIR / "ui" / f"{name}.mp3"
+        if out.exists():
+            skipped += 1
+            continue
+        await synthesize(text, out, args.voice, args.rate)
+        generated += 1
+        print(f"{out.relative_to(REPO_DIR)}  ←  {text}")
 
     print(f"done: {generated} generated, {skipped} skipped (already present)")
 

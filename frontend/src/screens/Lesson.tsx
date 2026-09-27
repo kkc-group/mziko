@@ -104,10 +104,12 @@ export function Lesson({
               const correct = chosen.slug === step.word.slug
               if (!correct) {
                 setToast({ kind: 'try', text: 'Почти! Попробуй ещё' })
-                void speaker.play(step.word)
+                // The child hears what they actually picked, then that it was wrong.
+                await speaker.playThrough(chosen)
+                await speaker.phrase('wrong')
                 return false
               }
-              void speaker.play(step.word)
+              void speaker.phrase('correct')
               const body: AnswerBody = {
                 step_index: idx,
                 word_slug: chosen.slug,
@@ -220,43 +222,59 @@ function Quiz({
 }) {
   const [wrong, setWrong] = useState<string[]>([])
   const [okSlug, setOkSlug] = useState<string | null>(null)
-  const locked = okSlug !== null
+  // The tapped option, shown large over the options while the screen is locked.
+  const [picked, setPicked] = useState<{ word: WordOut; verdict: 'ok' | 'bad' | null } | null>(null)
+  const locked = okSlug !== null || picked !== null
 
   const pick = async (o: WordOut, el: HTMLElement) => {
     if (locked || wrong.includes(o.slug)) return
     const attempt = wrong.length + 1
+    setPicked({ word: o, verdict: null }) // locks every option at once: no double tap
     try {
       const correct = await onAnswer(o, attempt, el)
-      if (correct) setOkSlug(o.slug)
-      else setWrong((w) => [...w, o.slug])
+      if (correct) {
+        setOkSlug(o.slug)
+        setPicked({ word: o, verdict: 'ok' }) // stays until the next step
+      } else {
+        setWrong((w) => [...w, o.slug])
+        setPicked({ word: o, verdict: 'bad' })
+        setTimeout(() => setPicked(null), 400) // the red card fades, the rest unlock
+      }
     } catch (e) {
       // Never leave the child on a frozen screen: surface the failure instead.
       console.error(e)
+      setPicked(null)
       onError(e instanceof Error ? e.message : String(e))
     }
   }
 
   const cls = (o: WordOut, base: string) =>
     `${base}${o.slug === okSlug ? ' ok' : ''}${wrong.includes(o.slug) ? ' bad' : ''}`
+  const dim = picked ? ' dim' : ''
 
   if (step.type === 'listen') {
     return (
       <>
         <p className="prompt">Послушай и найди</p>
-        <SpeakButton word={step.word} speaker={speaker} label="Послушать ещё раз" />
-        <div className="grid">
-          {step.options.map((o) => (
-            <button
-              key={o.slug}
-              type="button"
-              className={cls(o, `tile${textClass(o)}`)}
-              disabled={locked || wrong.includes(o.slug)}
-              aria-label={o.ru}
-              onClick={(e) => void pick(o, e.currentTarget)}
-            >
-              <WordImage word={o} />
-            </button>
-          ))}
+        <div className={dim}>
+          <SpeakButton word={step.word} speaker={speaker} label="Послушать ещё раз" />
+        </div>
+        <div className="grid-wrap">
+          <div className={`grid${dim}`}>
+            {step.options.map((o) => (
+              <button
+                key={o.slug}
+                type="button"
+                className={cls(o, `tile${textClass(o)}`)}
+                disabled={locked || wrong.includes(o.slug)}
+                aria-label={o.ru}
+                onClick={(e) => void pick(o, e.currentTarget)}
+              >
+                <WordImage word={o} />
+              </button>
+            ))}
+          </div>
+          {picked && <Reveal word={picked.word} verdict={picked.verdict} />}
         </div>
       </>
     )
@@ -268,23 +286,46 @@ function Quiz({
       <div className="pic">
         <WordImage word={step.word} />
       </div>
-      <div className="opts">
-        {step.options.map((o) => (
-          <div className="opt" key={o.slug}>
-            <SpeakButton word={o} speaker={speaker} small />
-            <button
-              type="button"
-              className={cls(o, 'ans')}
-              disabled={locked || wrong.includes(o.slug)}
-              onClick={(e) => void pick(o, e.currentTarget)}
-            >
-              <span className="ka">{o.ka}</span>
-              {showHint && <small>{o.tr}</small>}
-            </button>
-          </div>
-        ))}
+      <div className="grid-wrap">
+        <div className={`opts${dim}`}>
+          {step.options.map((o) => (
+            <div className="opt" key={o.slug}>
+              <SpeakButton word={o} speaker={speaker} small />
+              <button
+                type="button"
+                className={cls(o, 'ans')}
+                disabled={locked || wrong.includes(o.slug)}
+                onClick={(e) => void pick(o, e.currentTarget)}
+              >
+                <span className="ka">{o.ka}</span>
+                {showHint && <small>{o.tr}</small>}
+              </button>
+            </div>
+          ))}
+        </div>
+        {picked && <Reveal word={picked.word} verdict={picked.verdict} asText />}
       </div>
     </>
+  )
+}
+
+/** The tapped option, large over the options: neutral while the answer is in flight, then ok/bad. */
+function Reveal({
+  word,
+  verdict,
+  asText = false,
+}: {
+  word: WordOut
+  verdict: 'ok' | 'bad' | null
+  asText?: boolean
+}) {
+  const shape = asText ? ' txt' : textClass(word)
+  return (
+    <div className="reveal" aria-hidden="true">
+      <div className={`pic${shape}${verdict ? ` ${verdict}` : ''}`}>
+        {asText ? <span className="glyph w ka">{word.ka}</span> : <WordImage word={word} />}
+      </div>
+    </div>
   )
 }
 

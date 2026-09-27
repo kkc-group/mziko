@@ -181,6 +181,11 @@ button:disabled { cursor: default; }
 .opt .ans { flex: 1; min-height: 56px; text-align: left; padding: 14px 18px; border-radius: 22px; background: var(--surface); border: 3px solid var(--line); box-shadow: 0 5px 0 var(--line); }
 .opt .ans .ka { font-size: 28px; display: block; line-height: 1.2; }
 .opt .ans small { color: var(--muted); font-weight: 700; }
+/* While an answer is in flight the options dim and stop taking taps; the tapped one shows large. */
+.grid-wrap { position: relative; }
+.dim { opacity: 0.35; pointer-events: none; }
+.reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.reveal .pic { box-shadow: 0 10px 20px var(--blob-edge); }
 .ok { border-color: var(--mint) !important; background: var(--mint-soft) !important; box-shadow: 0 5px 0 var(--mint) !important; }
 .bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
 @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
