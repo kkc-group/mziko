@@ -31,8 +31,12 @@ make db                     # PostgreSQL в Docker
 make migrate && make seed   # схема и слова двух тем
 make api                    # http://localhost:8000, документация /api/docs
 make web                    # http://localhost:5173, /api проксируется на 8000
-make pair                   # код привязки без Telegram: откройте /pair/<код> в браузере
+make pair                   # одноразовая ссылка привязки без Telegram, как из бота
+make token                  # общая ссылка с тестовым токеном: логинит любой браузер
 ```
+
+Ссылки печатаются для `http://localhost` (стек в Docker); при `make web` замените
+адрес на `http://localhost:5173`, а для телефона в той же сети — на IP компьютера.
 
 Бот локально: впишите `BOT_TOKEN` и свой Telegram id в `ADMIN_TELEGRAM_IDS`
 в `.env`, затем `make bot`. В Telegram: `/start`, `/addchild Сандро`, `/pair`.

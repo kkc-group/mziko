@@ -24,10 +24,19 @@ function pairCodeFromUrl(): string | null {
   return m ? decodeURIComponent(m[1]) : null
 }
 
+/** `/?token=…` stores a ready device token (testing without the bot) and cleans the URL. */
+function adoptTokenFromUrl(): void {
+  const token = new URLSearchParams(location.search).get('token')
+  if (!token) return
+  setToken(token)
+  history.replaceState(null, '', location.pathname)
+}
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>(() => {
     const code = pairCodeFromUrl()
     if (code) return { kind: 'pair', code }
+    adoptTokenFromUrl()
     return getToken() ? { kind: 'loading' } : { kind: 'unpaired' }
   })
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
