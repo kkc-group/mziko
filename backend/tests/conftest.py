@@ -13,7 +13,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from testcontainers.postgres import PostgresContainer
+from testcontainers.community.postgres import PostgresContainer
+
+from app.models import Child
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -40,7 +42,25 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     await engine.dispose()
 
 
+@pytest.fixture(scope="session")
+async def seeded(engine: AsyncEngine) -> None:
+    """Both topics loaded once per test session (seeding is idempotent)."""
+    from app.seed import load_topics, seed_topics
+
+    async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+        await seed_topics(session, load_topics(BACKEND_DIR.parent / "content"))
+
+
 @pytest.fixture
 async def db(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     async with async_sessionmaker(engine, expire_on_commit=False)() as session:
         yield session
+
+
+@pytest.fixture
+async def child(db: AsyncSession, seeded: None) -> Child:
+    """A fresh child with default settings; each test gets its own so state never leaks."""
+    child = Child(name="Сандро")
+    db.add(child)
+    await db.flush()
+    return child
