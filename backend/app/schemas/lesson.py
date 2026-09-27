@@ -2,13 +2,16 @@
 
 import uuid
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PlainSerializer
 
 from app.models import ImageKind
 
 StepType = Literal["intro", "listen", "recall"]
+
+# GEL amounts are exact decimals internally and plain numbers on the wire.
+Lari = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
 
 
 class ImageOut(BaseModel):
@@ -45,7 +48,17 @@ class AnswerResult(BaseModel):
     coins_gained: int
     word_learned: bool
     week_coins: int
-    week_lari: Decimal
+    week_lari: Lari
+
+
+class SessionIn(BaseModel):
+    topic_slug: str
+
+
+class SessionOut(BaseModel):
+    # None with empty steps means "nothing to do today".
+    session_id: uuid.UUID | None
+    steps: list[Step]
 
 
 class SessionSummary(BaseModel):
@@ -53,4 +66,4 @@ class SessionSummary(BaseModel):
     coins_gained: int
     learned: list[WordOut]
     week_coins: int
-    week_lari: Decimal
+    week_lari: Lari
