@@ -21,6 +21,9 @@ seed:
 api:
 	cd backend && uv run uvicorn app.main:app --reload --port 8000
 
+bot:
+	cd backend && uv run python -m bot.main
+
 test:
 	cd backend && uv run pytest
 

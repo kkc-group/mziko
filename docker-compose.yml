@@ -26,11 +26,25 @@ services:
       - ./content:/srv/content:ro
       - ./media:/srv/media:ro
     command: sh -c "alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     depends_on:
       db:
         condition: service_healthy
 
-  # `bot` service is added at stage 5 (TASK.md §11) together with the bot code.
+  bot:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mziko}:${POSTGRES_PASSWORD:-mziko}@db:5432/${POSTGRES_DB:-mziko}
+    command: python -m bot.main
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy   # migrations are applied by the api container
 
   web:
     image: caddy:2
