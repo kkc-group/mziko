@@ -55,21 +55,30 @@ make lint   # ruff, mypy, oxlint, tsc
 
 Всё разом в Docker: `make dev` (миграции и seed применяются при старте `api`).
 
-## Деплой на чистый сервер
+## Деплой
 
-1. Сервер с Docker и docker compose, домен с A-записью на сервер, открытые порты 80 и 443.
-2. `git clone … && cd mziko && cp .env.example .env`, в `.env`:
+Образы собираются на GitHub при каждом пуше в `main` и раскатываются на Droplet
+готовыми, см. [docs/features/ci-cd.md](docs/features/ci-cd.md). Сервер не знает
+про git: на нём лежат только `docker-compose.yml` и `.env`.
+
+Один раз на чистом сервере (Ubuntu 24.04, порты 22, 80, 443):
+
+1. Docker: `curl -fsSL https://get.docker.com | sh`.
+2. `mkdir -p /srv/mziko`, туда `.env` по образцу `.env.example`:
    - `POSTGRES_PASSWORD` — свой;
-   - `SITE_ADDRESS=mziko.example.com` — Caddy сам получит сертификат;
+   - `SITE_ADDRESS=mziko.example.com` — Caddy сам получит сертификат
+     (без домена `:80` и `PUBLIC_URL=http://<ip>`);
    - `PUBLIC_URL=https://mziko.example.com` — попадает в ссылки привязки;
    - `BOT_TOKEN` от @BotFather, `ADMIN_TELEGRAM_IDS=[123456789]` — ваш id;
    - `BOT_API_TOKEN` — секрет между ботом и API, `openssl rand -hex 32`.
-3. `docker compose up -d --build`. Поднимутся `db`, `api` (накатит миграции и слова),
-   `bot` и `web`.
-4. В Telegram: `/start`, `/addchild Сандро`, `/pair`. Ссылку из ответа открыть на iPad,
+3. Ключ деплоя: публичная часть в `~/.ssh/authorized_keys` пользователя SSH,
+   приватная — в секрет GitHub `DO_SSH_KEY`; ещё `DO_HOST` (IP) и `DO_USER`.
+4. Пуш в `main` или «Run workflow» в Actions. Поднимутся `db`, `api` (накатит
+   миграции и слова), `bot` и `web`.
+5. В Telegram: `/start`, `/addchild Сандро`, `/pair`. Ссылку из ответа открыть на iPad,
    затем «Поделиться → На экран Домой».
 
-Обновление: `git pull && docker compose up -d --build`.
+Откат: на сервере `cd /srv/mziko && IMAGE_TAG=<sha> docker compose up -d`.
 Резервная копия базы: `docker compose exec db pg_dump -U mziko mziko > backup.sql`.
 
 ## Контент и звук
