@@ -1,4 +1,4 @@
-"""Telegram bot process: `python -m bot.main`."""
+"""Telegram bot process: `python -m bot.main`. Talks to the API only, never to the database."""
 
 import asyncio
 import logging
@@ -9,10 +9,9 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from app.core.config import get_settings
-from app.core.db import get_sessionmaker
-from app.services import parents
+from bot.api import ParentApi, make_client
 from bot.handlers import router
-from bot.middleware import ParentSessionMiddleware
+from bot.middleware import ParentApiMiddleware
 from bot.scheduler import setup_scheduler
 
 
@@ -20,23 +19,23 @@ async def run() -> None:
     settings = get_settings()
     if not settings.bot_token:
         sys.exit("BOT_TOKEN is not set")
-
-    async with get_sessionmaker()() as db:
-        await parents.ensure_admin_parents(db, settings.admin_telegram_ids)
-        await db.commit()
+    if not settings.bot_api_token:
+        sys.exit("BOT_API_TOKEN is not set")
 
     bot = Bot(settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
-    dp.message.middleware(ParentSessionMiddleware())
-    dp.callback_query.middleware(ParentSessionMiddleware())
-    dp.include_router(router)
+    async with make_client(settings.api_url, settings.bot_api_token) as client:
+        api = ParentApi(client)
+        dp.message.middleware(ParentApiMiddleware(api))
+        dp.callback_query.middleware(ParentApiMiddleware(api))
+        dp.include_router(router)
 
-    scheduler = setup_scheduler(bot)
-    scheduler.start()
-    try:
-        await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
-    finally:
-        scheduler.shutdown(wait=False)
+        scheduler = setup_scheduler(bot, api, settings.timezone)
+        scheduler.start()
+        try:
+            await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
+        finally:
+            scheduler.shutdown(wait=False)
 
 
 if __name__ == "__main__":

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     bot_token: str = ""
     admin_telegram_ids: list[int] = Field(default_factory=list)
+    # Shared secret the bot presents to /api/parent/*. Empty disables those routes.
+    bot_api_token: str = ""
+    # Where the bot finds the API (inside docker-compose: http://api:8000).
+    api_url: str = "http://localhost:8000"
 
     timezone: str = "Asia/Tbilisi"
 

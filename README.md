@@ -38,8 +38,11 @@ make token                  # общая ссылка с тестовым ток
 Ссылки печатаются для `http://localhost` (стек в Docker); при `make web` замените
 адрес на `http://localhost:5173`, а для телефона в той же сети — на IP компьютера.
 
-Бот локально: впишите `BOT_TOKEN` и свой Telegram id в `ADMIN_TELEGRAM_IDS`
-в `.env`, затем `make bot`. В Telegram: `/start`, `/addchild Сандро`, `/pair`.
+Бот локально: впишите `BOT_TOKEN`, свой Telegram id в `ADMIN_TELEGRAM_IDS` и
+секрет `BOT_API_TOKEN` (`openssl rand -hex 32`) в `.env`, поднимите `make api`,
+затем `make bot`. Бот ходит только в API (`API_URL`, по умолчанию
+`http://localhost:8000`), в базу он не заглядывает. В Telegram: `/start`,
+`/addchild Сандро`, `/pair`.
 
 Если API слушает другой порт: `API_URL=http://localhost:8001 make web`.
 
@@ -59,7 +62,8 @@ make lint   # ruff, mypy, oxlint, tsc
    - `POSTGRES_PASSWORD` — свой;
    - `SITE_ADDRESS=mziko.example.com` — Caddy сам получит сертификат;
    - `PUBLIC_URL=https://mziko.example.com` — попадает в ссылки привязки;
-   - `BOT_TOKEN` от @BotFather, `ADMIN_TELEGRAM_IDS=[123456789]` — ваш id.
+   - `BOT_TOKEN` от @BotFather, `ADMIN_TELEGRAM_IDS=[123456789]` — ваш id;
+   - `BOT_API_TOKEN` — секрет между ботом и API, `openssl rand -hex 32`.
 3. `docker compose up -d --build`. Поднимутся `db`, `api` (накатит миграции и слова),
    `bot` и `web`.
 4. В Telegram: `/start`, `/addchild Сандро`, `/pair`. Ссылку из ответа открыть на iPad,

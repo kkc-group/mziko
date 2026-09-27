@@ -1,0 +1,248 @@
+"""HTTP tests of /api/parent/*: the bot's token, the parent boundary, report and payout."""
+
+from datetime import timedelta
+
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.models import Child, CoinReason, Parent
+from app.services import coins
+from tests.conftest import BOT_API_TOKEN, DAY1, Clock
+from tests.helpers import at, play_day
+
+
+def bot_headers(parent: Parent | int) -> dict[str, str]:
+    telegram_id = parent if isinstance(parent, int) else parent.telegram_id
+    return {"Authorization": f"Bearer {BOT_API_TOKEN}", "X-Telegram-Id": str(telegram_id)}
+
+
+async def test_bot_token_and_parent_header_are_required(
+    client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    url = f"/api/parent/children/{child.id}/report"
+    assert (await client.get(url)).status_code == 401
+    bad = {"Authorization": "Bearer nope", "X-Telegram-Id": str(parent.telegram_id)}
+    assert (await client.get(url, headers=bad)).status_code == 401
+    no_parent = {"Authorization": f"Bearer {BOT_API_TOKEN}"}
+    assert (await client.get(url, headers=no_parent)).status_code == 400
+    assert (await client.get(url, headers=bot_headers(999_999_999))).status_code == 403
+    assert (await client.get(url, headers=bot_headers(parent))).status_code == 200
+
+
+async def test_report_and_week_stay_within_the_parent_link(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
+) -> None:
+    await play_day(db, child, "colors", at(DAY1))
+    clock.moment = at(DAY1, 18)
+
+    r = await client.get(f"/api/parent/children/{child.id}/report", headers=bot_headers(parent))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["child"] == {
+        "id": child.id,
+        "name": "Сандро",
+        "rate": 10,
+        "cap_lari": 15,
+        "show_hint": True,
+    }
+    assert body["days_studied"] == 1
+    assert body["week"]["status"] == "open" and body["week"]["coins"] > 0
+    assert body["week"]["lari_due"] == float(coins.lari_for(body["week"]["coins"], 10, 15))
+    assert body["week"]["week_end"] == str(DAY1 + timedelta(days=6 - DAY1.weekday()))
+    assert body["unpaid_past"] == []
+
+    week_id = body["week"]["id"]
+    same = await client.get(f"/api/parent/weeks/{week_id}", headers=bot_headers(parent))
+    assert same.status_code == 200 and same.json()["week"]["id"] == week_id
+
+    stranger = Parent(telegram_id=555_000 + child.id)
+    db.add(stranger)
+    await db.flush()
+    for url in (f"/api/parent/children/{child.id}/report", f"/api/parent/weeks/{week_id}"):
+        assert (await client.get(url, headers=bot_headers(stranger))).status_code == 404
+    assert (
+        await client.post(f"/api/parent/weeks/{week_id}/pay", headers=bot_headers(stranger))
+    ).status_code == 404
+    assert (await client.get("/api/parent/weeks/0", headers=bot_headers(parent))).status_code == 404
+
+
+async def test_pay_closes_the_week_once(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
+) -> None:
+    week = await coins.get_or_create_week(db, child.id, DAY1)
+    await coins.add_coins(db, child, week, 23, CoinReason.answer)
+    clock.moment = at(DAY1 + timedelta(days=6), 20)
+
+    paid = await client.post(f"/api/parent/weeks/{week.id}/pay", headers=bot_headers(parent))
+    assert paid.status_code == 200, paid.text
+    body = paid.json()
+    assert body["already_paid"] is False
+    assert body["report"]["week"]["status"] == "paid"
+    assert body["report"]["week"]["lari_paid"] == 2.3
+    assert body["report"]["week"]["paid_at"] is not None
+
+    again = await client.post(f"/api/parent/weeks/{week.id}/pay", headers=bot_headers(parent))
+    assert again.status_code == 200
+    assert again.json()["already_paid"] is True
+    assert again.json()["report"]["week"]["lari_paid"] == 2.3
+
+    # The next week's report lists nothing as unpaid: the payout closed it.
+    clock.moment = at(DAY1 + timedelta(days=7), 12)
+    nxt = await client.get(f"/api/parent/children/{child.id}/report", headers=bot_headers(parent))
+    assert nxt.json()["unpaid_past"] == []
+
+
+async def test_unpaid_previous_week_is_listed_with_its_due(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
+) -> None:
+    week = await coins.get_or_create_week(db, child.id, DAY1)
+    await coins.add_coins(db, child, week, 40, CoinReason.answer)
+    clock.moment = at(DAY1 + timedelta(days=7), 12)
+
+    r = await client.get(f"/api/parent/children/{child.id}/report", headers=bot_headers(parent))
+    past = r.json()["unpaid_past"]
+    assert [p["id"] for p in past] == [week.id]
+    assert past[0]["coins"] == 40 and past[0]["lari_due"] == 4.0 and past[0]["status"] == "open"
+
+
+async def test_children_list_and_create(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    blank = await client.post(
+        "/api/parent/children", json={"name": "   "}, headers=bot_headers(parent)
+    )
+    assert blank.status_code == 422
+
+    created = await client.post(
+        "/api/parent/children", json={"name": "  Тако  "}, headers=bot_headers(parent)
+    )
+    assert created.status_code == 200, created.text
+    assert created.json()["name"] == "Тако"
+    new_id = created.json()["id"]
+
+    listed = await client.get("/api/parent/children", headers=bot_headers(parent))
+    assert {c["id"] for c in listed.json()} == {child.id, new_id}
+
+    stranger = Parent(telegram_id=555_100 + child.id)
+    db.add(stranger)
+    await db.flush()
+    stranger_list = await client.get("/api/parent/children", headers=bot_headers(stranger))
+    assert stranger_list.json() == []
+
+
+async def test_progress_shows_learned_words_and_stays_within_the_parent_link(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    await play_day(db, child, "colors", at(DAY1))
+
+    r = await client.get(f"/api/parent/children/{child.id}/progress", headers=bot_headers(parent))
+    assert r.status_code == 200, r.text
+    colors = next(t for t in r.json()["topics"] if t["slug"] == "colors")
+    assert colors["learned"] == 0
+    assert any(w["stage"] == 1 for w in colors["words"])
+
+    stranger = Parent(telegram_id=555_200 + child.id)
+    db.add(stranger)
+    await db.flush()
+    assert (
+        await client.get(f"/api/parent/children/{child.id}/progress", headers=bot_headers(stranger))
+    ).status_code == 404
+
+
+async def test_settings_are_validated_and_saved(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    url = f"/api/parent/children/{child.id}/settings"
+    ok = await client.patch(url, json={"rate": 15}, headers=bot_headers(parent))
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["rate"] == 15
+
+    bad = await client.patch(url, json={"rate": 7}, headers=bot_headers(parent))
+    assert bad.status_code == 422
+
+    hint = await client.patch(url, json={"show_hint": False}, headers=bot_headers(parent))
+    assert hint.status_code == 200
+    assert hint.json()["show_hint"] is False
+
+    stranger = Parent(telegram_id=555_300 + child.id)
+    db.add(stranger)
+    await db.flush()
+    assert (
+        await client.patch(url, json={"rate": 20}, headers=bot_headers(stranger))
+    ).status_code == 404
+
+
+async def test_pair_code_is_issued_and_redeemable(
+    client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    r = await client.post(
+        f"/api/parent/children/{child.id}/pair-codes", headers=bot_headers(parent)
+    )
+    assert r.status_code == 200, r.text
+    url = r.json()["url"]
+    assert url.startswith(get_settings().public_url)
+    assert "/pair/" in url
+    code = url.rsplit("/", 1)[-1]
+
+    redeemed = await client.post(f"/api/pair/{code}")
+    assert redeemed.status_code == 200, redeemed.text
+    assert redeemed.json()["child"]["id"] == child.id
+
+
+async def test_devices_list_and_delete(client: AsyncClient, parent: Parent, child: Child) -> None:
+    pair_codes = f"/api/parent/children/{child.id}/pair-codes"
+    devices_url = f"/api/parent/children/{child.id}/devices"
+
+    code_resp = await client.post(pair_codes, headers=bot_headers(parent))
+    code = code_resp.json()["url"].rsplit("/", 1)[-1]
+    await client.post(f"/api/pair/{code}")
+
+    listed = await client.get(devices_url, headers=bot_headers(parent))
+    assert listed.status_code == 200, listed.text
+    (device,) = listed.json()
+
+    deleted = await client.delete(f"{devices_url}/{device['id']}", headers=bot_headers(parent))
+    assert deleted.status_code == 200, deleted.text
+    assert deleted.json() == []
+
+    again = await client.delete(f"{devices_url}/{device['id']}", headers=bot_headers(parent))
+    assert again.status_code == 404
+
+    other_child = (
+        await client.post(
+            "/api/parent/children", json={"name": "Другой"}, headers=bot_headers(parent)
+        )
+    ).json()
+    other_code = (
+        (
+            await client.post(
+                f"/api/parent/children/{other_child['id']}/pair-codes", headers=bot_headers(parent)
+            )
+        )
+        .json()["url"]
+        .rsplit("/", 1)[-1]
+    )
+    await client.post(f"/api/pair/{other_code}")
+    (other_device,) = (
+        await client.get(
+            f"/api/parent/children/{other_child['id']}/devices", headers=bot_headers(parent)
+        )
+    ).json()
+
+    assert (
+        await client.delete(f"{devices_url}/{other_device['id']}", headers=bot_headers(parent))
+    ).status_code == 404
+
+
+async def test_reports_due_lists_every_child_with_its_parents(
+    client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    url = "/api/parent/reports/due"
+    assert (await client.get(url)).status_code == 401
+
+    r = await client.get(url, headers={"Authorization": f"Bearer {BOT_API_TOKEN}"})
+    assert r.status_code == 200, r.text
+
+    ours = next(d for d in r.json() if d["report"]["child"]["id"] == child.id)
+    assert ours["telegram_ids"] == [parent.telegram_id]

@@ -1,5 +1,6 @@
-"""FastAPI dependencies: database session, clock, authenticated child."""
+"""FastAPI dependencies: database session, clock, authenticated child or parent."""
 
+import secrets
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Annotated
@@ -8,9 +9,10 @@ from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
+from app.core.config import get_settings
 from app.core.db import get_sessionmaker
-from app.models import Child
-from app.services import pairing
+from app.models import Child, Parent
+from app.services import pairing, parents
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:
@@ -41,3 +43,29 @@ async def current_child(
 
 
 CurrentChild = Annotated[Child, Depends(current_child)]
+
+
+def bot_service(authorization: Annotated[str | None, Header()] = None) -> None:
+    """The Telegram bot authenticates with the shared BOT_API_TOKEN."""
+    expected = get_settings().bot_api_token
+    scheme, _, token = (authorization or "").partition(" ")
+    if not expected or scheme.lower() != "bearer" or not secrets.compare_digest(token, expected):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "bot token required")
+
+
+async def current_parent(
+    db: Db,
+    _: Annotated[None, Depends(bot_service)],
+    x_telegram_id: Annotated[int | None, Header()] = None,
+) -> Parent:
+    """The parent the bot acts for; strangers get 403 and the bot stays silent to them."""
+    if x_telegram_id is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "X-Telegram-Id header required")
+    parent = await parents.get_parent(db, x_telegram_id)
+    if parent is None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "unknown parent")
+    return parent
+
+
+BotService = Annotated[None, Depends(bot_service)]
+CurrentParent = Annotated[Parent, Depends(current_parent)]

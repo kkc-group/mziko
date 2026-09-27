@@ -1,14 +1,12 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from app.models import Child, Device, WeekStatus
-from app.services.parents import CAP_OPTIONS, RATE_OPTIONS
-from app.services.report import WeekReport
+from app.schemas.parent import CAP_OPTIONS, RATE_OPTIONS, ChildInfo, DeviceOut, WeekReportOut
 from bot.texts import week_label
 
 
-def report_kb(r: WeekReport) -> InlineKeyboardMarkup:
+def report_kb(r: WeekReportOut) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
-    if r.week.status is WeekStatus.open:
+    if r.week.status == "open":
         rows.append(
             [
                 InlineKeyboardButton(text="Выплачено", callback_data=f"pay:{r.week.id}"),
@@ -28,7 +26,7 @@ def report_kb(r: WeekReport) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def settings_kb(child: Child) -> InlineKeyboardMarkup:
+def settings_kb(child: ChildInfo) -> InlineKeyboardMarkup:
     def mark(value: int, current: int) -> str:
         return f"✓ {value}" if value == current else str(value)
 
@@ -51,14 +49,15 @@ def settings_kb(child: Child) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text=f"Подсказка кириллицей: {'вкл ✓' if child.show_hint else 'выкл'}",
-                    callback_data=f"set:{child.id}:hint:toggle",
+                    # The button carries the value to set, so no read is needed to toggle.
+                    callback_data=f"set:{child.id}:hint:{0 if child.show_hint else 1}",
                 )
             ],
         ]
     )
 
 
-def children_kb(children: list[Child], action: str) -> InlineKeyboardMarkup:
+def children_kb(children: list[ChildInfo], action: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=c.name, callback_data=f"child:{action}:{c.id}")]
@@ -67,13 +66,13 @@ def children_kb(children: list[Child], action: str) -> InlineKeyboardMarkup:
     )
 
 
-def devices_kb(devices: list[Device]) -> InlineKeyboardMarkup:
+def devices_kb(child: ChildInfo, devices: list[DeviceOut]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text=f"Отключить: {d.name or 'устройство'} ({d.created_at:%d.%m})",
-                    callback_data=f"dev:{d.id}",
+                    callback_data=f"dev:{child.id}:{d.id}",
                 )
             ]
             for d in devices

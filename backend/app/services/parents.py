@@ -8,9 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Child, Parent, parent_children
-
-RATE_OPTIONS = (5, 10, 15, 20, 30)
-CAP_OPTIONS = (5, 10, 15, 20, 30)
+from app.schemas.parent import CAP_OPTIONS, RATE_OPTIONS
 
 
 async def ensure_admin_parents(db: AsyncSession, telegram_ids: Iterable[int]) -> None:

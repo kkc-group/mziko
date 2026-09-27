@@ -39,7 +39,9 @@ services:
     build: ./backend
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mziko}:${POSTGRES_PASSWORD:-mziko}@db:5432/${POSTGRES_DB:-mziko}
+      # The bot talks to the API only; it has no database access.
+      API_URL: http://api:8000
+      DATABASE_URL: ""
     command: python -m bot.main
     restart: unless-stopped
     depends_on:

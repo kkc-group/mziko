@@ -1,52 +1,14 @@
-"""End-to-end HTTP tests: pairing, auth, lesson flow. The clock is a mutable holder."""
+"""End-to-end HTTP tests: pairing, auth, lesson flow. Fixtures client/clock/parent: conftest."""
 
 import uuid
-from collections.abc import AsyncIterator
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 
-import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_now
-from app.main import create_app
 from app.models import Child, Parent
 from app.services import pairing
-from tests.helpers import at
-
-DAY1 = date(2026, 9, 22)
-
-
-class Clock:
-    def __init__(self, moment: datetime) -> None:
-        self.moment = moment
-
-
-@pytest.fixture
-def clock() -> Clock:
-    return Clock(at(DAY1))
-
-
-@pytest.fixture
-async def client(db: AsyncSession, clock: Clock) -> AsyncIterator[AsyncClient]:
-    app = create_app()
-
-    async def override_db() -> AsyncIterator[AsyncSession]:
-        yield db
-
-    app.dependency_overrides[get_db] = override_db
-    app.dependency_overrides[get_now] = lambda: clock.moment
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-
-
-@pytest.fixture
-async def parent(db: AsyncSession, child: Child) -> Parent:
-    parent = Parent(telegram_id=1000 + child.id, name="Папа")
-    parent.children.append(child)
-    db.add(parent)
-    await db.flush()
-    return parent
+from tests.conftest import Clock
 
 
 async def pair(

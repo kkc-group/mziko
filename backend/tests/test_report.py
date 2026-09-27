@@ -2,6 +2,7 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.parent_routes import child_info, report_out, topic_progress_out
 from app.models import Child, CoinReason, Parent
 from app.services import coins, parents, report
 from bot import texts
@@ -22,7 +23,7 @@ async def test_week_report_counts_days_words_and_cap(db: AsyncSession, child: Ch
     assert (r.week.coins, r.cap_reached, str(r.lari)) == (5, True, "5.0")
     assert r.unpaid_past == []
 
-    text = texts.report_text(r)
+    text = texts.report_text(report_out(r))
     assert "Неделя 21.09–27.09" in text
     assert "Занимался 3 из 7 дней" in text
     assert "Выучено слов: 3 (" in text
@@ -39,7 +40,7 @@ async def test_unpaid_previous_week_is_listed_until_paid(db: AsyncSession, child
 
     r = await report.week_report(db, child, at(SUN, 20))
     assert [w.id for w in r.unpaid_past] == [old.id]  # empty week is not "to pay"
-    assert "14.09–20.09 — 2,1 ₾" in texts.report_text(r)
+    assert "14.09–20.09 — 2,1 ₾" in texts.report_text(report_out(r))
 
     await coins.pay_week(db, old, child, at(SUN, 20, 5))
     r = await report.week_report(db, child, at(SUN, 20, 6))
@@ -78,7 +79,8 @@ async def test_parent_child_access_boundary(db: AsyncSession, child: Child) -> N
 
 async def test_progress_text_shows_dots(db: AsyncSession, child: Child) -> None:
     await play_day(db, child, "colors", at(MON))
-    text = texts.progress_text(child, await report.progress_by_topic(db, child))
+    topics = [topic_progress_out(t) for t in await report.progress_by_topic(db, child)]
+    text = texts.progress_text(child_info(child), topics)
     assert "🎨 <b>Цвета</b> — 0 из 10" in text
     assert "●○○ წითელი · красный" in text
     assert "○○○ ლურჯი" not in text and "●○○ ლურჯი · синий" in text
