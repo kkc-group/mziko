@@ -1,0 +1,66 @@
+slug: basics
+title_ru: Первые слова
+title_ka: პირველი სიტყვები
+icon: "🐶"
+order: 1
+words:
+  - slug: dog
+    ka: ძაღლი
+    tr: дзагли
+    ru: собака
+    image: {kind: emoji, value: "🐶"}
+  - slug: cat
+    ka: კატა
+    tr: ката
+    ru: кошка
+    image: {kind: emoji, value: "🐱"}
+  - slug: apple
+    ka: ვაშლი
+    tr: вашли
+    ru: яблоко
+    image: {kind: emoji, value: "🍎"}
+  - slug: sun
+    ka: მზე
+    tr: мзе
+    ru: солнце
+    image: {kind: emoji, value: "☀️"}
+  - slug: house
+    ka: სახლი
+    tr: сахли
+    ru: дом
+    image: {kind: emoji, value: "🏠"}
+  - slug: bread
+    ka: პური
+    tr: пури
+    ru: хлеб
+    image: {kind: emoji, value: "🍞"}
+  - slug: ball
+    ka: ბურთი
+    tr: бурти
+    ru: мяч
+    image: {kind: emoji, value: "⚽"}
+  - slug: horse
+    ka: ცხენი
+    tr: цхени
+    ru: лошадь
+    image: {kind: emoji, value: "🐴"}
+  - slug: fish
+    ka: თევზი
+    tr: тевзи
+    ru: рыба
+    image: {kind: emoji, value: "🐟"}
+  - slug: flower
+    ka: ყვავილი
+    tr: квавили
+    ru: цветок
+    image: {kind: emoji, value: "🌸"}
+  - slug: car
+    ka: მანქანა
+    tr: манкана
+    ru: машина
+    image: {kind: emoji, value: "🚗"}
+  - slug: water
+    ka: წყალი
+    tr: цкали
+    ru: вода
+    image: {kind: emoji, value: "💧"}

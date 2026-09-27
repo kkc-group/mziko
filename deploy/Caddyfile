@@ -1,0 +1,20 @@
+# SITE_ADDRESS is ":80" for local runs and "mziko.example.com" in production,
+# where Caddy obtains a Let's Encrypt certificate automatically.
+{$SITE_ADDRESS}
+
+encode gzip
+
+handle /api/* {
+	reverse_proxy api:8000
+}
+
+handle_path /media/* {
+	root * /srv/media
+	file_server
+}
+
+handle {
+	root * /srv/web
+	try_files {path} /index.html
+	file_server
+}

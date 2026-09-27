@@ -1,0 +1,56 @@
+slug: colors
+title_ru: Цвета
+title_ka: ფერები
+icon: "🎨"
+order: 2
+words:
+  - slug: red
+    ka: წითელი
+    tr: цители
+    ru: красный
+    image: {kind: color, value: "#E53935"}
+  - slug: blue
+    ka: ლურჯი
+    tr: лурджи
+    ru: синий
+    image: {kind: color, value: "#1E6FE0"}
+  - slug: green
+    ka: მწვანე
+    tr: мцване
+    ru: зелёный
+    image: {kind: color, value: "#2EAA4A"}
+  - slug: yellow
+    ka: ყვითელი
+    tr: квители
+    ru: жёлтый
+    image: {kind: color, value: "#FFD21F"}
+  - slug: white
+    ka: თეთრი
+    tr: тетри
+    ru: белый
+    image: {kind: color, value: "#FFFFFF"}  # frontend draws a grey outline for white
+  - slug: black
+    ka: შავი
+    tr: шави
+    ru: чёрный
+    image: {kind: color, value: "#1A1A1A"}
+  - slug: orange
+    ka: ნარინჯისფერი
+    tr: наринджисфери
+    ru: оранжевый
+    image: {kind: color, value: "#FF8A1F"}
+  - slug: pink
+    ka: ვარდისფერი
+    tr: вардисфери
+    ru: розовый
+    image: {kind: color, value: "#FF7EB6"}
+  - slug: purple
+    ka: იისფერი
+    tr: иисфери
+    ru: фиолетовый
+    image: {kind: color, value: "#8E44C9"}
+  - slug: brown
+    ka: ყავისფერი
+    tr: кависфери
+    ru: коричневый
+    image: {kind: color, value: "#8B5A2B"}
