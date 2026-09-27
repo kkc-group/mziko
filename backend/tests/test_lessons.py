@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Child, Topic, Word, WordProgress
+from app.models import Topic, Word, WordProgress
 from app.services import lessons
 
 DAY1 = date(2026, 9, 22)
@@ -62,59 +62,105 @@ def state(pos: lessons.Position, number: int) -> lessons.LessonState:
     return found
 
 
-async def test_position_one_new_topic_per_day(db: AsyncSession, child: Child) -> None:
-    path = await lessons.load_lessons(db)
-    colors = next(lsn for lsn in path if lsn.topic.slug == "colors")  # one lesson of 10
-    greetings = next(lsn for lsn in path if lsn.topic.slug == "greetings")
-    assert greetings.number == colors.number + 1
-
-    def progress_after(introduced_on: dict[int, date]) -> dict[int, WordProgress]:
-        out: dict[int, WordProgress] = {}
-        for lsn in path:
-            for w in lsn.words:
-                if lsn.number < colors.number:
-                    out[w.id] = WordProgress(word_id=w.id, introduced=True, introduced_on=DAY1)
-                elif w.id in introduced_on:
-                    out[w.id] = WordProgress(
-                        word_id=w.id, introduced=True, introduced_on=introduced_on[w.id]
-                    )
-        return out
-
-    # Fresh day: colors is current and playable; greetings is locked.
-    pos = lessons.position(path, progress_after({}), DAY2)
-    assert pos.current is not None and pos.current.lesson is colors
-    assert state(pos, colors.number).playable is True
-    assert state(pos, greetings.number).status == "locked"
-    assert pos.today_topic_id is None
-
-    # Three colors words shown today: colors stays playable, greetings stays locked.
-    three = {w.id: DAY2 for w in colors.words[:3]}
-    pos = lessons.position(path, progress_after(three), DAY2)
-    assert pos.today_topic_id == colors.topic.id
-    assert state(pos, colors.number).introduced == 3 and state(pos, colors.number).playable
-
-    # Every colors word shown today: colors is done yet replayable; greetings is current but
-    # not playable until tomorrow (one new topic per day).
-    every = {w.id: DAY2 for w in colors.words}
-    pos = lessons.position(path, progress_after(every), DAY2)
-    colors_state, greetings_state = state(pos, colors.number), state(pos, greetings.number)
-    assert (colors_state.status, colors_state.playable) == ("done", True)
-    assert (greetings_state.status, greetings_state.playable) == ("current", False)
-    assert pos.current is greetings_state
-
-    # Tomorrow greetings opens and colors is no longer replayable.
-    pos = lessons.position(path, progress_after(every), DAY2 + timedelta(days=1))
-    assert state(pos, greetings.number).playable is True
-    assert state(pos, colors.number).playable is False
+def topic_state(pos: lessons.Position, slug: str) -> lessons.TopicState:
+    return next(t for t in pos.topics if t.topic.slug == slug)
 
 
-async def test_all_lessons_done_means_no_current(db: AsyncSession, child: Child) -> None:
-    path = await lessons.load_lessons(db)
-    progress = {
+def introduced(path: list[lessons.Lesson], *slugs: str) -> dict[int, WordProgress]:
+    """Progress where every word of the named topics has been introduced."""
+    return {
         w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY1)
         for lsn in path
+        if lsn.topic.slug in slugs
         for w in lsn.words
     }
-    pos = lessons.position(path, progress, DAY2)
-    assert pos.current is None
-    assert all(s.status == "done" and not s.playable for s in pos.lessons)
+
+
+def test_sections_come_from_the_slug() -> None:
+    def topic(slug: str) -> Topic:
+        return Topic(id=1, slug=slug, title_ru="", title_ka="", icon="", order=1)
+
+    assert lessons.section_of(topic("letters-3")) == "letters"
+    assert lessons.section_of(topic("syllables")) == "syllables"
+    assert lessons.section_of(topic("colors")) == "words"
+
+
+async def test_fresh_day_opens_every_topic_and_orders_lessons_within_it(
+    db: AsyncSession, seeded: None
+) -> None:
+    path = await lessons.load_lessons(db)
+    pos = lessons.position(path, {}, [])
+    assert [t.topic.slug for t in pos.topics] == [lsn.topic.slug for lsn in path if lsn.part == 1]
+    assert all(t.status == "open" and not t.done for t in pos.topics)
+    assert [t.section for t in pos.topics[:6]] == ["letters"] * 4 + ["syllables", "words"]
+
+    # Any topic's first lesson can start; later parts of a topic wait for the first one.
+    food = [s for s in pos.lessons if s.lesson.topic.slug == "food"]
+    assert [(s.status, s.playable) for s in food] == [("current", True), ("locked", False)]
+    assert state(pos, 1).playable and state(pos, 2).playable  # letters-1 and letters-2 alike
+    assert pos.lesson_of_topic(food[0].lesson.topic.id) is food[0]
+
+
+async def test_one_topic_per_section_per_day(db: AsyncSession, seeded: None) -> None:
+    path = await lessons.load_lessons(db)
+    colors = next(lsn for lsn in path if lsn.topic.slug == "colors")
+    letters_2 = next(lsn for lsn in path if lsn.topic.slug == "letters-2")
+
+    # A colors session today locks the other word topics; letters and syllables stay open.
+    pos = lessons.position(path, {}, [colors.topic.id])
+    assert topic_state(pos, "colors").status == "today"
+    assert topic_state(pos, "greetings").status == "locked"
+    assert topic_state(pos, "letters-2").status == "open"
+    assert topic_state(pos, "syllables").status == "open"
+    assert state(pos, colors.number).playable is True
+    greetings = next(lsn for lsn in path if lsn.topic.slug == "greetings")
+    assert (state(pos, greetings.number).status, state(pos, greetings.number).playable) == (
+        "current",
+        False,
+    )
+
+    # Letters chosen as well: two topics of the day, one per section.
+    pos = lessons.position(path, {}, [colors.topic.id, letters_2.topic.id])
+    assert topic_state(pos, "letters-2").status == "today"
+    assert topic_state(pos, "letters-1").status == "locked"
+    assert topic_state(pos, "colors").status == "today"
+
+    # Every colors word shown: the lesson is done yet replayable while colors is today's topic.
+    pos = lessons.position(path, introduced(path, "colors"), [colors.topic.id])
+    assert (state(pos, colors.number).status, state(pos, colors.number).playable) == ("done", True)
+    assert topic_state(pos, "colors").done is True
+
+    # Another day, nothing chosen: colors can be replayed, and so can anything else.
+    pos = lessons.position(path, introduced(path, "colors"), [])
+    assert (state(pos, colors.number).status, state(pos, colors.number).playable) == ("done", True)
+    assert state(pos, greetings.number).playable is True
+    assert pos.lesson_of_topic(colors.topic.id) is state(pos, colors.number)
+
+    # A replay of colors that day is the choice for words: greetings is locked again.
+    pos = lessons.position(path, introduced(path, "colors"), [colors.topic.id])
+    assert state(pos, greetings.number).playable is False
+
+
+async def test_two_part_topic_opens_its_second_lesson_after_the_first(
+    db: AsyncSession, seeded: None
+) -> None:
+    path = await lessons.load_lessons(db)
+    food = [lsn for lsn in path if lsn.topic.slug == "food"]
+    first_done = {
+        w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY2) for w in food[0].words
+    }
+    pos = lessons.position(path, first_done, [food[0].topic.id])
+    first, second = state(pos, food[0].number), state(pos, food[1].number)
+    assert (first.status, first.playable) == ("done", True)
+    assert (second.status, second.playable) == ("current", True)
+    assert pos.lesson_of_topic(food[0].topic.id) is state(pos, food[1].number)
+    assert topic_state(pos, "food").done is False
+
+
+async def test_all_lessons_done(db: AsyncSession, seeded: None) -> None:
+    path = await lessons.load_lessons(db)
+    progress = introduced(path, *{lsn.topic.slug for lsn in path})
+    pos = lessons.position(path, progress, [])
+    assert pos.all_done
+    assert all(t.done for t in pos.topics)
+    assert all(s.status == "done" and s.playable for s in pos.lessons)  # every topic is a replay

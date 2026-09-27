@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Меню и экран «Уроки»</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
+.wrap {
+  position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) 170px calc(var(--safe-left) + 16px);
+}
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.hello { display: flex; align-items: flex-end; gap: 10px; margin: 6px 0 14px; }
+.mascot { flex: none; }
+.bubble { background: var(--surface); border: 2px solid var(--line); border-radius: 22px 22px 22px 6px; padding: 12px 16px; margin-bottom: 26px; }
+.bubble .ka { font-size: 22px; display: block; color: var(--word-color); }
+.bubble small { color: var(--muted); font-size: 14px; }
+.jar { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 26px; padding: 14px 18px; }
+.jar svg { width: 64px; height: 64px; flex: none; }
+.jar b { font-size: 34px; font-weight: 900; line-height: 1; }
+.jar-unit { font-weight: 800; }
+.jar .sub { color: var(--muted); font-size: 15px; }
+.week { display: flex; justify-content: space-between; margin: 14px 2px; }
+.day { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface); border: 2px dashed var(--line); color: var(--muted); }
+.day.today { border-style: solid; border-color: var(--grape); color: var(--ink); }
+.path { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.step { position: relative; }
+.step + .step::before { content: ''; position: absolute; left: 34px; top: -16px; height: 18px; border-left: 4px dotted var(--line); }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.part { color: var(--muted); white-space: nowrap; }
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn.done .num, .lsn.fold .num, .lsn.review .num { background: var(--mint); color: #fff; font-size: 20px; }
+.lsn.lock { background: transparent; border-style: dashed; }
+.lsn.lock .num { border: 2px dashed var(--line); color: var(--muted); }
+.lsn.lock .ic { filter: grayscale(1); opacity: 0.35; }
+.lsn.lock .t { color: var(--muted); }
+.lock-i { flex: none; width: 24px; height: 24px; color: var(--muted); }
+.lsn.review { border-color: var(--pom); }
+.more { padding: 2px 0 0 60px; color: var(--muted); font-weight: 800; font-size: 16px; }
+.mini-play {
+  flex: none; background: var(--pom); color: #fff; font-weight: 900; font-size: 14px; line-height: 1;
+  padding: 10px 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--pom-dark);
+}
+.mini-play:disabled { background: var(--muted); box-shadow: 0 3px 0 #4a4466; }
+.cur { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.num.now { background: var(--pom); color: #fff; }
+.cur .ic { flex: none; display: flex; --s: 56px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.cur .prog { flex: none; }
+.soon { text-align: center; color: var(--muted); font-weight: 800; font-size: 15px; }
+.play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
+}
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; }
+.notice {
+  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 24px); transform: translateX(-50%); z-index: 30;
+  background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; max-width: 90vw; text-align: center;
+}
+
+/* ---------- new: burger + menu sheet (built from the tokens above only) ---------- */
+.burger { position: absolute; z-index: 2; top: calc(var(--safe-top) + 10px); right: calc(var(--safe-right) + 16px); display: grid; place-items: center; }
+.burger svg, .x svg { width: 24px; height: 24px; }
+.scrim { position: absolute; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
+.sheet {
+  position: absolute; z-index: 21; top: 0; right: 0; bottom: 0; width: 300px; display: flex; flex-direction: column; gap: 14px;
+  padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) 16px;
+  background: var(--bg); border-left: 2px solid var(--line); border-radius: 26px 0 0 26px;
+}
+.sheet .x { align-self: flex-end; display: grid; place-items: center; }
+.mi { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font-size: 24px; font-weight: 900; line-height: 1.1; }
+.mi .emoji { --s: 34px; }
+.mi .t { flex: 1; min-width: 0; }
+.mi.on { border: 3px solid var(--pom); box-shadow: 0 5px 0 var(--pom-dark); }
+.mi.off { background: transparent; border-style: dashed; color: var(--muted); }
+.mi.off .emoji { filter: grayscale(1); opacity: 0.35; }
+.mi .t small { display: block; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
+
+/* ---------- new: lessons screen ---------- */
+.topbar { position: sticky; z-index: 6; top: var(--safe-top); display: flex; align-items: center; gap: 12px; height: 72px; margin: -16px -16px 0; padding: 8px 16px; background: var(--bg); }
+.topbar .x { display: grid; place-items: center; flex: none; }
+.topbar h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1; }
+.lhello { display: flex; align-items: flex-end; gap: 8px; margin: 4px 0 6px; }
+.lhello .bubble { margin-bottom: 14px; font-weight: 800; font-size: 16px; line-height: 1.25; }
+.sec { margin-top: 8px; }
+.sech { position: sticky; z-index: 5; top: calc(var(--safe-top) + 56px); display: flex; align-items: center; gap: 10px; margin: 0 -16px; padding: 14px 20px 10px; background: var(--bg); font-size: 24px; font-weight: 900; line-height: 1.1; }
+.sech .emoji { --s: 26px; }
+.rows { display: flex; flex-direction: column; gap: 10px; }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.icw { position: relative; flex: none; display: flex; }
+.ok-b { position: absolute; right: -8px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: #fff; font-size: 13px; font-weight: 900; font-style: normal; line-height: 1; border: 2px solid var(--surface); }
+.lsn.lock .ok-b { border-color: var(--bg); }
+.tmr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--muted); font-size: 13px; font-weight: 800; line-height: 1; }
+.cur .icw .ok-b { width: 26px; height: 26px; font-size: 15px; }
+.cur .lsn { min-height: 56px; padding: 8px 12px; border-radius: 18px; }
+.lsn.nowp { border: 2px solid var(--pom); }
+.allnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 16px; border-radius: 22px; background: var(--mint-soft); font-weight: 800; font-size: 17px; line-height: 1.25; }
+.allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
+
+/* ---------- mockup chrome (not product) — same as home-lessons.html ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(4, 328px); gap: 20px; justify-content: center; margin-top: 18px; }
+.col { display: flex; flex-direction: column; gap: 22px; }
+.colh { height: 64px; padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); }
+.colh b { display: block; font-size: 19px; font-weight: 900; line-height: 1.2; }
+.colh span { display: block; font-size: 14px; font-weight: 700; color: var(--muted); }
+.darkrow { display: grid; grid-template-columns: repeat(4, 246px); gap: 20px; justify-content: center; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 80px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .hills, .dev .notice { position: absolute; }
+.scr { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; transform-origin: 0 0; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); }
+.fw.sm { width: 246px; height: 519px; }
+.fw.sm .phone { transform: scale(0.6); }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; background: var(--bg); }
+.sbar.dim { background: transparent; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.ref { width: 100%; max-width: 1392px; margin: 18px auto 0; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 2px solid var(--line); border-radius: 18px; overflow: hidden; font-size: 15px; }
+.ref th, .ref td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 2px solid var(--line); }
+.ref tr:last-child th, .ref tr:last-child td { border-bottom: 0; }
+.ref thead th { font-weight: 900; font-size: 16px; }
+.ref tbody th { font-weight: 800; white-space: nowrap; }
+.ref td small { color: var(--muted); font-weight: 600; }
+.ref tfoot td, .ref tfoot th { font-weight: 900; border-top: 2px solid var(--line); border-bottom: 0; }
+@media (max-width: 1420px) {
+  .cols { grid-template-columns: repeat(2, 328px); }
+  .darkrow { grid-template-columns: repeat(2, 246px); }
+}
+@media (max-width: 720px) {
+  .cols { grid-template-columns: 328px; }
+  .darkrow { grid-template-columns: 246px; }
+  .ref { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Меню и экран «Уроки»</h1>
+  <p class="lead">Новый экран: с главной по кнопке-«бургеру» (☰) открывается шторка справа, из неё — «Уроки». Здесь ребёнок сам выбирает тему на сегодня: по одной в каждом из трёх разделов — Буквы, Слоги, Слова. Токены и классы строк (<code>.lsn</code>, <code>.cur</code>, <code>.play</code>, <code>.mini-play</code>, <code>.lock-i</code>) — дословно из styles.css; новое (шторка, заголовки разделов, галочка на иконке, «завтра») собрано только из них. Рамка 390×844, масштаб 0,8; экран внутри рамки прокручивается.</p>
+
+  <h2>Светлая тема · состояния</h2>
+  <p class="lead">Названия, иконки и число слов — из content/topics/*.yaml. Темы внутри раздела стоят в порядке <code>order</code> и не переезжают: выбранная тема раскрывается карточкой на своём месте.</p>
+  <div class="cols" id="cols"></div>
+
+  <h2>Тёмная тема · B и C</h2>
+  <p class="lead"><code>data-theme="dark"</code> на рамке. Масштаб 0,6.</p>
+  <div class="darkrow" id="dark"></div>
+
+  <h2>Справка · разделы → темы → уроки</h2>
+  <p class="lead" id="sum"></p>
+  <table class="ref" id="ref"></table>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>«2 урока» раскрываются только у темы дня.</b> Пока тема не выбрана, строка одна: «2 урока · 18 слов». Выбирают тему, а не урок, и порядок уроков внутри темы жёсткий — показывать «Еда · 2» до выбора значит показать строку, которую всё равно нельзя нажать. Всегда раскрытые уроки удвоили бы «Слова» (13 → 23 строки). Выбранная тема становится карточкой: «Еда · 1 — Повторить», «Еда · 2 — Играть».</li>
+    <li><b>Одна кнопка на строку, и она же — вся строка.</b> Доступная тема: «Играть» (новая) или «Повторить» (с галочкой). Закрытая — без кнопки: замок и «завтра», рамка пунктиром, иконка серая. В карточке темы дня главная кнопка большая, прочие уроки темы — маленькие.</li>
+    <li><b>Темы не переезжают.</b> Выбранная тема раскрывается на своём месте, а не прыгает наверх: ребёнок помнит «Еда — где медведь и футболка», а не «вторая сверху». Цена — тему дня в «Словах» иногда надо докрутить (C2); заголовок раздела при этом прилипает, так что видно, в каком ты разделе.</li>
+    <li><b>Пройденная раньше тема, закрытая сегодня, сохраняет галочку.</b> Галочка — «ты это уже прошёл», замок — «сегодня нельзя»; они не спорят, а стоят рядом (Буквы 1 в C).</li>
+    <li><b>Что уступает при нехватке места.</b> Название темы не сжимается и переносится на вторую строку («Природа и погода»); подпись «2 урока · 15 слов» уходит под название; кнопка и «завтра» справа не переносятся. Подсказка Мзико сверху — одна фраза и уезжает при прокрутке; прилипают только шапка с кнопкой «назад» и заголовок раздела.</li>
+    <li><b>Меню — шторка справа, крестик на месте бургера.</b> Закрыть можно там же, где открыл, или тапом по затемнению. «Настройки» видны, но пунктиром и с «скоро» — не нажимаются.</li>
+  </ul>
+</main>
+<script>
+/* real topics from content/topics/*.yaml (slug, title_ru, icon, order, word count) */
+const TOPICS = [
+  ['letters-1', 'Буквы 1', '🔤', 1, 8], ['letters-2', 'Буквы 2', '✏️', 2, 8], ['letters-3', 'Буквы 3', '📖', 3, 8], ['letters-4', 'Буквы 4', '🎓', 4, 9],
+  ['syllables', 'Слоги', '🧩', 5, 25],
+  ['basics', 'Первые слова', '🐶', 6, 12], ['colors', 'Цвета', '🎨', 7, 10], ['greetings', 'Приветствия', '👋', 8, 10], ['numbers', 'Числа', '🔢', 9, 10],
+  ['family', 'Семья', '👨‍👩‍👧', 10, 12], ['school', 'Школа', '🎒', 11, 15], ['body', 'Тело', '🖐️', 12, 12], ['animals', 'Животные', '🐻', 13, 14],
+  ['food', 'Еда', '🍽️', 14, 18], ['clothes', 'Одежда', '👕', 15, 12], ['home', 'Дом', '🛏️', 16, 13], ['nature', 'Природа и погода', '🌦️', 17, 15],
+  ['actions', 'Действия', '🏃', 18, 14],
+].map(([slug, title, icon, order, n]) => {
+  const k = n <= 10 ? 1 : Math.ceil(n / 10);
+  const sizes = Array.from({ length: k }, (_, i) => Math.floor(n / k) + (i < n % k ? 1 : 0));
+  return { slug, title, icon, order, n, sizes };
+});
+const T = Object.fromEntries(TOPICS.map(t => [t.slug, t]));
+const SECTIONS = [
+  { key: 'letters', title: 'Буквы', icon: '🔤', slugs: ['letters-1', 'letters-2', 'letters-3', 'letters-4'] },
+  { key: 'syll', title: 'Слоги', icon: '🧩', slugs: ['syllables'] },
+  { key: 'words', title: 'Слова', icon: '💬', slugs: TOPICS.filter(t => t.order >= 6).map(t => t.slug) },
+];
+
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const wordsW = n => `${n} ${plural(n, 'слово', 'слова', 'слов')}`;
+const lessonsW = n => `${n} ${plural(n, 'урок', 'урока', 'уроков')}`;
+const meta = t => t.sizes.length > 1 ? `${lessonsW(t.sizes.length)} · ${wordsW(t.n)}` : wordsW(t.n);
+const partT = (t, i) => t.sizes.length > 1 ? `${t.title}&nbsp;<span class="part">·&nbsp;${i + 1}</span>` : t.title;
+const em = e => `<span class="emoji" role="img" aria-hidden="true">${e}</span>`;
+
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+const JAR = '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 14 H46 L44 20 Q56 30 52 48 Q48 60 32 60 Q16 60 12 48 Q8 30 20 20Z" fill="#C8683E"/><path d="M18 14 H46 L44 20 H20Z" fill="#A4532F"/><path d="M14 38 Q32 44 50 38" stroke="#E7A07A" stroke-width="3" fill="none"/><circle cx="32" cy="10" r="6" fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="2"/></svg>';
+const HILLS = '<svg class="hills" viewBox="0 0 540 140" preserveAspectRatio="none" aria-hidden="true"><path d="M0 90 Q120 20 260 80 T540 60 V140 H0Z" fill="var(--hill1)"/><path d="M0 120 Q160 70 320 110 T540 100 V140 H0Z" fill="var(--hill2)"/></svg>';
+const LOCK = '<svg class="lock-i" viewBox="0 0 24 24" aria-label="закрыто"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+const BURGER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+/* ---- rows ----
+   topic state: 'open' (can be chosen) · 'lock' (closed until tomorrow) · {today:…} (topic of the day, a card)
+   done: passed on an earlier day (check badge) */
+const icw = (t, done) => `<span class="icw"><span class="ic">${em(t.icon)}</span>${done ? '<i class="ok-b">✓</i>' : ''}</span>`;
+const openRow = (t, done, busy) => `<button type="button" class="lsn"${busy ? ' disabled' : ''}>${icw(t, done)}<span class="t">${t.title}<small>${meta(t)}</small></span><span class="mini-play">${done ? 'Повторить' : 'Играть'}</span></button>`;
+const lockRow = (t, done) => `<div class="lsn lock" aria-disabled="true">${icw(t, done)}<span class="t">${t.title}<small>${meta(t)}</small></span><span class="tmr">${LOCK}завтра</span></div>`;
+/* topic of the day. parts: array per lesson: 'done' (passed today) · 'cur' (open now, shown=N) · 'lock' (after the previous one) · 'rep' (repeat topic)
+   single-lesson topics collapse to one card */
+function todayCard(t, { parts, shown = 0, done = false, busy = false }) {
+  const multi = t.sizes.length > 1;
+  const btnText = p => p === 'rep' || p === 'done' ? 'Повторить' : 'Играть';
+  if (!multi) {
+    const p = parts[0];
+    const sub = p === 'rep' ? `повтор · ${wordsW(t.n)}` : p === 'done' ? `показано ${t.n} из ${t.n}` : shown ? `показано ${shown} из ${t.n}` : wordsW(t.n);
+    const pct = p === 'done' ? 100 : Math.round(shown / t.n * 100);
+    return `<div class="cur"><div class="cur-h">${icw(t, done)}<div class="cur-t"><b>${t.title}</b><small>${sub}</small></div></div>${
+      (shown || p === 'done') ? `<div class="prog"><i style="width:${pct}%"></i></div>` : ''}<button type="button" class="play"${busy ? ' disabled' : ''}>${btnText(p)}</button></div>`;
+  }
+  const rows = parts.map((p, i) => {
+    const sz = t.sizes[i];
+    if (p === 'lock') return `<div class="lsn lock" aria-disabled="true"><span class="num">${i + 1}</span><span class="t">${partT(t, i)}<small>${wordsW(sz)}</small></span><span class="tmr">${LOCK}после ${i}</span></div>`;
+    if (p === 'done' || p === 'rep') return `<button type="button" class="lsn review"><span class="num">✓</span><span class="t">${partT(t, i)}<small>${wordsW(sz)}</small></span><span class="mini-play">Повторить</span></button>`;
+    return `<div class="lsn nowp"><span class="num now">${i + 1}</span><span class="t">${partT(t, i)}<small>${shown ? `показано ${shown} из ${sz}` : wordsW(sz)}</small></span></div>`;
+  }).join('');
+  const ci = parts.indexOf('cur');
+  const big = ci >= 0 ? `<button type="button" class="play"${busy ? ' disabled' : ''}>Играть</button>` : '';
+  return `<div class="cur"><div class="cur-h">${icw(t, done)}<div class="cur-t"><b>${t.title}</b><small>${meta(t)}</small></div></div>${rows}${big}</div>`;
+}
+
+/* st: { [slug]: 'open' | 'lock' | {today opts} }, done: Set of slugs passed earlier, notes: { [sectionKey]: html } */
+function lessons({ st = {}, done = [], notes = {}, busy = false, notice = '' }) {
+  const D = new Set(done);
+  const secs = SECTIONS.map(s => {
+    const rows = s.slugs.map(slug => {
+      const t = T[slug], v = st[slug] || 'open', d = D.has(slug);
+      if (v === 'lock') return lockRow(t, d);
+      if (typeof v === 'object') return `<div id="t-${slug}">${todayCard(t, { ...v, done: d, busy })}</div>`;
+      return openRow(t, d, false);
+    }).join('');
+    return `<section class="sec" id="s-${s.key}"><div class="sech">${em(s.icon)}${s.title}</div>${notes[s.key] || ''}<div class="rows">${rows}</div></section>`;
+  }).join('');
+  return `${HILLS}<div class="scr"><main class="wrap">
+    <div class="topbar"><button type="button" class="x" aria-label="На главную">${BACK}</button><h1>Уроки</h1></div>
+    <div class="lhello">${MASCOT(64)}<div class="bubble">Каждый день — одна тема из каждого раздела</div></div>
+    ${secs}
+  </main></div>${notice ? `<div class="notice" role="status">${notice}</div>` : ''}`;
+}
+
+/* home underlay for the menu: home-lessons.html state 1 plus the burger */
+function homeUnder() {
+  const l = T['letters-1'];
+  return `${HILLS}<div class="scr"><main class="wrap">
+    <button type="button" class="x burger" aria-label="Меню">${BURGER}</button>
+    <div class="hello">${MASCOT(120)}<div class="bubble" style="margin-right:62px"><span class="ka">გამარჯობა!</span><small>гамарджоба! Я Мзико. Поиграем, Сандро?</small></div></div>
+    <div class="jar">${JAR}<div><b>0</b> <span class="jar-unit">монет</span><div class="sub">это 0,0 ₾ на сладости</div></div></div>
+    <div class="week">${DAYS.map((d, i) => `<div class="day${i === 2 ? ' today' : ''}">${d}</div>`).join('')}</div>
+    <div class="path"><div class="step"><div class="cur"><div class="cur-h"><span class="num now">1</span><span class="ic">${em(l.icon)}</span><div class="cur-t"><b>${l.title}</b><small>${wordsW(l.n)}</small></div></div><button type="button" class="play">Играть</button></div></div>
+    <div class="step"><div class="lsn lock"><span class="num">2</span><span class="ic">${em(T['letters-2'].icon)}</span><span class="t">Буквы 2</span>${LOCK}</div></div></div>
+  </main></div>
+  <div class="scrim"></div>
+  <nav class="sheet" aria-label="Меню">
+    <button type="button" class="x" aria-label="Закрыть">${CROSS}</button>
+    <button type="button" class="mi on">${em('📚')}<span class="t">Уроки</span></button>
+    <div class="mi off" aria-disabled="true">${em('⚙️')}<span class="t">Настройки<small>скоро</small></span></div>
+  </nav>`;
+}
+
+function phone(theme, body, sm, scrollTo = null, dimBar = false) {
+  return `<div class="fw${sm ? ' sm' : ''}"><div class="dev phone" data-theme="${theme}"${scrollTo ? ` data-to="${scrollTo}"` : ''}><div class="sbar${dimBar ? ' dim' : ''}"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div></div>`;
+}
+const fig = (t, sub, frame) => `<figure><figcaption>${t}${sub ? `<span>${sub}</span>` : ''}</figcaption>${frame}</figure>`;
+
+/* ---- states ---- */
+const wordSlugs = SECTIONS[2].slugs;
+const lockAll = (slugs, except) => Object.fromEntries(slugs.filter(s => s !== except).map(s => [s, 'lock']));
+const S = {
+  fresh: () => lessons({}),
+  mid: (busy = false, notice = '') => lessons({
+    busy, notice,
+    done: ['letters-1'],
+    st: {
+      'letters-1': 'lock', 'letters-2': { parts: ['cur'], shown: 3 }, 'letters-3': 'lock', 'letters-4': 'lock',
+      ...lockAll(wordSlugs, 'food'), food: { parts: ['done', 'cur'] },
+    },
+  }),
+  repeat: () => lessons({
+    done: ['letters-1', 'letters-2', 'syllables', 'basics', 'colors', 'greetings', 'numbers', 'food', 'nature'],
+    st: { ...lockAll(wordSlugs, 'colors'), colors: { parts: ['rep'] } },
+  }),
+  allLetters: () => lessons({
+    done: ['letters-1', 'letters-2', 'letters-3', 'letters-4', 'basics'],
+    notes: { letters: '<div class="allnote"><span class="num">✓</span>Все буквы пройдены, можно повторить</div>' },
+  }),
+  conflict: () => lessons({ done: ['letters-1'], notice: 'Этот урок откроется завтра' }),
+};
+
+const C = [
+  { h: 'Вход и свежий день', s: 'меню открыто · ничего не выбрано', f: [
+    ['A · Меню открыто', 'шторка поверх главной (состояние 1 из home-lessons.html); «Уроки» — активный, «Настройки» — пунктиром, «скоро»; крестик на месте бургера, тап по затемнению тоже закрывает', phone('light', homeUnder(), false, null, true)],
+    ['B · Свежий день, верх', 'ничего не выбрано: все темы открыты, у каждой «Играть»; двухурочные — одной строкой «3 урока · 25 слов»', phone('light', S.fresh())],
+    ['B2 · Прокручено к «Словам»', `шапка «Уроки» и заголовок «Слова» прилипли; ${wordSlugs.length} тем, самое длинное название — «Природа и погода», на 390 px оно ещё влезает в строку рядом с кнопкой`, phone('light', S.fresh(), false, 's-words')],
+  ] },
+  { h: 'Середина дня', s: 'тема дня выбрана в «Буквах» и «Словах»', f: [
+    ['C · Верх', '«Буквы 2» — тема дня, показано 3 из 8, «Играть»; «Буквы 1» пройдена раньше: галочка, но сегодня замок «завтра»; «Буквы 3–4» — «завтра». «Слоги» не выбраны — открыты', phone('light', S.mid())],
+    ['C2 · Прокручено к «Еде»', `«Еда» раскрыта на месте: «Еда · 1» пройден сегодня — «Повторить», «Еда · 2» — «Играть»; остальные ${wordSlugs.length - 1} тем — «завтра»`, phone('light', S.mid(), false, 't-food')],
+    ['C3 · Конец списка', 'нижние закрытые темы над холмами; последний ряд не прячется под полоску «Домой» — у .wrap снизу 170 px', phone('light', S.mid(), false, 'bottom')],
+  ] },
+  { h: 'Повтор и всё пройдено', s: 'другой день · раздел закончен', f: [
+    ['D · Повтор пройденной темы', 'другой день; выбраны «Цвета», пройденные раньше целиком: галочка, «повтор · 10 слов», «Повторить». Остальные темы — «завтра», у пройденных раньше галочка остаётся', phone('light', S.repeat(), false, 's-words')],
+    ['E · Все буквы пройдены', 'сегодня ничего не выбрано; подсказка «Все буквы пройдены, можно повторить», у всех четырёх — галочка и «Повторить»; любая из них станет темой дня', phone('light', S.allLetters())],
+  ] },
+  { h: 'Сбои', s: 'нет связи · выбрал на другом устройстве', f: [
+    ['C · Нажал «Играть», а связи нет', 'кнопки темы дня серые, пока ждём ответа (busy); внизу — существующий .notice из App.tsx. Выбор темы не засчитан — ничего не закрылось', phone('light', S.mid(true, 'Нет связи. Проверь интернет и попробуй ещё'))],
+    ['B · Тему уже выбрали сегодня в другом месте', 'сервер ответил 409 — текст существующего .notice из App.tsx; после ответа список перерисуется в вид C с чужим выбором', phone('light', S.conflict())],
+  ] },
+];
+document.getElementById('cols').innerHTML = C.map(c => `
+  <div class="col"><div class="colh"><b>${c.h}</b><span>${c.s}</span></div>
+    ${c.f.map(f => fig(f[0], f[1], f[2])).join('')}
+  </div>`).join('');
+document.getElementById('dark').innerHTML = [
+  ['B · Свежий день', S.fresh(), null], ['B2 · «Слова», прокручено', S.fresh(), 's-words'],
+  ['C · Середина дня', S.mid(), null], ['C2 · «Еда» раскрыта', S.mid(), 't-food'],
+].map(([t, b, to]) => fig(t, 'тёмная', phone('dark', b, true, to))).join('');
+
+/* scroll frames to a section / card; the sticky top bar + section header cover 47 + 56 + ~48 px */
+document.querySelectorAll('.dev[data-to]').forEach(d => {
+  const scr = d.querySelector('.scr');
+  if (d.dataset.to === 'bottom') { scr.scrollTop = scr.scrollHeight; return; }
+  const el = d.querySelector('#' + d.dataset.to);
+  let y = 0, n = el;
+  while (n && n !== scr && n.offsetParent) { y += n.offsetTop; if (n.offsetParent === scr) break; n = n.offsetParent; }
+  scr.scrollTop = y - (el.classList.contains('sec') ? 103 : 160);
+});
+
+/* ---- reference ---- */
+const totalWords = TOPICS.reduce((a, t) => a + t.n, 0), totalLessons = TOPICS.reduce((a, t) => a + t.sizes.length, 0);
+document.getElementById('sum').textContent = `3 раздела, ${TOPICS.length} тем, ${totalWords} слов → ${totalLessons} уроков. Тема до 10 слов — один урок; больше — ceil(слов / 10) уроков, слова поровну в порядке файла. В день — одна тема из каждого раздела.`;
+document.getElementById('ref').innerHTML = `<thead><tr><th>Раздел</th><th>Тема</th><th>Слов</th><th>Уроки · слов</th></tr></thead><tbody>${
+  SECTIONS.map(s => s.slugs.map((slug, i) => { const t = T[slug]; return `<tr>${i === 0 ? `<th rowspan="${s.slugs.length}">${s.title}<br><small>${s.slugs.length} ${plural(s.slugs.length, 'тема', 'темы', 'тем')}</small></th>` : ''}<th>${t.icon} ${t.title} <small>${slug}</small></th><td>${t.n}</td><td>${t.sizes.map((z, j) => `${t.sizes.length > 1 ? `«${t.title} · ${j + 1}»` : `«${t.title}»`} · ${z}`).join('<br>')}</td></tr>`; }).join('')).join('')
+}</tbody><tfoot><tr><th>Итого</th><td>${TOPICS.length} тем</td><td>${totalWords}</td><td>${totalLessons} уроков</td></tr></tfoot>`;
+</script>
+</body>
+</html>

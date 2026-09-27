@@ -7,7 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import local_date, week_start
 from app.models import Child, Session, Word
-from app.schemas.me import ChildOut, LessonOut, MeOut, SettingsOut, StickerOut, WeekOut
+from app.schemas.me import (
+    ChildOut,
+    LessonOut,
+    MeOut,
+    SettingsOut,
+    StickerOut,
+    TopicOut,
+    WeekOut,
+)
 from app.services import coins, lessons
 from app.services.learning import LEARNED_STAGE, word_out
 
@@ -35,7 +43,9 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
 
     path = await lessons.load_lessons(db)
     progress = await lessons.load_progress(db, child.id)
-    position = lessons.position(path, progress, today)
+    today_topics = await lessons.load_today_topics(db, child.id, today)
+    position = lessons.position(path, progress, today_topics)
+    today_lesson = position.lesson_of_topic(today_topics[-1]) if today_topics else None
 
     def learned(word: Word) -> bool:
         p = progress.get(word.id)
@@ -63,6 +73,17 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
         )
         for s in position.lessons
     ]
+    topics_out = [
+        TopicOut(
+            slug=t.topic.slug,
+            title_ru=t.topic.title_ru,
+            icon=t.topic.icon,
+            section=t.section,
+            status=t.status,
+            done=t.done,
+        )
+        for t in position.topics
+    ]
 
     return MeOut(
         child=ChildOut(id=child.id, name=child.name),
@@ -75,6 +96,8 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
             study_days=study_days,
         ),
         lessons=lessons_out,
+        topics=topics_out,
+        today_lesson=today_lesson.lesson.number if today_lesson else None,
         review_available=review_available,
         stickers=[
             StickerOut(word=word_out(w, lesson.topic.slug), learned=learned(w))

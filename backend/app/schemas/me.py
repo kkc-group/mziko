@@ -42,6 +42,17 @@ class LessonOut(BaseModel):
     playable: bool  # "Играть" / "Повторить" is available today
 
 
+class TopicOut(BaseModel):
+    """A row of the "Уроки" screen. `today`: the section's topic of the day; `locked`: yields."""
+
+    slug: str
+    title_ru: str
+    icon: str
+    section: Literal["letters", "syllables", "words"]
+    status: Literal["open", "today", "locked"]
+    done: bool  # every lesson of it is done
+
+
 class StickerOut(BaseModel):
     word: WordOut
     learned: bool
@@ -52,5 +63,7 @@ class MeOut(BaseModel):
     settings: SettingsOut
     week: WeekOut
     lessons: list[LessonOut]
+    topics: list[TopicOut]
+    today_lesson: int | None  # the lesson for the home card: of the topic chosen last today
     review_available: bool  # older words wait for a review (the "all done" button)
     stickers: list[StickerOut]

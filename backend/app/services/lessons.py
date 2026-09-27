@@ -1,17 +1,20 @@
 """Lessons: topics cut into equal parts of at most MAX_WORDS_PER_LESSON words, numbered in order.
 
 Nothing about lessons is stored. They are derived from topic order and word
-order, and a child's position from word progress:
+order, and a child's position from word progress and today's sessions:
 
+- topics fall into three sections (letters, syllables, words), by slug;
 - a lesson is done when every word in it has been introduced;
-- the current lesson is the first one that is not done;
-- one new topic per day: the current lesson can start only if no other topic
-  had words introduced today (`introduced_on`);
-- done lessons of today's topic can be replayed as often as the child likes;
+- within a topic lessons go in order: the first one not done is current,
+  the ones after it wait for it;
+- a day has one topic per section: the first session of a topic today (a new
+  lesson or a replay) makes it the section's topic of the day and locks the
+  other topics of that section until tomorrow;
+- done lessons of an open topic can be replayed as often as the child likes;
 - older words come back only as review steps mixed into any session.
 """
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
 from math import ceil
@@ -20,11 +23,21 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Topic, Word, WordProgress
+from app.models import Session, Topic, Word, WordProgress
 
 MAX_WORDS_PER_LESSON = 10
 
+Section = Literal["letters", "syllables", "words"]
+TopicStatus = Literal["open", "today", "locked"]
 LessonStatus = Literal["done", "current", "locked"]
+
+
+def section_of(topic: Topic) -> Section:
+    if topic.slug.startswith("letters-"):
+        return "letters"
+    if topic.slug == "syllables":
+        return "syllables"
+    return "words"
 
 
 @dataclass(frozen=True)
@@ -75,6 +88,35 @@ async def load_progress(db: AsyncSession, child_id: int) -> dict[int, WordProgre
     return {p.word_id: p for p in (await db.execute(stmt)).scalars()}
 
 
+async def load_today_topics(db: AsyncSession, child_id: int, today: date) -> list[int]:
+    """Ids of the topics the child had sessions in today, in session order, last chosen last."""
+    stmt = (
+        select(Session.topic_id)
+        .where(
+            Session.child_id == child_id,
+            Session.study_date == today,
+            Session.topic_id.is_not(None),
+        )
+        .order_by(Session.created_at)
+    )
+    ordered: list[int] = []
+    for topic_id in (await db.execute(stmt)).scalars():
+        if topic_id is None:  # filtered above; keeps the type checker honest
+            continue
+        if topic_id in ordered:
+            ordered.remove(topic_id)
+        ordered.append(topic_id)
+    return ordered
+
+
+@dataclass(frozen=True)
+class TopicState:
+    topic: Topic
+    section: Section
+    status: TopicStatus
+    done: bool  # every lesson of it is done
+
+
 @dataclass(frozen=True)
 class LessonState:
     lesson: Lesson
@@ -86,44 +128,63 @@ class LessonState:
 @dataclass(frozen=True)
 class Position:
     lessons: list[LessonState]
-    current: LessonState | None  # None once every lesson is done
-    today_topic_id: int | None  # the topic that had new words today, if any
+    topics: list[TopicState]
 
     def get(self, number: int) -> LessonState | None:
         return next((s for s in self.lessons if s.lesson.number == number), None)
 
+    def lesson_of_topic(self, topic_id: int) -> LessonState | None:
+        """The topic's lesson to play: its first unfinished one, else its last (a replay)."""
+        mine = [s for s in self.lessons if s.lesson.topic.id == topic_id]
+        if not mine:
+            return None
+        return next((s for s in mine if s.status != "done"), mine[-1])
 
-def position(lessons: Sequence[Lesson], progress: dict[int, WordProgress], today: date) -> Position:
+    @property
+    def all_done(self) -> bool:
+        return all(s.status == "done" for s in self.lessons)
+
+
+def position(
+    lessons: Sequence[Lesson], progress: dict[int, WordProgress], today_topics: Collection[int]
+) -> Position:
+    """`today_topics` are the ids of the topics the child had sessions in today."""
+
     def introduced(word: Word) -> bool:
         p = progress.get(word.id)
         return p is not None and p.introduced
 
-    today_topic_id = next(
-        (
-            lesson.topic.id
-            for lesson in lessons
-            for w in lesson.words
-            if (p := progress.get(w.id)) is not None and p.introduced_on == today
-        ),
-        None,
-    )
+    today_by_section: dict[Section, int] = {}
+    for lesson in lessons:
+        if lesson.topic.id in today_topics:
+            today_by_section[section_of(lesson.topic)] = lesson.topic.id
+
+    def topic_status(topic: Topic) -> TopicStatus:
+        chosen = today_by_section.get(section_of(topic))
+        if chosen is None:
+            return "open"
+        return "today" if chosen == topic.id else "locked"
 
     states: list[LessonState] = []
-    current: LessonState | None = None
+    topics: list[TopicState] = []
+    current_of: dict[int, bool] = {}  # topic id -> its current lesson has been placed
     for lesson in lessons:
+        topic = lesson.topic
         count = sum(introduced(w) for w in lesson.words)
-        done = count == len(lesson.words)
-        if done:
+        if count == len(lesson.words):
             status: LessonStatus = "done"
-            playable = lesson.topic.id == today_topic_id
-        elif current is None:
+        elif not current_of.get(topic.id):
             status = "current"
-            playable = today_topic_id in (None, lesson.topic.id)
+            current_of[topic.id] = True
         else:
             status = "locked"
-            playable = False
-        state = LessonState(lesson=lesson, introduced=count, status=status, playable=playable)
-        if status == "current":
-            current = state
-        states.append(state)
-    return Position(lessons=states, current=current, today_topic_id=today_topic_id)
+        playable = status != "locked" and topic_status(topic) != "locked"
+        states.append(LessonState(lesson, introduced=count, status=status, playable=playable))
+        if lesson.part == lesson.parts:
+            done = all(s.status == "done" for s in states if s.lesson.topic.id == topic.id)
+            topics.append(
+                TopicState(
+                    topic=topic, section=section_of(topic), status=topic_status(topic), done=done
+                )
+            )
+    return Position(lessons=states, topics=topics)

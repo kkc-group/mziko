@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Child, ImageKind, Session, Topic, Word, WordProgress
 from app.schemas.lesson import AnswerIn
-from app.services import coins, learning
+from app.services import coins, learning, lessons
 from app.services.errors import InvalidStep, LessonLocked, NotFound
 from tests.helpers import (
     answer_correctly,
@@ -121,24 +121,43 @@ async def test_replay_of_todays_lesson_quizzes_every_word_and_pays_no_coin_twice
     assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10
 
 
-async def test_lesson_locked_until_the_next_day_and_unknown_lesson_raises(
+async def test_one_topic_per_section_per_day_and_unknown_lesson_raises(
     db: AsyncSession, child: Child
 ) -> None:
-    with pytest.raises(LessonLocked):  # lesson 2 before lesson 1
-        await learning.build_session(db, child, 2, at(DAY1))
+    path = await lessons.load_lessons(db)
+    food = [lsn.number for lsn in path if lsn.topic.slug == "food"]
+    with pytest.raises(LessonLocked):  # the second part of a topic before the first
+        await learning.build_session(db, child, food[1], at(DAY1))
     with pytest.raises(NotFound):
         await learning.build_session(db, child, 999, at(DAY1))
 
     colors = await skip_to(db, child, "colors")
     for _ in range(4):
         await play_day(db, child, "colors", at(DAY1))
-    with pytest.raises(LessonLocked):  # greetings is the next topic: not today
+    with pytest.raises(LessonLocked):  # greetings is another word topic: not today
         await learning.build_session(db, child, colors + 1, at(DAY1, 20))
+    letters = await learning.build_session(db, child, 1, at(DAY1, 20), random.Random(23))
+    assert letters is not None  # letters are a section of their own: still open today
+    with pytest.raises(LessonLocked):  # and now letters-2 waits for tomorrow
+        await learning.build_session(db, child, 2, at(DAY1, 21))
+
     tomorrow = await learning.build_session(db, child, colors + 1, at(DAY2), random.Random(23))
     assert tomorrow is not None
     assert [s.word.topic_slug for s in steps_of(tomorrow) if s.type == "intro"] == ["greetings"] * 3
-    with pytest.raises(LessonLocked):  # and yesterday's lesson is no longer a replay
+    with pytest.raises(LessonLocked):  # yesterday's topic is locked once another one is chosen
         await learning.build_session(db, child, colors, at(DAY2, 13))
+
+
+async def test_replay_of_an_old_topic_is_the_choice_of_the_day(
+    db: AsyncSession, child: Child
+) -> None:
+    colors = await skip_to(db, child, "colors")
+    for _ in range(4):
+        await play_day(db, child, "colors", at(DAY1))
+    replay = await learning.build_session(db, child, colors, at(DAY2), random.Random(24))
+    assert replay is not None and not any(s.type == "intro" for s in steps_of(replay))
+    with pytest.raises(LessonLocked):  # colors took the word section for today
+        await learning.build_session(db, child, colors + 1, at(DAY2, 13))
 
 
 async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(

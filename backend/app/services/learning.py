@@ -96,6 +96,7 @@ async def build_session(
     """Create a session for lesson `lesson_number`, or a review-only one for None.
 
     The lesson must be playable today (see services.lessons), else LessonLocked.
+    The session itself makes its topic the section's topic of the day.
     Up to 3 of its words not yet shown are introduced (in order). The quiz then
     reviews: first the lesson's own words not answered correctly today, then the
     longest-waiting unlearned words of earlier lessons, 4 in all. Replaying a
@@ -106,7 +107,8 @@ async def build_session(
     today = local_date(now)
     topics = await _topics_by_id(db)
     progress_by_word = await lessons.load_progress(db, child.id)
-    position = lessons.position(await lessons.load_lessons(db), progress_by_word, today)
+    today_topics = await lessons.load_today_topics(db, child.id, today)
+    position = lessons.position(await lessons.load_lessons(db), progress_by_word, today_topics)
 
     lesson: lessons.Lesson | None = None
     if lesson_number is not None:
