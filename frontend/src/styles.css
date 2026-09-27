@@ -302,3 +302,46 @@ button:disabled { cursor: default; }
   .mid h1 { font-size: 26px; }
   .hi h1 { font-size: 30px; }
 }
+
+/* --- menu sheet + "Уроки" screen: docs/mockups/lessons-menu.html, docs/mockups/home-menu.html ---
+   Values are verbatim from the mockups, built only from the tokens above, with two adaptations
+   for the real app: .scrim/.sheet use `position: fixed` (the mockups sat inside a phone-frame
+   wrapper with `position: relative`; the real page has no such ancestor and scrolls, like .lesson
+   and .notice already do with `fixed`), and the emoji size variable (--s) is set on the row
+   container rather than on .emoji, because here <Emoji> can render either a Twemoji <img> or a
+   text fallback — the existing .ic/.stk/.cur .ic rules follow the same pattern. */
+.burger { position: absolute; z-index: 2; top: calc(var(--safe-top) + 10px); right: calc(var(--safe-right) + 16px); display: grid; place-items: center; }
+.burger svg, .x svg { width: 24px; height: 24px; }
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
+.sheet {
+  position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: 300px; display: flex; flex-direction: column; gap: 14px;
+  padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) 16px;
+  background: var(--bg); border-left: 2px solid var(--line); border-radius: 26px 0 0 26px;
+}
+.sheet .x { align-self: flex-end; display: grid; place-items: center; }
+.mi { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font-size: 24px; font-weight: 900; line-height: 1.1; --s: 34px; }
+.mi .t { flex: 1; min-width: 0; }
+.mi.on { border: 3px solid var(--pom); box-shadow: 0 5px 0 var(--pom-dark); }
+.mi.off { background: transparent; border-style: dashed; color: var(--muted); }
+.mi.off .emoji, .mi.off .pic-img { filter: grayscale(1); opacity: 0.35; }
+.mi .t small { display: block; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
+
+.topbar { position: sticky; z-index: 6; top: var(--safe-top); display: flex; align-items: center; gap: 12px; height: 72px; margin: -16px -16px 0; padding: 8px 16px; background: var(--bg); }
+.topbar .x { display: grid; place-items: center; flex: none; }
+.topbar h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1; }
+.lhello { display: flex; align-items: flex-end; gap: 8px; margin: 4px 0 6px; }
+.lhello .bubble { margin-bottom: 14px; font-weight: 800; font-size: 16px; line-height: 1.25; }
+.sec { margin-top: 8px; }
+.sech { position: sticky; z-index: 5; top: calc(var(--safe-top) + 56px); display: flex; align-items: center; gap: 10px; margin: 0 -16px; padding: 14px 20px 10px; background: var(--bg); font-size: 24px; font-weight: 900; line-height: 1.1; --s: 26px; }
+.rows { display: flex; flex-direction: column; gap: 10px; }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.icw { position: relative; flex: none; display: flex; }
+.ok-b { position: absolute; right: -8px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: #fff; font-size: 13px; font-weight: 900; font-style: normal; line-height: 1; border: 2px solid var(--surface); }
+.lsn.lock .ok-b { border-color: var(--bg); }
+.tmr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--muted); font-size: 13px; font-weight: 800; line-height: 1; }
+.cur .icw .ok-b { width: 26px; height: 26px; font-size: 15px; }
+.cur .lsn { min-height: 56px; padding: 8px 12px; border-radius: 18px; }
+.lsn.nowp { border: 2px solid var(--pom); }
+.allnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 16px; border-radius: 22px; background: var(--mint-soft); font-weight: 800; font-size: 17px; line-height: 1.25; }
+.allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
+.lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }

@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { fmtLari } from '../fx'
+import { fmtLari, wordsW } from '../fx'
 import type { LessonOut, Me } from '../types'
 import { Emoji } from '../components/Emoji'
 import { JarIcon, Mascot } from '../components/Mascot'
+import { Menu } from '../components/Menu'
 import { WordImage } from '../components/WordImage'
 import { textClass } from '../wordText'
 
@@ -14,15 +14,6 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-function LockIcon() {
-  return (
-    <svg className="lock-i" viewBox="0 0 24 24" aria-label="закрыто">
-      <rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor" />
-      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function LessonTitle({ lesson }: { lesson: LessonOut }) {
   return (
     <>
@@ -32,28 +23,92 @@ function LessonTitle({ lesson }: { lesson: LessonOut }) {
   )
 }
 
+/** Today's topic card: review rows for its already-played parts, progress, then the play button. */
+function TodayLessonCard({
+  lesson,
+  lessons,
+  busy,
+  onPlay,
+}: {
+  lesson: LessonOut
+  lessons: LessonOut[]
+  busy: boolean
+  onPlay: (lesson: LessonOut) => void
+}) {
+  const doneSiblings = lessons.filter((l) => l.topic_slug === lesson.topic_slug && l.part < lesson.part)
+  const finished = lesson.status === 'done'
+  const shown = lesson.introduced > 0
+  const sub = finished
+    ? `показано ${lesson.total} из ${lesson.total}`
+    : shown
+      ? `показано ${lesson.introduced} из ${lesson.total}`
+      : wordsW(lesson.total)
+  const pct = finished ? 100 : Math.round((lesson.introduced / lesson.total) * 100)
+
+  return (
+    <div className="cur">
+      <div className="cur-h">
+        <span className="num now">{lesson.number}</span>
+        <span className="ic">
+          <Emoji value={lesson.icon} alt="" />
+        </span>
+        <div className="cur-t">
+          <b>
+            <LessonTitle lesson={lesson} />
+          </b>
+          <small>{sub}</small>
+        </div>
+      </div>
+      {(shown || finished) && (
+        <div className="prog">
+          <i style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {doneSiblings.map((l) => (
+        <div key={l.number} className="lsn review">
+          <span className="num">✓</span>
+          <span className="t">
+            <LessonTitle lesson={l} />
+            <small>{wordsW(l.total)}</small>
+          </span>
+          <button type="button" className="mini-play" disabled={busy} onClick={() => onPlay(l)}>
+            Повторить
+          </button>
+        </div>
+      ))}
+      <button type="button" className="play" disabled={busy} onClick={() => onPlay(lesson)}>
+        {finished ? 'Повторить' : 'Играть'}
+      </button>
+      {finished && <p className="soon">Новый урок — завтра</p>}
+    </div>
+  )
+}
+
 export function Home({
   me,
   busy,
   onPlay,
+  menuOpen,
+  onOpenMenu,
+  onCloseMenu,
+  onOpenLessons,
 }: {
   me: Me
   busy: boolean
   onPlay: (lesson: LessonOut | null) => void
+  menuOpen: boolean
+  onOpenMenu: () => void
+  onCloseMenu: () => void
+  onOpenLessons: () => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const learnedTotal = me.stickers.filter((s) => s.learned).length
-
-  const doneLessons = me.lessons.filter((l) => l.status === 'done')
-  const current = me.lessons.find((l) => l.status === 'current')
-  // Today's finished lessons can be replayed; offer the latest one.
-  const playableDone = [...doneLessons].reverse().find((l) => l.playable)
-  const lockedLessons = me.lessons.filter((l) => l.status === 'locked')
-  const visibleLocked = lockedLessons.slice(0, 2)
-  const restLocked = lockedLessons.length - visibleLocked.length
+  const lesson = me.today_lesson != null ? (me.lessons.find((l) => l.number === me.today_lesson) ?? null) : null
+  const allDone = me.topics.length > 0 && me.topics.every((t) => t.done)
 
   return (
     <main className="wrap">
+      <Menu open={menuOpen} onOpen={onOpenMenu} onClose={onCloseMenu} onLessons={onOpenLessons} />
+
       <div className="hello">
         <Mascot />
         <div className="bubble">
@@ -84,37 +139,22 @@ export function Home({
       </div>
 
       <div className="path">
-        {doneLessons.length > 0 && (
-          <div className="step">
-            <button
-              type="button"
-              className="lsn fold"
-              aria-expanded={expanded}
-              onClick={() => setExpanded((e) => !e)}
-            >
-              <span className="num">✓</span>
-              <span className="t">Пройдено {doneLessons.length} уроков</span>
-              <span className="chev">{expanded ? '▾' : '▸'}</span>
-            </button>
-          </div>
-        )}
-
-        {expanded &&
-          doneLessons.map((l) => (
-            <div key={l.number} className="step">
-              <div className="lsn done">
-                <span className="num">✓</span>
-                <span className="ic">
-                  <Emoji value={l.icon} alt="" />
-                </span>
-                <span className="t">
-                  <LessonTitle lesson={l} />
-                </span>
-              </div>
+        {lesson ? (
+          <>
+            <div className="step">
+              <TodayLessonCard lesson={lesson} lessons={me.lessons} busy={busy} onPlay={onPlay} />
             </div>
-          ))}
-
-        {!current && (
+            <div className="step">
+              <button type="button" className="lsn nav" onClick={onOpenLessons}>
+                <span className="ic">
+                  <Emoji value="📚" alt="" />
+                </span>
+                <span className="t">Другие уроки</span>
+                <span className="chev">▸</span>
+              </button>
+            </div>
+          </>
+        ) : allDone ? (
           <div className="step">
             <div className="cur all">
               <Mascot size={88} />
@@ -130,101 +170,16 @@ export function Home({
               </button>
             </div>
           </div>
-        )}
-
-        {current && playableDone && current.playable && (
+        ) : (
           <div className="step">
-            <div className="lsn review">
-              <span className="num">✓</span>
-              <span className="ic">
-                <Emoji value={playableDone.icon} alt="" />
-              </span>
-              <span className="t">
-                <LessonTitle lesson={playableDone} />
-              </span>
-              <button
-                type="button"
-                className="mini-play"
-                disabled={busy}
-                onClick={() => onPlay(playableDone)}
-              >
-                Повторить
+            <div className="cur all">
+              <Mascot size={88} />
+              <b>Выбери урок на сегодня</b>
+              <small>Каждый день — одна тема из каждого раздела</small>
+              <button type="button" className="play" disabled={busy} onClick={onOpenLessons}>
+                К урокам
               </button>
             </div>
-          </div>
-        )}
-
-        {current && playableDone && !current.playable && (
-          <div className="step">
-            <div className="cur">
-              <div className="cur-h">
-                <span className="num now">{playableDone.number}</span>
-                <span className="ic">
-                  <Emoji value={playableDone.icon} alt="" />
-                </span>
-                <div className="cur-t">
-                  <b>
-                    <LessonTitle lesson={playableDone} />
-                  </b>
-                </div>
-              </div>
-              <button type="button" className="play" disabled={busy} onClick={() => onPlay(playableDone)}>
-                Повторить
-              </button>
-              <p className="soon">Новый урок — завтра</p>
-            </div>
-          </div>
-        )}
-
-        {current && (current.playable || !playableDone) && (
-          <div className="step">
-            <div className="cur">
-              <div className="cur-h">
-                <span className="num now">{current.number}</span>
-                <span className="ic">
-                  <Emoji value={current.icon} alt="" />
-                </span>
-                <div className="cur-t">
-                  <b>
-                    <LessonTitle lesson={current} />
-                  </b>
-                  <small>
-                    показано {current.introduced} из {current.total}
-                  </small>
-                </div>
-              </div>
-              <div className="prog">
-                <i style={{ width: `${Math.round((current.introduced / current.total) * 100)}%` }} />
-              </div>
-              {current.playable ? (
-                <button type="button" className="play" disabled={busy} onClick={() => onPlay(current)}>
-                  Играть
-                </button>
-              ) : (
-                <p className="soon">Новый урок — завтра</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {visibleLocked.map((l) => (
-          <div key={l.number} className="step">
-            <div className="lsn lock" aria-disabled="true">
-              <span className="num">{l.number}</span>
-              <span className="ic">
-                <Emoji value={l.icon} alt="" />
-              </span>
-              <span className="t">
-                <LessonTitle lesson={l} />
-              </span>
-              <LockIcon />
-            </div>
-          </div>
-        ))}
-
-        {restLocked > 0 && (
-          <div className="step">
-            <div className="more">Дальше ещё {restLocked} уроков</div>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { Speaker } from './audio'
 import { Hills } from './components/Mascot'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
+import { Lessons } from './screens/Lessons'
 import { Login } from './screens/Login'
 import type { LessonOut, Me, Step } from './types'
 
@@ -12,6 +13,9 @@ type Screen =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
   | { kind: 'home'; me: Me }
+
+/** Which of the two screens under the "home" state is shown; the menu opens only over 'home'. */
+type View = 'home' | 'lessons'
 
 interface ActiveLesson {
   sessionId: string
@@ -39,6 +43,8 @@ export default function App() {
     adoptTokenFromUrl()
     return getToken() ? { kind: 'loading' } : { kind: 'login', code: null }
   })
+  const [view, setView] = useState<View>('home')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -59,6 +65,7 @@ export default function App() {
 
   const reload = useCallback(() => {
     setScreen({ kind: 'loading' })
+    setView('home') // a fresh load always lands on the home screen
     void loadMe()
   }, [loadMe])
 
@@ -99,7 +106,13 @@ export default function App() {
 
   const closeLesson = () => {
     setLesson(null)
+    setView('home')
     reload()
+  }
+
+  const openLessons = () => {
+    setMenuOpen(false)
+    setView('lessons')
   }
 
   return (
@@ -117,7 +130,20 @@ export default function App() {
           </div>
         </main>
       )}
-      {screen.kind === 'home' && <Home me={screen.me} busy={busy} onPlay={startLesson} />}
+      {screen.kind === 'home' && view === 'home' && (
+        <Home
+          me={screen.me}
+          busy={busy}
+          onPlay={startLesson}
+          menuOpen={menuOpen}
+          onOpenMenu={() => setMenuOpen(true)}
+          onCloseMenu={() => setMenuOpen(false)}
+          onOpenLessons={openLessons}
+        />
+      )}
+      {screen.kind === 'home' && view === 'lessons' && (
+        <Lessons me={screen.me} busy={busy} onPlay={startLesson} onBack={() => setView('home')} />
+      )}
       {notice && (
         <div className="notice" role="status" onClick={() => setNotice(null)}>
           {notice}

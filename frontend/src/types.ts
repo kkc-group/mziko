@@ -44,6 +44,16 @@ export interface LessonOut {
   playable: boolean
 }
 
+/** A row of the "Уроки" screen: `today` is the section's topic of the day, `locked` yields to it. */
+export interface TopicOut {
+  slug: string
+  title_ru: string
+  icon: string
+  section: 'letters' | 'syllables' | 'words'
+  status: 'open' | 'today' | 'locked'
+  done: boolean
+}
+
 export interface Me {
   child: { id: number; name: string }
   settings: { rate: number; cap_lari: number; show_hint: boolean }
@@ -55,6 +65,8 @@ export interface Me {
     study_days: string[]
   }
   lessons: LessonOut[]
+  topics: TopicOut[]
+  today_lesson: number | null
   review_available: boolean
   stickers: { word: WordOut; learned: boolean }[]
 }
