@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { WordOut } from '../types'
 import { isLetter } from '../wordText'
+import { Emoji } from './Emoji'
 
 /** Emoji, colour blob, picture or large text for a word. Size comes from the parent via --s. */
 export function WordImage({ word }: { word: WordOut }) {
@@ -18,9 +19,5 @@ export function WordImage({ word }: { word: WordOut }) {
       </span>
     )
   }
-  return (
-    <span className="emoji" role="img" aria-label={word.ru}>
-      {value}
-    </span>
-  )
+  return <Emoji value={value} alt={word.ru} />
 }

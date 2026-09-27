@@ -3,6 +3,7 @@ import { api, withRetry, type AnswerBody } from '../api'
 import type { Speaker } from '../audio'
 import { flyCoins, fmtLari, uuid } from '../fx'
 import type { AnchorOut, SessionSummary, Step, WordOut } from '../types'
+import { Emoji } from '../components/Emoji'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { SpeakButton } from '../components/SpeakButton'
 import { WordImage } from '../components/WordImage'
@@ -195,7 +196,7 @@ function Anchor({ letter, anchor, showHint }: { letter: string; anchor: AnchorOu
   const rest = anchor.ka.startsWith(letter) ? anchor.ka.slice(letter.length) : anchor.ka
   return (
     <div className="anchor" aria-label={`${anchor.ka} — ${anchor.ru}`}>
-      {anchor.emoji ? <span className="emoji">{anchor.emoji}</span> : <small>{anchor.ru}</small>}
+      {anchor.emoji ? <Emoji value={anchor.emoji} alt={anchor.ru} /> : <small>{anchor.ru}</small>}
       <span className="ka">
         {rest === anchor.ka ? anchor.ka : <><b>{letter}</b>{rest}</>}
       </span>

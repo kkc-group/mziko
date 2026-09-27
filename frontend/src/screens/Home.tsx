@@ -1,5 +1,6 @@
 import { fmtLari } from '../fx'
 import type { Me, TopicOut } from '../types'
+import { Emoji } from '../components/Emoji'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { WordImage } from '../components/WordImage'
 import { textClass } from '../wordText'
@@ -62,7 +63,9 @@ export function Home({
             disabled={busy || !t.has_lesson}
             onClick={() => onPlay(t)}
           >
-            <span className="ic">{t.icon}</span>
+            <span className="ic">
+              <Emoji value={t.icon} alt="" />
+            </span>
             <span>
               <b>{t.title_ru}</b>
               <span>

@@ -58,6 +58,18 @@ primer tradition (Deda Ena), not the alphabet; reorder by moving lines.
 
 Slugs `on`, `yes`, `no` must be quoted: bare, YAML reads them as booleans.
 
+## Emoji pictures
+
+Emoji stay plain characters in the YAML (word images, topic `icon`, letter
+`anchor.emoji`), but the app draws them from the bundled Twemoji set so every
+device shows the same picture. After adding a word with a new emoji run
+`make twemoji` (from the repo root): it downloads the missing SVGs into
+`media/twemoji/` and fails with the emoji name if Twemoji has no such file.
+The files are committed like the audio.
+
+Twemoji graphics are CC BY 4.0 (https://github.com/jdecked/twemoji). The
+attribution line belongs on the app's future settings / about screen.
+
 ## Native speaker review required
 
 The Cyrillic transcriptions (`tr`) are approximate: Georgian ejective consonants

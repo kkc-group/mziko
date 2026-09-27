@@ -28,7 +28,7 @@
 ```sh
 cp .env.example .env        # при занятом 5432 поменяйте POSTGRES_PORT и DATABASE_URL
 make db                     # PostgreSQL в Docker
-make migrate && make seed   # схема и слова двух тем
+make migrate && make seed   # схема и все темы: буквы, слоги, слова
 make api                    # http://localhost:8000, документация /api/docs
 make web                    # http://localhost:5173, /api проксируется на 8000
 make pair                   # одноразовая ссылка привязки без Telegram, как из бота
@@ -72,5 +72,6 @@ make lint   # ruff, mypy, oxlint, tsc
 
 Слова правятся в `content/topics/*.yaml`, затем `make seed` (или перезапуск `api`).
 Добавленные слова получают звук командой `make tts` (временный синтез, уже
-существующие файлы не перезаписываются). Транскрипции и звук перед запуском
-проверяет носитель языка, см. [content/README.md](content/README.md).
+существующие файлы не перезаписываются), а картинки для новых эмодзи — командой
+`make twemoji` (набор Twemoji, CC BY 4.0, файлы в `media/twemoji/`). Транскрипции
+и звук перед запуском проверяет носитель языка, см. [content/README.md](content/README.md).

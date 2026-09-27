@@ -82,7 +82,7 @@ button:disabled { cursor: default; }
 }
 .topic:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
 .topic:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
-.topic .ic { font-size: 40px; line-height: 1; }
+.topic .ic { font-size: 40px; line-height: 1; --s: 40px; display: flex; flex: none; }
 .topic b { display: block; font-size: 24px; font-weight: 900; line-height: 1.1; }
 .topic span span { font-size: 15px; font-weight: 700; opacity: 0.9; }
 .learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }

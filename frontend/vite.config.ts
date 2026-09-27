@@ -19,7 +19,8 @@ function mediaDevServer(): Plugin {
           next()
           return
         }
-        res.setHeader('Content-Type', file.endsWith('.mp3') ? 'audio/mpeg' : 'application/octet-stream')
+        const type = file.endsWith('.mp3') ? 'audio/mpeg' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream'
+        res.setHeader('Content-Type', type)
         fs.createReadStream(file).pipe(res)
       })
     },
@@ -59,6 +60,14 @@ export default defineConfig({
             options: {
               cacheName: 'audio',
               expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/twemoji/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'twemoji',
+              expiration: { maxEntries: 400, maxAgeSeconds: 30 * 24 * 3600 },
             },
           },
           {

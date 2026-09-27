@@ -43,3 +43,6 @@ lint:
 # Temporary TTS audio for words that have no recording yet (existing files are kept).
 tts:
 	uv run --no-project --with edge-tts --with pyyaml python scripts/gen_tts.py
+
+twemoji:
+	uv run --no-project --with pyyaml python scripts/fetch_twemoji.py
