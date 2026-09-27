@@ -1,4 +1,4 @@
-.PHONY: dev db migrate revision seed test lint api tts
+.PHONY: dev db migrate revision seed test lint api bot web tts
 
 # Everything in Docker, with migrations and seed applied on api start.
 dev:
@@ -24,11 +24,19 @@ api:
 bot:
 	cd backend && uv run python -m bot.main
 
+web:
+	cd frontend && pnpm dev
+
+# Local dev without Telegram: create a dev parent/child and print a pairing code.
+pair:
+	cd backend && uv run python dev_pair.py
+
 test:
 	cd backend && uv run pytest
 
 lint:
 	cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy app bot
+	cd frontend && pnpm lint && pnpm typecheck
 
 # Temporary TTS audio for words that have no recording yet (existing files are kept).
 tts:
