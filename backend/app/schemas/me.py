@@ -1,6 +1,7 @@
 """Response of GET /api/me: everything the home screen needs in one call."""
 
 from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -26,14 +27,19 @@ class WeekOut(BaseModel):
     study_days: list[date]
 
 
-class TopicOut(BaseModel):
-    slug: str
+class LessonOut(BaseModel):
+    """One step of the child's path: a topic, or a part of a bigger one."""
+
+    number: int
+    topic_slug: str
     title_ru: str
-    title_ka: str
     icon: str
+    part: int
+    parts: int
     total: int
-    learned: int
-    has_lesson: bool
+    introduced: int
+    status: Literal["done", "current", "locked"]
+    playable: bool  # "Играть" / "Повторить" is available today
 
 
 class StickerOut(BaseModel):
@@ -45,5 +51,6 @@ class MeOut(BaseModel):
     child: ChildOut
     settings: SettingsOut
     week: WeekOut
-    topics: list[TopicOut]
+    lessons: list[LessonOut]
+    review_available: bool  # older words wait for a review (the "all done" button)
     stickers: list[StickerOut]

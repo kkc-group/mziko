@@ -9,12 +9,19 @@ from app.api.routes import router
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.services import parents
-from app.services.errors import InvalidStep, NotFound, ServiceError, SessionFinished
+from app.services.errors import (
+    InvalidStep,
+    LessonLocked,
+    NotFound,
+    ServiceError,
+    SessionFinished,
+)
 
 STATUS_FOR_ERROR: dict[type[ServiceError], int] = {
     NotFound: 404,
     InvalidStep: 400,
     SessionFinished: 409,
+    LessonLocked: 409,
 }
 
 

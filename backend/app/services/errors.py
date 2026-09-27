@@ -12,3 +12,7 @@ class InvalidStep(ServiceError):
 
 class SessionFinished(ServiceError):
     pass
+
+
+class LessonLocked(ServiceError):
+    """The lesson exists but may not be played today (see services.lessons)."""

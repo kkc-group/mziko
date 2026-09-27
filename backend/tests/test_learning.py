@@ -9,8 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Child, ImageKind, Session, Topic, Word, WordProgress
 from app.schemas.lesson import AnswerIn
 from app.services import coins, learning
-from app.services.errors import InvalidStep, NotFound
-from tests.helpers import answer_correctly, at, play_day, quiz_steps, steps_of
+from app.services.errors import InvalidStep, LessonLocked, NotFound
+from tests.helpers import (
+    answer_correctly,
+    at,
+    build_for_topic,
+    play_day,
+    quiz_steps,
+    skip_to,
+    steps_of,
+)
 
 DAY1 = date(2026, 9, 22)  # Tuesday
 DAY2 = DAY1 + timedelta(days=1)
@@ -30,7 +38,7 @@ async def progress_of(db: AsyncSession, child: Child, slug: str) -> WordProgress
 async def test_first_session_introduces_three_topic_words_in_order(
     db: AsyncSession, child: Child
 ) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(1))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(1))
     assert session is not None
     steps = steps_of(session)
 
@@ -56,7 +64,7 @@ async def test_review_words_come_from_all_topics_and_keep_their_own_distractors(
 ) -> None:
     await play_day(db, child, "basics", at(DAY1))  # dog, cat, apple introduced & stage 1
 
-    session = await learning.build_session(db, child, "colors", at(DAY2), random.Random(2))
+    session = await build_for_topic(db, child, "colors", at(DAY2), random.Random(2))
     assert session is not None
     steps = steps_of(session)
     assert [s.word.slug for s in steps if s.type == "intro"] == ["red", "blue", "green"]
@@ -74,27 +82,63 @@ async def test_review_skips_words_answered_today_and_learned_words(
 ) -> None:
     await play_day(db, child, "colors", at(DAY1))
     # Same day again: the three words were answered today, so no review; next 3 new words.
-    session = await learning.build_session(db, child, "colors", at(DAY1, 18), random.Random(3))
+    session = await build_for_topic(db, child, "colors", at(DAY1, 18), random.Random(3))
     assert session is not None
     assert {s.word.slug for s in steps_of(session)} == {"yellow", "white", "black"}
 
 
-async def test_empty_plan_when_nothing_to_learn_or_review(db: AsyncSession, child: Child) -> None:
-    topic = (await db.execute(select(Topic).where(Topic.slug == "colors"))).scalar_one()
-    words = (await db.execute(select(Word).where(Word.topic_id == topic.id))).scalars()
-    for w in words:
-        db.add(
-            WordProgress(
-                child_id=child.id, word_id=w.id, stage=3, introduced=True, last_correct_date=DAY1
-            )
-        )
-    await db.flush()
-    assert await learning.build_session(db, child, "colors", at(DAY2)) is None
+async def test_review_only_session_is_none_when_nothing_waits(
+    db: AsyncSession, child: Child
+) -> None:
+    assert await learning.build_session(db, child, None, at(DAY1)) is None
+    await play_day(db, child, "colors", at(DAY1))  # answered today: nothing to review yet
+    assert await learning.build_session(db, child, None, at(DAY1, 18)) is None
+    review = await learning.build_session(db, child, None, at(DAY2), random.Random(20))
+    assert review is not None and review.topic_id is None
+    assert {s.word.slug for s in steps_of(review)} == {"red", "blue", "green"}
+    assert all(s.type != "intro" for s in steps_of(review))
 
 
-async def test_unknown_topic_raises(db: AsyncSession, child: Child) -> None:
+async def test_replay_of_todays_lesson_quizzes_every_word_and_pays_no_coin_twice(
+    db: AsyncSession, child: Child
+) -> None:
+    number = await skip_to(db, child, "colors")
+    for _ in range(4):  # 3 + 3 + 3 + 1 new words: the whole lesson in one day
+        session = await learning.build_session(db, child, number, at(DAY1), random.Random(21))
+        assert session is not None
+        for index, _ in quiz_steps(session):
+            await answer_correctly(db, child, session, index, at(DAY1))
+    week = await coins.get_or_create_week(db, child.id, DAY1)
+    assert week.coins == 10  # one coin per word, however many times it was quizzed
+
+    replay = await learning.build_session(db, child, number, at(DAY1, 19), random.Random(22))
+    assert replay is not None
+    steps = steps_of(replay)
+    assert not any(s.type == "intro" for s in steps)
+    assert len(steps) == 10 and {s.word.topic_slug for s in steps} == {"colors"}
+    for index, _ in quiz_steps(replay):
+        assert (await answer_correctly(db, child, replay, index, at(DAY1, 19))).coins_gained == 0
+    assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10
+
+
+async def test_lesson_locked_until_the_next_day_and_unknown_lesson_raises(
+    db: AsyncSession, child: Child
+) -> None:
+    with pytest.raises(LessonLocked):  # lesson 2 before lesson 1
+        await learning.build_session(db, child, 2, at(DAY1))
     with pytest.raises(NotFound):
-        await learning.build_session(db, child, "nope", at(DAY1))
+        await learning.build_session(db, child, 999, at(DAY1))
+
+    colors = await skip_to(db, child, "colors")
+    for _ in range(4):
+        await play_day(db, child, "colors", at(DAY1))
+    with pytest.raises(LessonLocked):  # greetings is the next topic: not today
+        await learning.build_session(db, child, colors + 1, at(DAY1, 20))
+    tomorrow = await learning.build_session(db, child, colors + 1, at(DAY2), random.Random(23))
+    assert tomorrow is not None
+    assert [s.word.topic_slug for s in steps_of(tomorrow) if s.type == "intro"] == ["greetings"] * 3
+    with pytest.raises(LessonLocked):  # and yesterday's lesson is no longer a replay
+        await learning.build_session(db, child, colors, at(DAY2, 13))
 
 
 async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
@@ -127,7 +171,7 @@ async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
     await db.flush()
 
     # Nothing here is committed: the shared database must not gain a topic other tests count.
-    first = await learning.build_session(db, child, topic.slug, at(DAY1))
+    first = await build_for_topic(db, child, topic.slug, at(DAY1))
     assert first is not None
     intro = steps_of(first)[0]
     assert intro.word.image.kind is ImageKind.text
@@ -137,7 +181,7 @@ async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
 
     # Day 2: the letters come back for review; whatever the dice say, never `recall`.
     for seed in range(10):
-        session = await learning.build_session(db, child, topic.slug, at(DAY2), random.Random(seed))
+        session = await build_for_topic(db, child, topic.slug, at(DAY2), random.Random(seed))
         assert session is not None
         review = [s for s in steps_of(session) if s.type != "intro"]
         assert review and all(s.type == "listen" for s in review)
@@ -148,7 +192,7 @@ async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
 
 
 async def test_first_try_correct_earns_one_coin_and_a_stage(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(4))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(4))
     assert session is not None
     index, step = quiz_steps(session)[0]
 
@@ -164,7 +208,7 @@ async def test_first_try_correct_earns_one_coin_and_a_stage(db: AsyncSession, ch
 async def test_wrong_answer_gives_nothing_and_second_try_gives_no_coins(
     db: AsyncSession, child: Child
 ) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(5))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(5))
     assert session is not None
     index, step = quiz_steps(session)[0]
     wrong = next(o.slug for o in step.options if o.slug != step.word.slug)
@@ -184,7 +228,7 @@ async def test_wrong_answer_gives_nothing_and_second_try_gives_no_coins(
 
 
 async def test_stage_grows_at_most_once_per_day(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(6))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(6))
     assert session is not None
     # Hand-craft a second quiz step for the same word inside the same session.
     first_index, step = quiz_steps(session)[0]
@@ -194,15 +238,15 @@ async def test_stage_grows_at_most_once_per_day(db: AsyncSession, child: Child) 
 
     await answer_correctly(db, child, session, first_index, at(DAY1, 9))
     again = await answer_correctly(db, child, session, dup_index, at(DAY1, 21))
-    assert again.coins_gained == 1  # a different step still pays its coin
+    assert again.coins_gained == 0  # the word was already answered today: no second coin
     progress = await progress_of(db, child, step.word.slug)
-    assert progress.stage == 1  # but the stage moved only once today
+    assert progress.stage == 1  # and the stage moved only once today
 
 
 async def test_word_is_learned_on_third_day_with_bonus(db: AsyncSession, child: Child) -> None:
     await play_day(db, child, "colors", at(DAY1))
     await play_day(db, child, "colors", at(DAY2))
-    session = await learning.build_session(db, child, "colors", at(DAY3), random.Random(7))
+    session = await build_for_topic(db, child, "colors", at(DAY3), random.Random(7))
     assert session is not None
 
     red_index = next(i for i, s in quiz_steps(session) if s.word.slug == "red")
@@ -221,7 +265,7 @@ async def test_word_is_learned_on_third_day_with_bonus(db: AsyncSession, child: 
 async def test_weekly_cap_clips_coins(db: AsyncSession, child: Child) -> None:
     child.rate, child.cap_lari = 1, 2  # only 2 coins per week
     await db.flush()
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(8))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(8))
     assert session is not None
     gains = [
         (await answer_correctly(db, child, session, i, at(DAY1))).coins_gained
@@ -233,7 +277,7 @@ async def test_weekly_cap_clips_coins(db: AsyncSession, child: Child) -> None:
 
 
 async def test_repeated_client_answer_id_is_idempotent(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(9))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(9))
     assert session is not None
     index, step = quiz_steps(session)[0]
     payload = AnswerIn(
@@ -246,7 +290,7 @@ async def test_repeated_client_answer_id_is_idempotent(db: AsyncSession, child: 
 
 
 async def test_same_step_cannot_be_farmed_with_new_ids(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(10))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(10))
     assert session is not None
     index, _ = quiz_steps(session)[0]
     await answer_correctly(db, child, session, index, at(DAY1))
@@ -255,7 +299,7 @@ async def test_same_step_cannot_be_farmed_with_new_ids(db: AsyncSession, child: 
 
 
 async def test_invalid_answers_are_rejected(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(11))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(11))
     assert session is not None
     with pytest.raises(InvalidStep):  # intro step
         await learning.submit_answer(
@@ -289,9 +333,7 @@ async def test_invalid_answers_are_rejected(db: AsyncSession, child: Child) -> N
 
 async def test_week_boundary_follows_tbilisi_midnight(db: AsyncSession, child: Child) -> None:
     sunday, monday = date(2026, 9, 27), date(2026, 9, 28)
-    session = await learning.build_session(
-        db, child, "colors", at(sunday, 23, 30), random.Random(12)
-    )
+    session = await build_for_topic(db, child, "colors", at(sunday, 23, 30), random.Random(12))
     assert session is not None
     (i1, _), (i2, _), *_ = quiz_steps(session)
 
@@ -308,7 +350,7 @@ async def test_week_boundary_follows_tbilisi_midnight(db: AsyncSession, child: C
 
 
 async def test_finish_marks_study_day_and_is_idempotent(db: AsyncSession, child: Child) -> None:
-    session = await learning.build_session(db, child, "colors", at(DAY1), random.Random(13))
+    session = await build_for_topic(db, child, "colors", at(DAY1), random.Random(13))
     assert session is not None
     first = await learning.finish_session(db, child, session.id, at(DAY1, 12, 5))
     second = await learning.finish_session(db, child, session.id, at(DAY1, 12, 9))

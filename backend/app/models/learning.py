@@ -45,6 +45,8 @@ class WordProgress(Base):
     introduced: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    # Tbilisi day the word was first shown; "one new topic per day" is decided by it.
+    introduced_on: Mapped[date | None] = mapped_column(Date)
     learned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     child: Mapped[Child] = relationship()
@@ -60,9 +62,8 @@ class Session(Base):
     child_id: Mapped[int] = mapped_column(
         ForeignKey("children.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    topic_id: Mapped[int] = mapped_column(
-        ForeignKey("topics.id", ondelete="CASCADE"), nullable=False
-    )
+    # None for a review-only session (every lesson is done).
+    topic_id: Mapped[int | None] = mapped_column(ForeignKey("topics.id", ondelete="CASCADE"))
     # Calendar day in Asia/Tbilisi when the session was started.
     study_date: Mapped[date] = mapped_column(Date, nullable=False)
     steps: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False)
@@ -70,7 +71,7 @@ class Session(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     child: Mapped[Child] = relationship()
-    topic: Mapped[Topic] = relationship()
+    topic: Mapped[Topic | None] = relationship()
     answers: Mapped[list["Answer"]] = relationship(back_populates="session")
 
 

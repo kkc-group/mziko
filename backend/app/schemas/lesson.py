@@ -62,7 +62,8 @@ class AnswerResult(BaseModel):
 
 
 class SessionIn(BaseModel):
-    topic_slug: str
+    # The lesson number to play; None asks for a review-only session (every lesson done).
+    lesson: int | None = None
 
 
 class SessionOut(BaseModel):

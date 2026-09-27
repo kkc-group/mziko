@@ -36,7 +36,7 @@ async def me(db: Db, now: Now, child: CurrentChild) -> MeOut:
 
 @router.post("/sessions", response_model=SessionOut)
 async def start_session(body: SessionIn, db: Db, now: Now, child: CurrentChild) -> SessionOut:
-    session = await learning.build_session(db, child, body.topic_slug, now)
+    session = await learning.build_session(db, child, body.lesson, now)
     if session is None:
         return SessionOut(session_id=None, steps=[])
     return SessionOut(session_id=session.id, steps=[Step.model_validate(s) for s in session.steps])

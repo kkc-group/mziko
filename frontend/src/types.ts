@@ -30,14 +30,18 @@ export interface Step {
   options: WordOut[]
 }
 
-export interface TopicOut {
-  slug: string
+/** One step of the child's path: a topic, or a part of a bigger one. */
+export interface LessonOut {
+  number: number
+  topic_slug: string
   title_ru: string
-  title_ka: string
   icon: string
+  part: number
+  parts: number
   total: number
-  learned: number
-  has_lesson: boolean
+  introduced: number
+  status: 'done' | 'current' | 'locked'
+  playable: boolean
 }
 
 export interface Me {
@@ -50,7 +54,8 @@ export interface Me {
     lari: number
     study_days: string[]
   }
-  topics: TopicOut[]
+  lessons: LessonOut[]
+  review_available: boolean
   stickers: { word: WordOut; learned: boolean }[]
 }
 

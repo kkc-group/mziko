@@ -75,16 +75,52 @@ button:disabled { cursor: default; }
 .day { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface); border: 2px dashed var(--line); color: var(--muted); }
 .day.done { background: var(--sun); border: 2px solid var(--sun-dark); color: #4a3200; }
 .day.today { border-style: solid; border-color: var(--grape); color: var(--ink); }
-.topics { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
-.topic {
-  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 84px; padding: 16px 18px; border-radius: 24px;
-  background: var(--pom); color: #fff; text-align: left; box-shadow: 0 6px 0 var(--pom-dark);
+/* lesson path (replaces .topics / .topic) */
+.path { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.step { position: relative; }
+.step + .step::before { content: ''; position: absolute; left: 34px; top: -16px; height: 18px; border-left: 4px dotted var(--line); }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.part { color: var(--muted); white-space: nowrap; }
+
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn.done .num, .lsn.fold .num, .lsn.review .num { background: var(--mint); color: #fff; font-size: 20px; }
+.lsn.lock { background: transparent; border-style: dashed; }
+.lsn.lock .num { border: 2px dashed var(--line); color: var(--muted); }
+.lsn.lock .ic { filter: grayscale(1); opacity: 0.35; }
+.lsn.lock .t { color: var(--muted); }
+.lock-i { flex: none; width: 24px; height: 24px; color: var(--muted); }
+.lsn.fold { background: var(--mint-soft); border-color: var(--mint-soft); }
+.lsn.fold .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
+.lsn.review { border-color: var(--pom); }
+.more { padding: 2px 0 0 60px; color: var(--muted); font-weight: 800; font-size: 16px; }
+
+.mini-play {
+  flex: none; background: var(--pom); color: #fff; font-weight: 900; font-size: 14px; line-height: 1;
+  padding: 10px 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--pom-dark);
 }
-.topic:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
-.topic:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
-.topic .ic { font-size: 40px; line-height: 1; --s: 40px; display: flex; flex: none; }
-.topic b { display: block; font-size: 24px; font-weight: 900; line-height: 1.1; }
-.topic span span { font-size: 15px; font-weight: 700; opacity: 0.9; }
+.mini-play:disabled { background: var(--muted); box-shadow: 0 3px 0 #4a4466; }
+
+/* current lesson */
+.cur { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.num.now { background: var(--pom); color: #fff; }
+.cur .ic { flex: none; display: flex; --s: 56px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.cur .prog { flex: none; }
+.soon { text-align: center; color: var(--muted); font-weight: 800; font-size: 15px; }
+.play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
+}
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.cur.all { align-items: center; text-align: center; }
+.cur.all b { font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur.all small { color: var(--muted); font-size: 15px; font-weight: 800; margin-top: -8px; }
 .learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }
 .stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
 .stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }

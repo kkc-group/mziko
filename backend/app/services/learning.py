@@ -33,7 +33,8 @@ from app.schemas.lesson import (
     WordOut,
 )
 from app.services import coins as coin_service
-from app.services.errors import InvalidStep, NotFound, SessionFinished
+from app.services import lessons
+from app.services.errors import InvalidStep, LessonLocked, NotFound, SessionFinished
 
 NEW_WORDS_PER_SESSION = 3
 REVIEW_WORDS_PER_SESSION = 4
@@ -88,36 +89,53 @@ def _pick_distractors(
 async def build_session(
     db: AsyncSession,
     child: Child,
-    topic_slug: str,
+    lesson_number: int | None,
     now: datetime,
     rng: random.Random | None = None,
 ) -> Session | None:
-    """Create today's lesson for `topic_slug`, or return None when there is nothing to do.
+    """Create a session for lesson `lesson_number`, or a review-only one for None.
 
-    New words (up to 3, in topic order) are marked introduced here. Review words
-    (up to 4) come from every topic: introduced, not yet learned, and not answered
-    correctly today; the longest-waiting first.
+    The lesson must be playable today (see services.lessons), else LessonLocked.
+    Up to 3 of its words not yet shown are introduced (in order). The quiz then
+    reviews: first the lesson's own words not answered correctly today, then the
+    longest-waiting unlearned words of earlier lessons, 4 in all. Replaying a
+    finished lesson quizzes every word of it plus up to 4 older ones.
+    Returns None when there is nothing at all to do.
     """
     rng = rng or random.Random()
     today = local_date(now)
     topics = await _topics_by_id(db)
-    topic = next((t for t in topics.values() if t.slug == topic_slug), None)
-    if topic is None:
-        raise NotFound(f"topic {topic_slug!r}")
+    progress_by_word = await lessons.load_progress(db, child.id)
+    position = lessons.position(await lessons.load_lessons(db), progress_by_word, today)
 
-    introduced_ids = set(
-        (
-            await db.execute(
-                select(WordProgress.word_id).where(
-                    WordProgress.child_id == child.id, WordProgress.introduced.is_(True)
-                )
-            )
-        ).scalars()
-    )
-    topic_words = await _topic_words(db, topic.id)
-    new_words = [w for w in topic_words if w.id not in introduced_ids][:NEW_WORDS_PER_SESSION]
+    lesson: lessons.Lesson | None = None
+    if lesson_number is not None:
+        state = position.get(lesson_number)
+        if state is None:
+            raise NotFound(f"lesson {lesson_number}")
+        if not state.playable:
+            raise LessonLocked(f"lesson {lesson_number} cannot be played today")
+        lesson = state.lesson
 
-    review_stmt = (
+    def introduced(word: Word) -> bool:
+        p = progress_by_word.get(word.id)
+        return p is not None and p.introduced
+
+    def answered_today(word: Word) -> bool:
+        p = progress_by_word.get(word.id)
+        return p is not None and p.last_correct_date == today
+
+    lesson_words: list[Word] = list(lesson.words) if lesson else []
+    new_words = [w for w in lesson_words if not introduced(w)][:NEW_WORDS_PER_SESSION]
+    if new_words:
+        own_reviews = [w for w in lesson_words if introduced(w) and not answered_today(w)]
+        own_reviews = own_reviews[:REVIEW_WORDS_PER_SESSION]
+        older_limit = REVIEW_WORDS_PER_SESSION - len(own_reviews)
+    else:  # a replay: the whole lesson, plus the usual share of older words
+        own_reviews = lesson_words
+        older_limit = REVIEW_WORDS_PER_SESSION
+
+    older_stmt = (
         select(Word)
         .join(WordProgress, WordProgress.word_id == Word.id)
         .where(
@@ -128,22 +146,27 @@ async def build_session(
                 WordProgress.last_correct_date.is_(None),
                 WordProgress.last_correct_date < today,
             ),
+            Word.id.not_in([w.id for w in lesson_words]),
         )
         .order_by(WordProgress.last_correct_date.asc().nulls_first(), Word.id)
-        .limit(REVIEW_WORDS_PER_SESSION)
+        .limit(older_limit)
     )
-    review_words = list((await db.execute(review_stmt)).scalars())
+    older_reviews = list((await db.execute(older_stmt)).scalars()) if older_limit else []
+    review_words = own_reviews + older_reviews
 
     if not new_words and not review_words:
         return None
 
+    introduced_ids = {w.id for w in lesson_words if introduced(w)}
     for word in new_words:
         progress = await _get_or_create_progress(db, child.id, word.id)
         progress.introduced = True
+        progress.introduced_on = today
+        introduced_ids.add(word.id)
 
     # Distractors come from the same topic as the correct word.
-    pools: dict[int, list[Word]] = {topic.id: topic_words}
-    for word in review_words:
+    pools: dict[int, list[Word]] = {}
+    for word in [*new_words, *review_words]:
         if word.topic_id not in pools:
             pools[word.topic_id] = await _topic_words(db, word.topic_id)
 
@@ -180,7 +203,7 @@ async def build_session(
 
     session = Session(
         child_id=child.id,
-        topic_id=topic.id,
+        topic_id=lesson.topic.id if lesson else None,
         study_date=today,
         steps=[s.model_dump(mode="json") for s in steps],
     )
@@ -225,8 +248,10 @@ async def submit_answer(
 ) -> AnswerResult:
     """Grade one answer and credit coins.
 
-    Coins are granted only for a first-attempt correct answer, once per step.
-    A repeated `client_answer_id` returns the stored verdict without crediting again.
+    Coins are granted only for a first-attempt correct answer, once per step and
+    only the first time the word is answered correctly that day: replaying a
+    lesson earns nothing twice. A repeated `client_answer_id` returns the stored
+    verdict without crediting again.
     """
     session = await _load_session(db, child, session_id)
 
@@ -286,20 +311,20 @@ async def submit_answer(
                 )
             )
         ).scalar_one()
-        if not already_credited:
+        progress = await _get_or_create_progress(db, child.id, word.id)
+        first_today = progress.last_correct_date is None or progress.last_correct_date < today
+        if not already_credited and first_today:
             gained = await coin_service.add_coins(
                 db, child, week, COINS_PER_ANSWER, CoinReason.answer, answer.id
             )
-            progress = await _get_or_create_progress(db, child.id, word.id)
-            if progress.last_correct_date is None or progress.last_correct_date < today:
-                progress.stage = min(LEARNED_STAGE, progress.stage + 1)
-                progress.last_correct_date = today
-                if progress.stage == LEARNED_STAGE and progress.learned_at is None:
-                    progress.learned_at = now
-                    answer.word_learned = True
-                    gained += await coin_service.add_coins(
-                        db, child, week, COINS_PER_LEARNED_WORD, CoinReason.word_learned, answer.id
-                    )
+            progress.stage = min(LEARNED_STAGE, progress.stage + 1)
+            progress.last_correct_date = today
+            if progress.stage == LEARNED_STAGE and progress.learned_at is None:
+                progress.learned_at = now
+                answer.word_learned = True
+                gained += await coin_service.add_coins(
+                    db, child, week, COINS_PER_LEARNED_WORD, CoinReason.word_learned, answer.id
+                )
             answer.coins_gained = gained
             await db.flush()
 

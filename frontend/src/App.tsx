@@ -5,7 +5,7 @@ import { Hills } from './components/Mascot'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
 import { Pair, Unpaired } from './screens/Pair'
-import type { Me, Step, TopicOut } from './types'
+import type { LessonOut, Me, Step } from './types'
 
 type Screen =
   | { kind: 'pair'; code: string }
@@ -69,11 +69,11 @@ export default function App() {
     if (getToken() && !pairCodeFromUrl()) void loadMe()
   }, [loadMe])
 
-  const startLesson = async (topic: TopicOut) => {
+  const startLesson = async (lesson: LessonOut | null) => {
     setBusy(true)
     setNotice(null)
     try {
-      const s = await api.startSession(topic.slug)
+      const s = await api.startSession(lesson ? lesson.number : null)
       if (!s.session_id || s.steps.length === 0) {
         setNotice('На сегодня всё! Завтра новые слова')
         await loadMe()
@@ -87,6 +87,8 @@ export default function App() {
       if (e instanceof ApiError && e.status === 401) {
         setToken(null)
         setScreen({ kind: 'unpaired' })
+      } else if (e instanceof ApiError && e.status === 409) {
+        setNotice('Этот урок откроется завтра')
       } else {
         setNotice('Нет связи. Проверь интернет и попробуй ещё')
       }

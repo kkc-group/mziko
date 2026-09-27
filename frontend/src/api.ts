@@ -62,8 +62,8 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ device_name: deviceName }) },
     ),
   me: () => request<Me>('/api/me'),
-  startSession: (topic_slug: string) =>
-    request<SessionOut>('/api/sessions', { method: 'POST', body: JSON.stringify({ topic_slug }) }),
+  startSession: (lesson: number | null) =>
+    request<SessionOut>('/api/sessions', { method: 'POST', body: JSON.stringify({ lesson }) }),
   answer: (sessionId: string, body: AnswerBody) =>
     request<AnswerResult>(`/api/sessions/${sessionId}/answers`, {
       method: 'POST',

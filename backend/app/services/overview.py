@@ -6,9 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import local_date, week_start
-from app.models import Child, Session, Topic, Word, WordProgress
-from app.schemas.me import ChildOut, MeOut, SettingsOut, StickerOut, TopicOut, WeekOut
-from app.services import coins
+from app.models import Child, Session, Word
+from app.schemas.me import ChildOut, LessonOut, MeOut, SettingsOut, StickerOut, WeekOut
+from app.services import coins, lessons
 from app.services.learning import LEARNED_STAGE, word_out
 
 
@@ -33,46 +33,36 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
         ).scalars()
     )
 
-    topics = list((await db.execute(select(Topic).order_by(Topic.order))).scalars())
-    words = list((await db.execute(select(Word).order_by(Word.topic_id, Word.order))).scalars())
-    progress = {
-        p.word_id: p
-        for p in (
-            await db.execute(select(WordProgress).where(WordProgress.child_id == child.id))
-        ).scalars()
-    }
+    path = await lessons.load_lessons(db)
+    progress = await lessons.load_progress(db, child.id)
+    position = lessons.position(path, progress, today)
 
     def learned(word: Word) -> bool:
         p = progress.get(word.id)
         return p is not None and p.stage >= LEARNED_STAGE
 
-    def introduced(word: Word) -> bool:
-        p = progress.get(word.id)
-        return p is not None and p.introduced
-
-    review_pending = any(
+    review_available = any(
         p.introduced
         and p.stage < LEARNED_STAGE
         and (p.last_correct_date is None or p.last_correct_date < today)
         for p in progress.values()
     )
 
-    topic_slug = {t.id: t.slug for t in topics}
-    topics_out = []
-    for topic in topics:
-        topic_words = [w for w in words if w.topic_id == topic.id]
-        has_new = any(not introduced(w) for w in topic_words)
-        topics_out.append(
-            TopicOut(
-                slug=topic.slug,
-                title_ru=topic.title_ru,
-                title_ka=topic.title_ka,
-                icon=topic.icon,
-                total=len(topic_words),
-                learned=sum(learned(w) for w in topic_words),
-                has_lesson=has_new or review_pending,
-            )
+    lessons_out = [
+        LessonOut(
+            number=s.lesson.number,
+            topic_slug=s.lesson.topic.slug,
+            title_ru=s.lesson.topic.title_ru,
+            icon=s.lesson.topic.icon,
+            part=s.lesson.part,
+            parts=s.lesson.parts,
+            total=len(s.lesson.words),
+            introduced=s.introduced,
+            status=s.status,
+            playable=s.playable,
         )
+        for s in position.lessons
+    ]
 
     return MeOut(
         child=ChildOut(id=child.id, name=child.name),
@@ -84,8 +74,11 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
             lari=coins.lari_for(week.coins, child.rate, child.cap_lari),
             study_days=study_days,
         ),
-        topics=topics_out,
+        lessons=lessons_out,
+        review_available=review_available,
         stickers=[
-            StickerOut(word=word_out(w, topic_slug[w.topic_id]), learned=learned(w)) for w in words
+            StickerOut(word=word_out(w, lesson.topic.slug), learned=learned(w))
+            for lesson in path
+            for w in lesson.words
         ],
     )

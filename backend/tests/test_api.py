@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Child, Parent
 from app.services import pairing
 from tests.conftest import Clock
+from tests.helpers import skip_to
 
 
 async def pair(
@@ -69,15 +70,28 @@ async def test_full_lesson_flow_over_http(
         "lari": 0.0,
         "study_days": [],
     }
-    slugs = [t["slug"] for t in me["topics"]]
-    assert slugs[:5] == ["letters-1", "letters-2", "letters-3", "letters-4", "syllables"]
-    assert len(slugs) == 18
-    colors = next(t for t in me["topics"] if t["slug"] == "colors")
-    assert (colors["total"], colors["learned"], colors["has_lesson"]) == (10, 0, True)
+    lessons = me["lessons"]
+    assert [lsn["number"] for lsn in lessons] == list(range(1, 31))
+    assert [lsn["topic_slug"] for lsn in lessons[:5]] == [
+        "letters-1",
+        "letters-2",
+        "letters-3",
+        "letters-4",
+        "syllables",
+    ]
+    assert (lessons[0]["status"], lessons[0]["playable"]) == ("current", True)
+    assert (lessons[1]["status"], lessons[1]["playable"]) == ("locked", False)
+    colors = next(lsn for lsn in lessons if lsn["topic_slug"] == "colors")
+    assert (colors["total"], colors["introduced"], colors["status"]) == (10, 0, "locked")
+    assert me["review_available"] is False
     assert len(me["stickers"]) == 225
 
-    started = await client.post("/api/sessions", json={"topic_slug": "colors"}, headers=headers)
-    assert started.status_code == 200
+    locked = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
+    assert locked.status_code == 409
+
+    await skip_to(db, child, "colors")
+    started = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
+    assert started.status_code == 200, started.text
     session_id, steps = started.json()["session_id"], started.json()["steps"]
     assert [s["type"] for s in steps] == ["intro"] * 3 + ["listen"] * 3
 
@@ -144,6 +158,8 @@ async def test_full_lesson_flow_over_http(
 
     me = (await client.get("/api/me", headers=headers)).json()
     assert me["week"]["coins"] == 1 and me["week"]["study_days"] == ["2026-09-22"]
+    colors = next(lsn for lsn in me["lessons"] if lsn["topic_slug"] == "colors")
+    assert (colors["introduced"], colors["status"], colors["playable"]) == (3, "current", True)
 
     foreign = await client.post(f"/api/sessions/{uuid.uuid4()}/finish", headers=headers)
     assert foreign.status_code == 404

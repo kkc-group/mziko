@@ -84,4 +84,4 @@ async def test_progress_text_shows_dots(db: AsyncSession, child: Child) -> None:
     assert "🎨 <b>Цвета</b> — 0 из 10" in text
     assert "●○○ წითელი · красный" in text
     assert "○○○ ლურჯი" not in text and "●○○ ლურჯი · синий" in text
-    assert "○○○ ძაღლი · собака" in text
+    assert "○○○ გამარჯობა · привет" in text  # a later topic: untouched
