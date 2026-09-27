@@ -4,12 +4,11 @@ import { Speaker } from './audio'
 import { Hills } from './components/Mascot'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
-import { Pair, Unpaired } from './screens/Pair'
+import { Login } from './screens/Login'
 import type { LessonOut, Me, Step } from './types'
 
 type Screen =
-  | { kind: 'pair'; code: string }
-  | { kind: 'unpaired' }
+  | { kind: 'login'; code: string | null }
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
   | { kind: 'home'; me: Me }
@@ -19,8 +18,9 @@ interface ActiveLesson {
   steps: Step[]
 }
 
-function pairCodeFromUrl(): string | null {
-  const m = location.pathname.match(/^\/pair\/([^/]+)\/?$/)
+/** `/c/LOMI-7241` from the bot: the login code, the screen submits it itself. */
+function loginCodeFromUrl(): string | null {
+  const m = location.pathname.match(/^\/c\/([^/]+)\/?$/)
   return m ? decodeURIComponent(m[1]) : null
 }
 
@@ -34,10 +34,10 @@ function adoptTokenFromUrl(): void {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>(() => {
-    const code = pairCodeFromUrl()
-    if (code) return { kind: 'pair', code }
+    const loginCode = loginCodeFromUrl()
+    if (loginCode) return { kind: 'login', code: loginCode }
     adoptTokenFromUrl()
-    return getToken() ? { kind: 'loading' } : { kind: 'unpaired' }
+    return getToken() ? { kind: 'loading' } : { kind: 'login', code: null }
   })
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
   const [busy, setBusy] = useState(false)
@@ -50,7 +50,7 @@ export default function App() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         setToken(null)
-        setScreen({ kind: 'unpaired' })
+        setScreen({ kind: 'login', code: null })
       } else {
         setScreen({ kind: 'error', message: 'Не удалось загрузить. Проверь интернет и попробуй ещё.' })
       }
@@ -62,11 +62,11 @@ export default function App() {
     void loadMe()
   }, [loadMe])
 
-  // Initial load for an already paired device (the "loading" initial state).
+  // Initial load for an already logged-in device (the "loading" initial state).
   // Syncing with the server is the one legitimate reason to set state from an effect.
   useEffect(() => {
     // oxlint-disable-next-line react/set-state-in-effect
-    if (getToken() && !pairCodeFromUrl()) void loadMe()
+    if (getToken() && !loginCodeFromUrl()) void loadMe()
   }, [loadMe])
 
   const startLesson = async (lesson: LessonOut | null) => {
@@ -86,7 +86,7 @@ export default function App() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         setToken(null)
-        setScreen({ kind: 'unpaired' })
+        setScreen({ kind: 'login', code: null })
       } else if (e instanceof ApiError && e.status === 409) {
         setNotice('Этот урок откроется завтра')
       } else {
@@ -105,8 +105,7 @@ export default function App() {
   return (
     <>
       <Hills />
-      {screen.kind === 'pair' && <Pair code={screen.code} onPaired={reload} />}
-      {screen.kind === 'unpaired' && <Unpaired />}
+      {screen.kind === 'login' && <Login code={screen.code} onLoggedIn={reload} />}
       {screen.kind === 'loading' && <main className="wrap center"><p className="muted">Загружаю…</p></main>}
       {screen.kind === 'error' && (
         <main className="wrap center">

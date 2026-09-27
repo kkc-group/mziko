@@ -106,9 +106,11 @@ class ProgressOut(BaseModel):
     topics: list[TopicProgressOut]
 
 
-class PairCodeOut(BaseModel):
+class ChildCodeOut(BaseModel):
+    word: str
+    pin: str
+    code: str  # e.g. "LOMI-7241"
     url: str
-    expires_at: datetime
 
 
 class DeviceOut(BaseModel):

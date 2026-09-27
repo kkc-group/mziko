@@ -40,6 +40,11 @@ class Child(Base):
     show_hint: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
     )
+    # Permanent login code "WORD-1234": the word is unique and never changes,
+    # the parent can re-issue the pin (see services.login_codes).
+    code_word: Mapped[str | None] = mapped_column(String(4), unique=True)
+    code_pin: Mapped[str | None] = mapped_column(String(4))
+    code_rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[CreatedAt]
 
     parents: Mapped[list[Parent]] = relationship(
@@ -49,7 +54,7 @@ class Child(Base):
 
 
 class Device(Base):
-    """A paired browser (iPad). Only the SHA-256 of the bearer token is stored."""
+    """A logged-in browser (iPad). Only the SHA-256 of the bearer token is stored."""
 
     __tablename__ = "devices"
 
@@ -66,19 +71,14 @@ class Device(Base):
     child: Mapped[Child] = relationship(back_populates="devices")
 
 
-class PairCode(Base):
-    """One-time pairing link issued by a parent in the bot; lives 15 minutes."""
+class LoginLock(Base):
+    """Failed login attempts from one network address; three in a row lock it for an hour."""
 
-    __tablename__ = "pair_codes"
+    __tablename__ = "login_locks"
 
-    id: Mapped[IntPK]
-    code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    child_id: Mapped[int] = mapped_column(
-        ForeignKey("children.id", ondelete="CASCADE"), nullable=False
-    )
-    parent_id: Mapped[int] = mapped_column(
-        ForeignKey("parents.id", ondelete="CASCADE"), nullable=False
-    )
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[CreatedAt]
+    ip: Mapped[str] = mapped_column(String(45), primary_key=True)
+    failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    # The word typed on the last failed attempt: re-issuing that child's pin lifts the lock.
+    last_word: Mapped[str | None] = mapped_column(String(4))
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

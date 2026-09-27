@@ -4,6 +4,7 @@ from decimal import Decimal
 from html import escape as esc
 
 from app.schemas.parent import (
+    ChildCodeOut,
     ChildInfo,
     DeviceOut,
     TopicProgressOut,
@@ -31,7 +32,7 @@ def start_text(children: list[ChildInfo]) -> str:
         "/report — итоги недели\n"
         "/progress — прогресс по словам\n"
         "/settings — курс, лимит, подсказка\n"
-        "/pair — привязать iPad ребёнка\n"
+        "/code — код для входа ребёнка\n"
         "/devices — привязанные устройства\n"
         "/addchild Имя — добавить ребёнка"
     )
@@ -86,16 +87,19 @@ def settings_text(child: ChildInfo) -> str:
     )
 
 
-def pair_text(child: ChildInfo, url: str) -> str:
+def code_text(child: ChildInfo, code: ChildCodeOut) -> str:
     return (
-        f"Откройте эту ссылку на устройстве {esc(child.name)} в течение 15 минут:\n{esc(url)}\n\n"
-        "Потом добавьте страницу на экран «Домой»."
+        f"Код для входа {esc(child.name)}: <b>{esc(code.code)}</b>\n"
+        f"Ссылка для входа: {esc(code.url)}\n\n"
+        "Ребёнок вводит код на экране входа на любом устройстве, или откройте ссылку там. "
+        "Три ошибки подряд закрывают вход на час; «Новые цифры» открывают его сразу "
+        "и меняют цифры (слово остаётся)."
     )
 
 
 def devices_text(child: ChildInfo, devices: list[DeviceOut]) -> str:
     if not devices:
-        return f"У {esc(child.name)} нет привязанных устройств. Привязать: /pair"
+        return f"У {esc(child.name)} нет устройств. Код для входа: /code"
     rows = [
         f"• {esc(d.name or 'устройство')} — с {d.created_at:%d.%m.%Y}"
         + (f", был {d.last_seen_at:%d.%m %H:%M}" if d.last_seen_at else "")

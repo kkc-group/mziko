@@ -1,13 +1,12 @@
-"""End-to-end HTTP tests: pairing, auth, lesson flow. Fixtures client/clock/parent: conftest."""
+"""End-to-end HTTP tests: login, auth, lesson flow. Fixtures client/clock/parent: conftest."""
 
 import uuid
-from datetime import timedelta
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Child, Parent
-from app.services import pairing
+from app.services import login_codes, pairing
 from tests.conftest import Clock
 from tests.helpers import skip_to
 
@@ -15,29 +14,13 @@ from tests.helpers import skip_to
 async def pair(
     db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
 ) -> dict[str, str]:
-    code = await pairing.create_pair_code(db, parent, child, clock.moment)
-    response = await client.post(f"/api/pair/{code.code}", json={"device_name": "iPad"})
+    """Log a device in with the child's code; returns the auth header."""
+    await login_codes.ensure_code(db, child, clock.moment)
+    body = {"word": child.code_word, "pin": child.code_pin, "device_name": "iPad"}
+    response = await client.post("/api/login", json=body)
     assert response.status_code == 200, response.text
     token: str = response.json()["device_token"]
     return {"Authorization": f"Bearer {token}"}
-
-
-async def test_pair_code_works_once_and_expires(
-    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
-) -> None:
-    code = await pairing.create_pair_code(db, parent, child, clock.moment)
-    first = await client.post(f"/api/pair/{code.code}")
-    assert first.status_code == 200
-    assert first.json()["child"] == {"id": child.id, "name": "Сандро"}
-    assert len(first.json()["device_token"]) > 30
-
-    second = await client.post(f"/api/pair/{code.code}")
-    assert second.status_code == 404
-
-    stale = await pairing.create_pair_code(db, parent, child, clock.moment)
-    clock.moment += timedelta(minutes=16)
-    assert (await client.post(f"/api/pair/{stale.code}")).status_code == 404
-    assert (await client.post("/api/pair/garbage")).status_code == 404
 
 
 async def test_requests_need_a_valid_device_token(

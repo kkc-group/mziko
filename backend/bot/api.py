@@ -12,10 +12,10 @@ import httpx
 from pydantic import TypeAdapter
 
 from app.schemas.parent import (
+    ChildCodeOut,
     ChildInfo,
     DeviceOut,
     DueReportOut,
-    PairCodeOut,
     PayOut,
     ProgressOut,
     WeekReportOut,
@@ -93,11 +93,14 @@ class ParentApi:
             await self._call("PATCH", f"/children/{child_id}/settings", json=body)
         )
 
-    # --- pairing --------------------------------------------------------------
+    # --- login code and devices ----------------------------------------------
 
-    async def pair_code(self, child_id: int) -> PairCodeOut:
-        return PairCodeOut.model_validate(
-            await self._call("POST", f"/children/{child_id}/pair-codes")
+    async def child_code(self, child_id: int) -> ChildCodeOut:
+        return ChildCodeOut.model_validate(await self._call("GET", f"/children/{child_id}/code"))
+
+    async def rotate_code(self, child_id: int) -> ChildCodeOut:
+        return ChildCodeOut.model_validate(
+            await self._call("POST", f"/children/{child_id}/code/rotate")
         )
 
     async def devices(self, child_id: int) -> list[DeviceOut]:

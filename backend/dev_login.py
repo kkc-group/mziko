@@ -1,7 +1,7 @@
 """Dev helper for testing without Telegram.
 
-    uv run python dev_pair.py            # one-time pairing code, as the bot would give
-    uv run python dev_pair.py token      # shared device token that works in any browser
+    uv run python dev_login.py           # the child's login code and link, as the bot would show
+    uv run python dev_login.py token     # shared device token that works in any browser
 
 Both create a dev parent (telegram id 1) and a child "Сандро" on first use.
 """
@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import clock
 from app.core.db import get_sessionmaker
 from app.models import Child, Device, Parent
-from app.services import pairing, parents
+from app.services import login_codes, pairing, parents
 
 SHARED_TOKEN = "dev-shared-token"
 WEB_URL = "http://localhost"
@@ -34,7 +34,7 @@ async def dev_child(db: AsyncSession) -> tuple[Parent, Child]:
 
 async def main(mode: str) -> None:
     async with get_sessionmaker()() as db:
-        parent, child = await dev_child(db)
+        _, child = await dev_child(db)
         if mode == "token":
             token_hash = pairing.hash_token(SHARED_TOKEN)
             device = (
@@ -46,8 +46,9 @@ async def main(mode: str) -> None:
                 device.revoked_at = None
             print(f"{WEB_URL}/?token={SHARED_TOKEN}")
         else:
-            code = await pairing.create_pair_code(db, parent, child, clock.now())
-            print(f"{WEB_URL}/pair/{code.code}")
+            await login_codes.ensure_code(db, child, clock.now())
+            code = f"{child.code_word}-{child.code_pin}"
+            print(f"{code}\n{WEB_URL}/c/{code}")
         await db.commit()
 
 

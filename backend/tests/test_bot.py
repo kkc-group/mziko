@@ -80,6 +80,14 @@ async def test_client_round_trip_children_report_and_payout(
     progress = await api.progress(child.id)
     assert "●○○ წითელი · красный" in texts.progress_text(progress.child, progress.topics)
 
+    code = await api.child_code(child.id)
+    again = await api.child_code(child.id)
+    assert (again.word, again.pin) == (code.word, code.pin)
+    rotated = await api.rotate_code(child.id)
+    assert rotated.word == code.word
+    assert code.code in texts.code_text(children[0], code)
+    assert code.url in texts.code_text(children[0], code)
+
 
 async def test_client_maps_api_errors(
     db: AsyncSession, parent: Parent, child: Child, clock: Clock

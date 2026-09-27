@@ -173,31 +173,59 @@ async def test_settings_are_validated_and_saved(
     ).status_code == 404
 
 
-async def test_pair_code_is_issued_and_redeemable(
-    client: AsyncClient, parent: Parent, child: Child
+async def test_child_code_is_issued_once_and_rotated(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
 ) -> None:
-    r = await client.post(
-        f"/api/parent/children/{child.id}/pair-codes", headers=bot_headers(parent)
-    )
-    assert r.status_code == 200, r.text
-    url = r.json()["url"]
-    assert url.startswith(get_settings().public_url)
-    assert "/pair/" in url
-    code = url.rsplit("/", 1)[-1]
+    url = f"/api/parent/children/{child.id}/code"
+    first = await client.get(url, headers=bot_headers(parent))
+    assert first.status_code == 200, first.text
+    body = first.json()
+    assert body["code"] == f"{body['word']}-{body['pin']}"
+    assert body["url"].startswith(get_settings().public_url)
+    assert "/c/" in body["url"]
 
-    redeemed = await client.post(f"/api/pair/{code}")
-    assert redeemed.status_code == 200, redeemed.text
-    assert redeemed.json()["child"]["id"] == child.id
+    again = await client.get(url, headers=bot_headers(parent))
+    assert again.json()["word"] == body["word"]
+    assert again.json()["pin"] == body["pin"]
+
+    login = await client.post("/api/login", json={"word": body["word"], "pin": body["pin"]})
+    assert login.status_code == 200, login.text
+    assert login.json()["child"]["id"] == child.id
+
+    old_pin = body["pin"]
+    rotated = await client.post(f"{url}/rotate", headers=bot_headers(parent))
+    assert rotated.status_code == 200, rotated.text
+    assert rotated.json()["word"] == body["word"]
+    new_pin = rotated.json()["pin"]
+    if new_pin == old_pin:  # 1-in-10000 collision: rotate once more
+        rotated = await client.post(f"{url}/rotate", headers=bot_headers(parent))
+        new_pin = rotated.json()["pin"]
+
+    assert (
+        await client.post("/api/login", json={"word": body["word"], "pin": old_pin})
+    ).status_code == 401
+    new_login = await client.post("/api/login", json={"word": body["word"], "pin": new_pin})
+    assert new_login.status_code == 200
+    assert new_login.json()["child"]["id"] == child.id
+
+    stranger = Parent(telegram_id=555_500 + child.id)
+    db.add(stranger)
+    await db.flush()
+    assert (await client.get(url, headers=bot_headers(stranger))).status_code == 404
+    assert (await client.post(f"{url}/rotate", headers=bot_headers(stranger))).status_code == 404
 
 
 async def test_devices_list_and_delete(client: AsyncClient, parent: Parent, child: Child) -> None:
-    pair_codes = f"/api/parent/children/{child.id}/pair-codes"
     devices_url = f"/api/parent/children/{child.id}/devices"
 
-    code_resp = await client.post(pair_codes, headers=bot_headers(parent))
-    code = code_resp.json()["url"].rsplit("/", 1)[-1]
-    await client.post(f"/api/pair/{code}")
+    async def log_in(child_id: int) -> None:
+        code = (
+            await client.get(f"/api/parent/children/{child_id}/code", headers=bot_headers(parent))
+        ).json()
+        logged = await client.post("/api/login", json={"word": code["word"], "pin": code["pin"]})
+        assert logged.status_code == 200, logged.text
 
+    await log_in(child.id)
     listed = await client.get(devices_url, headers=bot_headers(parent))
     assert listed.status_code == 200, listed.text
     (device,) = listed.json()
@@ -214,16 +242,7 @@ async def test_devices_list_and_delete(client: AsyncClient, parent: Parent, chil
             "/api/parent/children", json={"name": "Другой"}, headers=bot_headers(parent)
         )
     ).json()
-    other_code = (
-        (
-            await client.post(
-                f"/api/parent/children/{other_child['id']}/pair-codes", headers=bot_headers(parent)
-            )
-        )
-        .json()["url"]
-        .rsplit("/", 1)[-1]
-    )
-    await client.post(f"/api/pair/{other_code}")
+    await log_in(other_child["id"])
     (other_device,) = (
         await client.get(
             f"/api/parent/children/{other_child['id']}/devices", headers=bot_headers(parent)

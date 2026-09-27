@@ -57,6 +57,14 @@ def settings_kb(child: ChildInfo) -> InlineKeyboardMarkup:
     )
 
 
+def code_kb(child: ChildInfo) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Новые цифры", callback_data=f"code:rotate:{child.id}")]
+        ]
+    )
+
+
 def children_kb(children: list[ChildInfo], action: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

@@ -79,3 +79,15 @@ export interface SessionSummary {
   week_coins: number
   week_lari: number
 }
+
+export interface LoginOut {
+  device_token: string
+  child: { id: number; name: string }
+}
+
+/** Lock state of this device's address (three misses in a row lock login for an hour). */
+export interface LockStatus {
+  locked_until: string | null
+  word: string | null
+  pin_rotated: boolean
+}

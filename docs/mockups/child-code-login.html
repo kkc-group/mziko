@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Вход по коду ребёнка</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
+.mascot { flex: none; }
+.mascot.bounce { animation: bounce 0.6s ease; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-16px) rotate(-6deg); } 70% { transform: translateY(0) rotate(4deg); } }
+.play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
+}
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; }
+.big-num { font-size: 56px; font-weight: 900; color: var(--sun-dark); }
+.dim { opacity: 0.35; pointer-events: none; }
+.bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+
+/* ---------- proposed: code login (replaces Pair / Unpaired) ----------
+   Built only from the tokens above. The screen owns its own keypad: no native keyboard,
+   so no autocorrect, no lowercase, no Cyrillic layout by accident. */
+.login {
+  position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column;
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+}
+.lg { flex: 1; max-width: 540px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.lg-head { display: flex; align-items: center; gap: 12px; }
+.lg-head h1 { margin: 0; font-size: 28px; font-weight: 900; line-height: 1.1; }
+.lg-head p { margin: 4px 0 0; color: var(--muted); font-weight: 700; font-size: 16px; line-height: 1.25; }
+.lg-head p b { color: var(--ink); }
+
+.code { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+.grp { flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
+.cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.grp small { text-align: center; font-size: 13px; font-weight: 800; color: var(--muted); line-height: 1; }
+.grp.on small { color: var(--word-color); }
+.dash { flex: none; width: 14px; height: 58px; display: grid; place-items: center; font-size: 30px; font-weight: 900; color: var(--muted); }
+.cell {
+  position: relative; height: 58px; border-radius: 14px; background: var(--surface); border: 3px solid var(--line);
+  box-shadow: 0 4px 0 var(--line); display: grid; place-items: center; font-size: 28px; font-weight: 900; line-height: 1;
+}
+.cell.cur { border-color: var(--word-color); box-shadow: 0 4px 0 var(--word-color); }
+.cell.cur::after { content: ''; width: 3px; height: 28px; border-radius: 2px; background: var(--word-color); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.code.ro .cell { box-shadow: none; border-style: dashed; }
+.code.shake { animation: shake 0.35s; }
+
+.msg { min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+.msg b { font-size: 20px; font-weight: 900; line-height: 1.15; color: var(--pom); }
+.msg span { font-weight: 800; font-size: 16px; color: var(--muted); line-height: 1.25; }
+.msg.info b { color: var(--mint); }
+.pips { display: flex; gap: 6px; }
+.pips i { width: 16px; height: 16px; border-radius: 50%; background: var(--sun); border: 2px solid var(--sun-dark); }
+.pips i.gone { background: transparent; border: 2px dashed var(--line); }
+
+.spacer { flex: 1; min-height: 0; }
+.keys { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.key {
+  height: 52px; border-radius: 14px; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+  display: grid; place-items: center; font-size: 22px; font-weight: 900; color: var(--ink); line-height: 1;
+}
+.key svg { width: 28px; height: 28px; color: var(--muted); }
+.key.w2 { grid-column: span 2; }
+.key.sw { font-size: 17px; color: var(--muted); }
+.keys.num { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.keys.num .key { height: 60px; border-radius: 18px; font-size: 30px; }
+.keys.num .key.sw { font-size: 18px; }
+
+.play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+.play.busy { pointer-events: none; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* centered screens: link check, lock, success (same frame as today's .wrap.center) */
+.mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding-bottom: 110px; position: relative; z-index: 1; }
+.mid h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1.15; }
+.mid p { margin: 0; color: var(--muted); font-weight: 700; font-size: 17px; line-height: 1.3; max-width: 320px; }
+.mid .code { max-width: 330px; }
+.mid .play { max-width: 360px; }
+.bigspin { width: 48px; height: 48px; border-radius: 50%; border: 6px solid var(--line); border-top-color: var(--word-color); animation: rot 0.9s linear infinite; }
+.lock-card { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 18px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.lock-card .big-num { line-height: 1; font-variant-numeric: tabular-nums; }
+.lock-card .prog { flex: none; width: 100%; }
+.lock-card .prog i { background: var(--sun); }
+.lock-card small { color: var(--muted); font-weight: 800; font-size: 15px; }
+.tip { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 360px; padding: 12px 14px; border-radius: 18px; border: 2px dashed var(--line); font-weight: 800; font-size: 16px; line-height: 1.25; text-align: center; }
+.hi .ka { display: block; font-size: 28px; color: var(--word-color); }
+.hi h1 { font-size: 34px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 340px; }
+
+/* short screens (iPhone SE 375×667): in the product this is @media (max-height: 700px) */
+.short .lg { gap: 10px; }
+.short .lg-head h1 { font-size: 24px; }
+.short .lg-head p { font-size: 15px; }
+.short .msg { min-height: 40px; }
+.short .key { height: 46px; }
+.short .keys.num .key { height: 52px; }
+.short .mid { gap: 10px; padding-bottom: 90px; }
+.short .mid h1 { font-size: 26px; }
+.short .hi h1 { font-size: 30px; }
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(4, 328px); gap: 20px; justify-content: center; margin-top: 18px; }
+.darkrow { display: grid; grid-template-columns: repeat(5, 246px); gap: 20px; justify-content: center; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 80px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .login, .dev .hills { position: absolute; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; transform-origin: 0 0; }
+.phone.se { width: 395px; height: 687px; border-radius: 28px; --safe-top: 20px; --safe-bottom: 0px; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); }
+.fw.se { height: 550px; }
+.fw.sm { width: 246px; height: 519px; }
+.fw.sm .phone { transform: scale(0.6); }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; }
+.se .sbar { height: 20px; font-size: 12px; padding: 0 12px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+@media (max-width: 1420px) {
+  .cols { grid-template-columns: repeat(2, 328px); }
+  .darkrow { grid-template-columns: repeat(2, 246px); }
+}
+@media (max-width: 720px) {
+  .cols { grid-template-columns: 328px; }
+  .darkrow { grid-template-columns: 246px; }
+}
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Вход по коду ребёнка</h1>
+  <p class="lead">Заменяет Pair и Unpaired из Pair.tsx. Код вида <code>LOMI-7241</code>: четыре латинские буквы, тире, четыре цифры. Экран не вызывает системную клавиатуру — у него своя: сначала буквы по алфавиту, после четвёртой буквы она сама меняется на крупные цифры. Токены и классы <code>.play</code>, <code>.prog</code>, <code>.big-num</code>, <code>.bad</code>, <code>.dim</code>, <code>.hills</code> взяты дословно из styles.css; новые классы (<code>.login</code>, <code>.code</code>, <code>.cell</code>, <code>.keys</code>, <code>.key</code>, <code>.msg</code>, <code>.lock-card</code>) собраны только из них. Рамка 390×844 в масштабе 0,8; iPhone SE — 375×667.</p>
+
+  <h2>Ввод кода</h2>
+  <p class="lead">Буквы и цифры — две отдельные группы с подписями «буквы» и «цифры»; включённая группа подписана цветом. Пока не набраны все восемь знаков, «Войти» серая. Клавиша «ABC» на цифровой панели возвращает к буквам; стирание с первой цифры тоже возвращает к буквам.</p>
+  <div class="cols" id="c1"></div>
+
+  <h2>Проверка и ошибки</h2>
+  <p class="lead">При ошибке код не стирается: чаще всего ошибка в одной цифре, и переписывать весь код заново обидно. Клетки краснеют и трясутся, «Войти» серая, пока код не изменят, — чтобы тот же неверный код нельзя было отправить второй раз и потратить попытку зря. Попытки — жёлтые кружки, как монетки: сколько осталось, а не сколько потрачено.</p>
+  <div class="cols" id="c2"></div>
+
+  <h2>Закрыт на час</h2>
+  <p class="lead">Экран без клавиатуры: вводить всё равно нечего. Таймер считает по времени сервера, перезагрузка страницы его не обнуляет. Кнопка «Попробовать снова» появляется только в двух случаях — час прошёл или родитель открыл код в Telegram.</p>
+  <div class="cols" id="c3"></div>
+
+  <h2>Успех и вход по ссылке</h2>
+  <p class="lead">«Привет, Лука!» держится ≈1,5 с и сам уходит на главный экран. Ссылка <code>/c/LOMI-7241</code> формы не показывает: код виден только для сверки, в пунктирных клетках, без курсора.</p>
+  <div class="cols" id="c4"></div>
+
+  <h2>Узкий и низкий экран · iPhone SE 375×667 · длинное имя</h2>
+  <p class="lead">Нет «чёлки» и полоски «Домой»: сверху 20 px, снизу 0. При нехватке высоты первым уменьшается Мзико, потом заголовок и высота клавиш; кнопка «Войти» и клетки кода не уменьшаются никогда. Имя длиннее двух строк обрезается многоточием (в базе имя до 100 знаков, родитель пишет его в боте как угодно).</p>
+  <div class="cols" id="c5"></div>
+
+  <h2>Тёмная тема</h2>
+  <p class="lead"><code>data-theme="dark"</code> на рамке. Масштаб 0,6. Курсор и подпись включённой группы — <code>--word-color</code> (жёлтый на тёмном).</p>
+  <div class="darkrow" id="dark"></div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Своя клавиатура вместо системной.</b> Системная на iPhone открывает кириллицу, строчные и автоисправление, закрывает половину экрана и прыгает при смене поля. Своя — всегда заглавные латинские буквы и крупные цифры, и после четвёртой буквы переключается сама. Цена — нельзя вставить скопированный код; для этого есть ссылка.</li>
+    <li><b>Буквы по алфавиту, а не QWERTY.</b> Ребёнок ищет букву по порядку, родитель найдёт её в любом порядке. 26 букв в семь столбцов — четыре ряда; стирание занимает две клетки в последнем ряду.</li>
+    <li><b>Одно сообщение на неверное слово и на неверные цифры.</b> «Не тот код» не говорит, существует ли слово LOMI, — иначе по экрану можно перебирать имена кодов.</li>
+    <li><b>Что уступает при нехватке места.</b> Сверху вниз: Мзико (72 → 48 px) → размер заголовка → высота клавиш (52 → 46, 60 → 52). Клетки кода, строка сообщения (её высота зарезервирована всегда, чтобы клавиатура не прыгала) и кнопка «Войти» не уменьшаются.</li>
+    <li><b>Родитель открыл код — слово остаётся набранным.</b> После «Попробовать снова» в клетках уже стоит LOMI, курсор на первой цифре, подсказка сменяется на «Цифры теперь новые — посмотри в Telegram».</li>
+  </ul>
+</main>
+
+<script>
+const MASCOT = (s, bounce) => `<svg class="mascot${bounce ? ' bounce' : ''}" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+const HILLS = '<svg class="hills" viewBox="0 0 540 140" preserveAspectRatio="none" aria-hidden="true"><path d="M0 90 Q120 20 260 80 T540 60 V140 H0Z" fill="var(--hill1)"/><path d="M0 120 Q160 70 320 110 T540 100 V140 H0Z" fill="var(--hill2)"/></svg>';
+const DEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M11.5 9.5l5 5M16.5 9.5l-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+/* ---- pieces ---- */
+// v: typed characters without the dash, e.g. 'LOM' or 'LOMI72'
+function code(v, { cur = true, bad = false, ro = false } = {}) {
+  const ch = [...v];
+  const at = cur && !ro && ch.length < 8 ? ch.length : -1;
+  const cell = i => `<div class="cell${i === at ? ' cur' : ''}${bad && i >= 4 ? ' bad' : ''}">${ch[i] || ''}</div>`;
+  const onLet = at >= 0 && at < 4, onNum = at >= 4 || (!ro && ch.length >= 4);
+  return `<div class="code${ro ? ' ro' : ''}${bad ? ' shake' : ''}" aria-label="Код">
+    <div class="grp${onLet ? ' on' : ''}"><div class="cells">${[0, 1, 2, 3].map(cell).join('')}</div><small>буквы</small></div>
+    <div class="dash">–</div>
+    <div class="grp${onNum ? ' on' : ''}"><div class="cells">${[4, 5, 6, 7].map(cell).join('')}</div><small>цифры</small></div>
+  </div>`;
+}
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const letKeys = dim => `<div class="keys${dim ? ' dim' : ''}" aria-label="Буквы">${LETTERS.map(l => `<button type="button" class="key">${l}</button>`).join('')}<button type="button" class="key w2" aria-label="Стереть">${DEL}</button></div>`;
+const numKeys = dim => `<div class="keys num${dim ? ' dim' : ''}" aria-label="Цифры">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button type="button" class="key">${n}</button>`).join('')}<button type="button" class="key sw" aria-label="К буквам">ABC</button><button type="button" class="key">0</button><button type="button" class="key" aria-label="Стереть">${DEL}</button></div>`;
+
+const pips = left => `<div class="pips" aria-hidden="true">${[0, 1, 2].map(i => `<i${i < left ? '' : ' class="gone"'}></i>`).join('')}</div>`;
+const MSG = {
+  none: '',
+  err2: `<b>Не тот код</b><span>Проверь буквы и цифры. Ещё 2 попытки</span>${pips(2)}`,
+  err1: `<b>Не тот код</b><span>Последняя попытка — потом код закроется на час</span>${pips(1)}`,
+  offline: '<b style="color:var(--muted)">Нет связи</b><span>Код не проверен, попытка не потрачена</span>',
+  reopened: '<b>Код открыт!</b><span>Цифры теперь новые — посмотри в Telegram</span>',
+};
+
+const HINT = 'Код есть у мамы или папы в&nbsp;<b>Telegram</b>';
+function form({ v = '', pad = 'let', msg = 'none', btn = 'off', dim = false, bad = false, hint = HINT, msgCls = '', short = false }) {
+  const b = btn === 'on' ? '<button type="button" class="play">Войти</button>'
+    : btn === 'busy' ? '<button type="button" class="play busy" aria-busy="true"><span class="spin"></span>Проверяем…</button>'
+    : '<button type="button" class="play" disabled>Войти</button>';
+  return `<div class="login"><div class="lg">
+    <div class="lg-head">${MASCOT(short ? 48 : 72)}<div><h1>Введи код</h1><p>${hint}</p></div></div>
+    ${code(v, { bad, cur: !dim && !bad })}
+    <div class="msg${msgCls}" role="status" aria-live="polite">${MSG[msg]}</div>
+    <div class="spacer"></div>
+    ${pad === 'let' ? letKeys(dim) : numKeys(dim)}
+    ${b}
+  </div></div>`;
+}
+
+const mid = inner => `${HILLS}<div class="login"><div class="mid">${inner}</div></div>`;
+
+function locked({ left = '59:12', pct = 98, state = 'wait', short = false }) {
+  const head = state === 'wait'
+    ? `${MASCOT(short ? 64 : 96)}<h1>Код закрыт на&nbsp;час</h1><p>Много ошибок подряд — так бывает. Немного отдохнём!</p>`
+    : state === 'time'
+      ? `${MASCOT(short ? 64 : 96, true)}<h1>Час прошёл!</h1><p>Можно попробовать ещё раз</p>`
+      : `${MASCOT(short ? 64 : 96, true)}<h1>Код открыт!</h1><p>Мама или папа открыли его в Telegram</p>`;
+  const card = state === 'wait'
+    ? `<div class="lock-card" role="timer" aria-label="До открытия ${left}"><small>Откроется через</small><span class="big-num">${left}</span><div class="prog"><i style="width:${pct}%"></i></div></div>
+       <div class="tip"><span>Попроси маму или папу открыть код в&nbsp;Telegram</span></div>`
+    : '<button type="button" class="play">Попробовать снова</button>';
+  return mid(head + card);
+}
+
+const hello = (name, short) => mid(`${MASCOT(short ? 96 : 120, true)}<div class="hi"><span class="ka">გამარჯობა!</span><h1>Привет, ${name}!</h1></div><p>Открываем уроки…</p>`);
+
+const LINK = {
+  check: mid(`${MASCOT(96)}<h1>Проверяем код…</h1>${code('LOMI7241', { ro: true })}<div class="bigspin" role="progressbar" aria-label="Проверяем"></div>`),
+  bad: mid(`${MASCOT(96)}<h1>Ссылка не&nbsp;сработала</h1><p>Ничего страшного — код можно ввести самому</p>${code('LOMI7241', { ro: true })}<button type="button" class="play">Ввести код</button>`),
+  offline: mid(`${MASCOT(96)}<h1>Нет связи</h1><p>Проверь интернет — и попробуем ещё раз</p><button type="button" class="play">Повторить</button>`),
+};
+
+/* ---- frames ---- */
+function phone(theme, body, { sm = false, se = false } = {}) {
+  const chrome = se ? '' : '<div class="island"></div>';
+  const bar = se ? '' : '<div class="hbar"></div>';
+  return `<div class="fw${sm ? ' sm' : ''}${se ? ' se' : ''}"><div class="dev phone${se ? ' se short' : ''}" data-theme="${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div>${chrome}${body}${bar}</div></div>`;
+}
+const fig = (t, sub, frame) => `<figure><figcaption>${t}${sub ? `<span>${sub}</span>` : ''}</figcaption>${frame}</figure>`;
+const put = (id, list, opt) => { document.getElementById(id).innerHTML = list.map(([t, s, b, o]) => fig(t, s, phone(opt?.theme || 'light', b, { ...opt, ...o }))).join(''); };
+
+put('c1', [
+  ['1 · Пусто', 'курсор в первой клетке букв, клавиатура с буквами, «Войти» серая', form({})],
+  ['2 · Две буквы', 'L, O набраны; курсор на третьей', form({ v: 'LO' })],
+  ['3 · Буквы готовы — цифры', 'после четвёртой буквы панель сама сменилась на цифры; набрано 7, 2', form({ v: 'LOMI72', pad: 'num' })],
+  ['4 · Код полный', 'LOMI-7241: курсора нет, «Войти» активна', form({ v: 'LOMI7241', pad: 'num', btn: 'on' })],
+]);
+
+put('c2', [
+  ['5 · Проверяем', 'нажали «Войти»: клавиши приглушены и не отвечают, на кнопке крутилка', form({ v: 'LOMI7241', pad: 'num', btn: 'busy', dim: true })],
+  ['6 · Неверно, осталось 2', 'цифры красные и трясутся, код не стёрт; «Войти» серая, пока код не изменят', form({ v: 'LOMI7214', pad: 'num', msg: 'err2', bad: true })],
+  ['7 · Неверно, последняя попытка', 'честно сказано, что будет дальше; один жёлтый кружок', form({ v: 'LOMI7421', pad: 'num', msg: 'err1', bad: true })],
+  ['8 · Нет связи', 'сервер не ответил: попытка не засчитана, «Войти» снова активна', form({ v: 'LOMI7241', pad: 'num', msg: 'offline', btn: 'on' })],
+]);
+
+put('c3', [
+  ['9 · Закрыт, идёт час', 'таймер 59:12, полоска убывает; подсказка про родителей; кнопки нет', locked({})],
+  ['9б · Осталось меньше минуты', 'то же, 00:38', locked({ left: '00:38', pct: 1 })],
+  ['10 · Час прошёл', '«Попробовать снова» → форма с пустыми клетками, три новые попытки', locked({ state: 'time' })],
+  ['11 · Родитель открыл код', 'появилось до конца часа; цифры у кода уже новые', locked({ state: 'parent' })],
+]);
+
+put('c4', [
+  ['12 · После «Попробовать снова» (родитель открыл)', 'слово LOMI осталось, цифры пустые — их надо взять новые', form({ v: 'LOMI', pad: 'num', msg: 'reopened', msgCls: ' info' })],
+  ['13 · Успех', '«Привет, Лука!» ≈1,5 с, дальше главный экран', hello('Лука')],
+  ['14 · Ссылка: проверяем', '/c/LOMI-7241 — формы нет, код только для сверки', LINK.check],
+  ['15 · Ссылка не сработала', 'код неверный или устарел; «Ввести код» открывает форму (1) пустой', LINK.bad],
+]);
+
+put('c5', [
+  ['16 · SE · пусто', 'Мзико 48 px, клавиши 46 px; всё в один экран без прокрутки', form({ short: true })],
+  ['17 · SE · неверно, последняя попытка', 'самая высокая раскладка: цифры 52 px + две строки сообщения', form({ v: 'LOMI7421', pad: 'num', msg: 'err1', bad: true, short: true })],
+  ['18 · SE · закрыт на час', '', locked({ short: true })],
+  ['19 · SE · длинное имя', '«Анастасия-Александра»: перенос по дефису', hello('Анастасия-Александра', true)],
+], { se: true });
+document.getElementById('c5').insertAdjacentHTML('beforeend',
+  fig('20 · Имя на 45 знаков', 'родитель вписал имя с отчеством и фамилией — две строки и многоточие', phone('light', hello('Константин Константинович Константинопольский'))) +
+  fig('21 · Ссылка, нет связи', 'отдельно от «не сработала»: код, может быть, верный', phone('light', LINK.offline)));
+
+put('dark', [
+  ['1 · Пусто', '', form({})],
+  ['4 · Код полный', '', form({ v: 'LOMI7241', pad: 'num', btn: 'on' })],
+  ['6 · Неверно, осталось 2', '', form({ v: 'LOMI7214', pad: 'num', msg: 'err2', bad: true })],
+  ['9 · Закрыт на час', '', locked({})],
+  ['13 · Успех', '', hello('Лука')],
+], { theme: 'dark', sm: true });
+</script>
+</body>
+</html>

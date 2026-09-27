@@ -1,4 +1,4 @@
-.PHONY: dev db migrate revision seed test lint api bot web pair token tts
+.PHONY: dev db migrate revision seed test lint api bot web code token tts
 
 # Everything in Docker, with migrations and seed applied on api start.
 dev:
@@ -28,10 +28,10 @@ web:
 	cd frontend && pnpm dev
 
 # Local testing without Telegram (dev parent + child "Сандро" are created on first use).
-pair:            # one-time pairing link, as the bot would send
-	cd backend && uv run python dev_pair.py
+code:            # the child's login code and link, as the bot would show
+	cd backend && uv run python dev_login.py
 token:           # shared link that logs in any browser
-	cd backend && uv run python dev_pair.py token
+	cd backend && uv run python dev_login.py token
 
 test:
 	cd backend && uv run pytest

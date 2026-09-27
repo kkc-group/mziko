@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
@@ -26,8 +26,14 @@ def get_now() -> datetime:
     return clock.now()
 
 
+def client_ip(request: Request) -> str:
+    """The caller's address; behind Caddy uvicorn must trust X-Forwarded-For (see compose)."""
+    return request.client.host if request.client else "unknown"
+
+
 Db = Annotated[AsyncSession, Depends(get_db)]
 Now = Annotated[datetime, Depends(get_now)]
+ClientIp = Annotated[str, Depends(client_ip)]
 
 
 async def current_child(

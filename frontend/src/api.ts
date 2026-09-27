@@ -1,4 +1,4 @@
-import type { AnswerResult, Me, SessionOut, SessionSummary } from './types'
+import type { AnswerResult, LockStatus, LoginOut, Me, SessionOut, SessionSummary } from './types'
 
 const TOKEN_KEY = 'mziko-device-token'
 
@@ -21,10 +21,13 @@ export function setToken(token: string | null): void {
 
 export class ApiError extends Error {
   status: number
+  /** The `detail` of the error body: a string, or an object for login errors. */
+  detail: unknown
 
-  constructor(status: number, message: string) {
-    super(message)
+  constructor(status: number, detail: unknown) {
+    super(typeof detail === 'string' ? detail : JSON.stringify(detail))
     this.status = status
+    this.detail = detail
   }
 }
 
@@ -37,7 +40,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   const response = await fetch(path, { ...init, headers })
   if (!response.ok) {
-    let detail = response.statusText
+    let detail: unknown = response.statusText
     try {
       detail = (await response.json()).detail ?? detail
     } catch {
@@ -56,11 +59,14 @@ export interface AnswerBody {
 }
 
 export const api = {
-  pair: (code: string, deviceName: string) =>
-    request<{ device_token: string; child: { id: number; name: string } }>(
-      `/api/pair/${encodeURIComponent(code)}`,
-      { method: 'POST', body: JSON.stringify({ device_name: deviceName }) },
-    ),
+  /** 401 → detail {error:'wrong_code', attempts_left}; 423 → detail {error:'locked', locked_until}. */
+  login: (word: string, pin: string, deviceName: string) =>
+    request<LoginOut>('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ word, pin, device_name: deviceName }),
+    }),
+  /** Lock state of this device's address; polled by the lock screen. */
+  loginStatus: () => request<LockStatus>('/api/login/status'),
   me: () => request<Me>('/api/me'),
   startSession: (lesson: number | null) =>
     request<SessionOut>('/api/sessions', { method: 'POST', body: JSON.stringify({ lesson }) }),

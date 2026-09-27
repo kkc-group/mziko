@@ -4,7 +4,7 @@ from app.models.base import Base
 from app.models.coins import CoinLedger, CoinReason, Week, WeekStatus
 from app.models.content import ImageKind, Topic, Word
 from app.models.learning import Answer, Session, WordProgress
-from app.models.people import Child, Device, PairCode, Parent, parent_children
+from app.models.people import Child, Device, LoginLock, Parent, parent_children
 
 __all__ = [
     "Answer",
@@ -14,7 +14,7 @@ __all__ = [
     "CoinReason",
     "Device",
     "ImageKind",
-    "PairCode",
+    "LoginLock",
     "Parent",
     "Session",
     "Topic",

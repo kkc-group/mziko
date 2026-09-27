@@ -51,7 +51,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // API responses are never cached; /pair/<code> must reach the app shell.
+        // API responses are never cached; /c/<code> must reach the app shell.
         navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
         runtimeCaching: [
           {

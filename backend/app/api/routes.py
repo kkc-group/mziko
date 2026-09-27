@@ -1,8 +1,10 @@
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
-from app.api.deps import CurrentChild, Db, Now
+from app.api.deps import ClientIp, CurrentChild, Db, Now
 from app.schemas.lesson import (
     AnswerIn,
     AnswerResult,
@@ -11,9 +13,10 @@ from app.schemas.lesson import (
     SessionSummary,
     Step,
 )
+from app.schemas.login import LockedDetail, LockStatusOut, LoginIn, LoginOut, WrongCodeDetail
 from app.schemas.me import ChildOut, MeOut
-from app.schemas.pair import PairIn, PairOut
-from app.services import learning, overview, pairing
+from app.services import learning, login_codes, overview
+from app.services.errors import LoginLocked, WrongCode
 
 router = APIRouter()
 
@@ -23,10 +26,33 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@router.post("/pair/{code}", response_model=PairOut)
-async def pair_device(code: str, db: Db, now: Now, body: PairIn | None = None) -> PairOut:
-    raw, child = await pairing.redeem_pair_code(db, code, now, body.device_name if body else None)
-    return PairOut(device_token=raw, child=ChildOut(id=child.id, name=child.name))
+def _login_error(status_code: int, detail: BaseModel) -> JSONResponse:
+    return JSONResponse({"detail": detail.model_dump(mode="json")}, status_code=status_code)
+
+
+@router.post("/login", response_model=LoginOut)
+async def login(body: LoginIn, db: Db, now: Now, ip: ClientIp) -> LoginOut | JSONResponse:
+    """Child login by the permanent code. 401 with attempts_left, 423 with locked_until.
+
+    Errors are returned, not raised: the Db dependency commits only on a normal
+    return, and a miss must be recorded or the hour lock would never happen.
+    """
+    try:
+        raw, child = await login_codes.login(db, ip, body.word, body.pin, now, body.device_name)
+    except WrongCode as exc:
+        return _login_error(
+            status.HTTP_401_UNAUTHORIZED, WrongCodeDetail(attempts_left=exc.attempts_left)
+        )
+    except LoginLocked as exc:
+        return _login_error(status.HTTP_423_LOCKED, LockedDetail(locked_until=exc.locked_until))
+    return LoginOut(device_token=raw, child=ChildOut(id=child.id, name=child.name))
+
+
+@router.get("/login/status", response_model=LockStatusOut)
+async def login_status(db: Db, now: Now, ip: ClientIp) -> LockStatusOut:
+    """Polled by the lock screen: is this address still locked, did the parent re-issue the pin."""
+    s = await login_codes.lock_status(db, ip, now)
+    return LockStatusOut(locked_until=s.locked_until, word=s.word, pin_rotated=s.pin_rotated)
 
 
 @router.get("/me", response_model=MeOut)

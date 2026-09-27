@@ -8,11 +8,11 @@ from app.api.deps import BotService, CurrentParent, Db, Now
 from app.core.config import get_settings
 from app.models import Child, Device, ImageKind, Week, Word
 from app.schemas.parent import (
+    ChildCodeOut,
     ChildCreate,
     ChildInfo,
     DeviceOut,
     DueReportOut,
-    PairCodeOut,
     PayOut,
     ProgressOut,
     SettingsPatch,
@@ -22,7 +22,7 @@ from app.schemas.parent import (
     WordBrief,
     WordProgressOut,
 )
-from app.services import coins, pairing, parents, report
+from app.services import coins, login_codes, pairing, parents, report
 from app.services.report import TopicProgress, WeekReport
 
 router = APIRouter()
@@ -87,6 +87,16 @@ def device_out(device: Device) -> DeviceOut:
         name=device.name,
         created_at=device.created_at,
         last_seen_at=device.last_seen_at,
+    )
+
+
+def child_code_out(child: Child) -> ChildCodeOut:
+    code = f"{child.code_word}-{child.code_pin}"
+    return ChildCodeOut(
+        word=child.code_word or "",
+        pin=child.code_pin or "",
+        code=code,
+        url=f"{get_settings().public_url.rstrip('/')}/c/{code}",
     )
 
 
@@ -168,12 +178,18 @@ async def update_settings(
     return child_info(updated)
 
 
-@router.post("/children/{child_id}/pair-codes", response_model=PairCodeOut)
-async def create_pair_code(child_id: int, db: Db, now: Now, parent: CurrentParent) -> PairCodeOut:
+@router.get("/children/{child_id}/code", response_model=ChildCodeOut)
+async def child_code(child_id: int, db: Db, now: Now, parent: CurrentParent) -> ChildCodeOut:
+    """The child's permanent login code, issued on first request."""
     child = await own_child(db, parent, child_id)
-    code = await pairing.create_pair_code(db, parent, child, now)
-    url = f"{get_settings().public_url.rstrip('/')}/pair/{code.code}"
-    return PairCodeOut(url=url, expires_at=code.expires_at)
+    return child_code_out(await login_codes.ensure_code(db, child, now))
+
+
+@router.post("/children/{child_id}/code/rotate", response_model=ChildCodeOut)
+async def rotate_child_code(child_id: int, db: Db, now: Now, parent: CurrentParent) -> ChildCodeOut:
+    """New pin, same word; lifts login locks stuck on that word."""
+    child = await own_child(db, parent, child_id)
+    return child_code_out(await login_codes.rotate_pin(db, child, now))
 
 
 @router.get("/children/{child_id}/devices", response_model=list[DeviceOut])

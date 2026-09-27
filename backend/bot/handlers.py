@@ -36,9 +36,9 @@ async def show_settings(message: Message, api: ParentApi, child: ChildInfo) -> N
     await message.answer(texts.settings_text(child), reply_markup=keyboards.settings_kb(child))
 
 
-async def show_pair(message: Message, api: ParentApi, child: ChildInfo) -> None:
-    code = await api.pair_code(child.id)
-    await message.answer(texts.pair_text(child, code.url))
+async def show_code(message: Message, api: ParentApi, child: ChildInfo) -> None:
+    code = await api.child_code(child.id)
+    await message.answer(texts.code_text(child, code), reply_markup=keyboards.code_kb(child))
 
 
 async def show_devices(message: Message, api: ParentApi, child: ChildInfo) -> None:
@@ -53,7 +53,7 @@ ACTIONS: dict[str, ChildAction] = {
     "report": show_report,
     "progress": show_progress,
     "settings": show_settings,
-    "pair": show_pair,
+    "code": show_code,
     "devices": show_devices,
 }
 
@@ -84,7 +84,7 @@ async def cmd_addchild(message: Message, command: CommandObject, api: ParentApi)
         await message.answer("Напишите имя: /addchild Сандро")
         return
     child = await api.add_child(name)
-    await message.answer(f"Добавил: {escape(child.name)}. Привязать устройство: /pair")
+    await message.answer(f"Добавил: {escape(child.name)}. Код для входа: /code")
 
 
 async def cmd_action(message: Message, api: ParentApi, command: CommandObject) -> None:
@@ -166,6 +166,19 @@ async def cb_settings(callback: CallbackQuery, api: ParentApi) -> None:
         return
     await callback.answer("Сохранено")
     await _edit(message, texts.settings_text(child), keyboards.settings_kb(child))
+
+
+@router.callback_query(F.data.startswith("code:"))
+async def cb_code(callback: CallbackQuery, api: ParentApi) -> None:
+    _, action, child_id = (callback.data or "").split(":")
+    message = _message_of(callback)
+    child = await api.child(int(child_id))
+    if message is None or child is None or action != "rotate":
+        await callback.answer("Недоступно")
+        return
+    code = await api.rotate_code(child.id)
+    await callback.answer("Цифры обновлены")
+    await _edit(message, texts.code_text(child, code), keyboards.code_kb(child))
 
 
 @router.callback_query(F.data.startswith("dev:"))

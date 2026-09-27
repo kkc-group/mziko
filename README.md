@@ -31,7 +31,7 @@ make db                     # PostgreSQL в Docker
 make migrate && make seed   # схема и все темы: буквы, слоги, слова
 make api                    # http://localhost:8000, документация /api/docs
 make web                    # http://localhost:5173, /api проксируется на 8000
-make pair                   # одноразовая ссылка привязки без Telegram, как из бота
+make code                   # код и ссылка для входа ребёнка без Telegram, как из бота
 make token                  # общая ссылка с тестовым токеном: логинит любой браузер
 ```
 
@@ -42,7 +42,7 @@ make token                  # общая ссылка с тестовым ток
 секрет `BOT_API_TOKEN` (`openssl rand -hex 32`) в `.env`, поднимите `make api`,
 затем `make bot`. Бот ходит только в API (`API_URL`, по умолчанию
 `http://localhost:8000`), в базу он не заглядывает. В Telegram: `/start`,
-`/addchild Сандро`, `/pair`.
+`/addchild Сандро`, `/code`.
 
 Если API слушает другой порт: `API_URL=http://localhost:8001 make web`.
 
@@ -68,14 +68,14 @@ make lint   # ruff, mypy, oxlint, tsc
    - `POSTGRES_PASSWORD` — свой;
    - `SITE_ADDRESS=mziko.example.com` — Caddy сам получит сертификат
      (без домена `:80` и `PUBLIC_URL=http://<ip>`);
-   - `PUBLIC_URL=https://mziko.example.com` — попадает в ссылки привязки;
+   - `PUBLIC_URL=https://mziko.example.com` — попадает в ссылки для входа;
    - `BOT_TOKEN` от @BotFather, `ADMIN_TELEGRAM_IDS=[123456789]` — ваш id;
    - `BOT_API_TOKEN` — секрет между ботом и API, `openssl rand -hex 32`.
 3. Ключ деплоя: публичная часть в `~/.ssh/authorized_keys` пользователя SSH,
    приватная — в секрет GitHub `DO_SSH_KEY`; ещё `DO_HOST` (IP) и `DO_USER`.
 4. Пуш в `main` или «Run workflow» в Actions. Поднимутся `db`, `api` (накатит
    миграции и слова), `bot` и `web`.
-5. В Telegram: `/start`, `/addchild Сандро`, `/pair`. Ссылку из ответа открыть на iPad,
+5. В Telegram: `/start`, `/addchild Сандро`, `/code`. Ссылку из ответа открыть на iPad,
    затем «Поделиться → На экран Домой».
 
 Откат: на сервере `cd /srv/mziko && IMAGE_TAG=<sha> docker compose up -d`.

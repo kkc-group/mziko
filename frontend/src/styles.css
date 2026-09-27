@@ -219,3 +219,86 @@ button:disabled { cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* --- login --- */
+.login {
+  position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column;
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+}
+.lg { flex: 1; max-width: 540px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.lg-head { display: flex; align-items: center; gap: 12px; }
+.lg-head h1 { margin: 0; font-size: 28px; font-weight: 900; line-height: 1.1; }
+.lg-head p { margin: 4px 0 0; color: var(--muted); font-weight: 700; font-size: 16px; line-height: 1.25; }
+.lg-head p b { color: var(--ink); }
+
+.code { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+.grp { flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; }
+.cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.grp small { text-align: center; font-size: 13px; font-weight: 800; color: var(--muted); line-height: 1; }
+.grp.on small { color: var(--word-color); }
+.dash { flex: none; width: 14px; height: 58px; display: grid; place-items: center; font-size: 30px; font-weight: 900; color: var(--muted); }
+.cell {
+  position: relative; height: 58px; border-radius: 14px; background: var(--surface); border: 3px solid var(--line);
+  box-shadow: 0 4px 0 var(--line); display: grid; place-items: center; font-size: 28px; font-weight: 900; line-height: 1;
+}
+.cell.cur { border-color: var(--word-color); box-shadow: 0 4px 0 var(--word-color); }
+.cell.cur::after { content: ''; width: 3px; height: 28px; border-radius: 2px; background: var(--word-color); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.code.ro .cell { box-shadow: none; border-style: dashed; }
+.code.shake { animation: shake 0.35s; }
+
+.msg { min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+.msg b { font-size: 20px; font-weight: 900; line-height: 1.15; color: var(--pom); }
+.msg span { font-weight: 800; font-size: 16px; color: var(--muted); line-height: 1.25; }
+.msg.info b { color: var(--mint); }
+.msg.offline b { color: var(--muted); }
+.pips { display: flex; gap: 6px; }
+.pips i { width: 16px; height: 16px; border-radius: 50%; background: var(--sun); border: 2px solid var(--sun-dark); }
+.pips i.gone { background: transparent; border: 2px dashed var(--line); }
+
+.spacer { flex: 1; min-height: 0; }
+.keys { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.key {
+  height: 52px; border-radius: 14px; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+  display: grid; place-items: center; font-size: 22px; font-weight: 900; color: var(--ink); line-height: 1;
+}
+.key svg { width: 28px; height: 28px; color: var(--muted); }
+.key.w2 { grid-column: span 2; }
+.key.sw { font-size: 17px; color: var(--muted); }
+.keys.digits { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.keys.digits .key { height: 60px; border-radius: 18px; font-size: 30px; }
+.keys.digits .key.sw { font-size: 18px; }
+
+.play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+.play.busy { pointer-events: none; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* centered screens: link check, lock, success (same frame as .wrap.center) */
+.mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding-bottom: 110px; position: relative; z-index: 1; }
+.mid h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1.15; }
+.mid p { margin: 0; color: var(--muted); font-weight: 700; font-size: 17px; line-height: 1.3; max-width: 320px; }
+.mid .code { max-width: 330px; }
+.mid .play { max-width: 360px; }
+.bigspin { width: 48px; height: 48px; border-radius: 50%; border: 6px solid var(--line); border-top-color: var(--word-color); animation: rot 0.9s linear infinite; }
+.lock-card { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 18px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.lock-card .big-num { line-height: 1; font-variant-numeric: tabular-nums; }
+.lock-card .prog { flex: none; width: 100%; }
+.lock-card .prog i { background: var(--sun); }
+.lock-card small { color: var(--muted); font-weight: 800; font-size: 15px; }
+.tip { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 360px; padding: 12px 14px; border-radius: 18px; border: 2px dashed var(--line); font-weight: 800; font-size: 16px; line-height: 1.25; text-align: center; }
+.hi .ka { display: block; font-size: 28px; color: var(--word-color); }
+.hi h1 { font-size: 34px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 340px; }
+
+/* short screens (e.g. iPhone SE 375x667): the mascot's own box shrinks via a
+   smaller `size` prop in Login.tsx; everything else shrinks here. */
+@media (max-height: 700px) {
+  .lg { gap: 10px; }
+  .lg-head h1 { font-size: 24px; }
+  .lg-head p { font-size: 15px; }
+  .msg { min-height: 40px; }
+  .key { height: 46px; }
+  .keys.digits .key { height: 52px; }
+  .mid { gap: 10px; padding-bottom: 90px; }
+  .mid h1 { font-size: 26px; }
+  .hi h1 { font-size: 30px; }
+}
