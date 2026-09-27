@@ -107,10 +107,12 @@ async def test_full_lesson_flow_over_http(
         "lari": 0.0,
         "study_days": [],
     }
-    assert [t["slug"] for t in me["topics"]] == ["basics", "colors"]
-    colors = me["topics"][1]
+    slugs = [t["slug"] for t in me["topics"]]
+    assert slugs[:5] == ["letters-1", "letters-2", "letters-3", "letters-4", "syllables"]
+    assert len(slugs) == 18
+    colors = next(t for t in me["topics"] if t["slug"] == "colors")
     assert (colors["total"], colors["learned"], colors["has_lesson"]) == (10, 0, True)
-    assert len(me["stickers"]) == 22
+    assert len(me["stickers"]) == 225
 
     started = await client.post("/api/sessions", json={"topic_slug": "colors"}, headers=headers)
     assert started.status_code == 200

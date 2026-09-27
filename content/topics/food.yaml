@@ -1,0 +1,96 @@
+slug: food
+title_ru: Еда
+title_ka: საჭმელი
+icon: "🍽️"
+order: 14
+words:
+  - slug: milk
+    ka: რძე
+    tr: рдзе
+    ru: молоко
+    image: {kind: emoji, value: "🥛"}
+  - slug: cheese
+    ka: ყველი
+    tr: квели
+    ru: сыр
+    image: {kind: emoji, value: "🧀"}
+  - slug: egg
+    ka: კვერცხი
+    tr: кверцхи
+    ru: яйцо
+    image: {kind: emoji, value: "🥚"}
+  - slug: meat
+    ka: ხორცი
+    tr: хорци
+    ru: мясо
+    image: {kind: emoji, value: "🍖"}
+  - slug: soup
+    ka: სუპი
+    tr: супи
+    ru: суп
+    image: {kind: emoji, value: "🍲"}
+  - slug: porridge
+    ka: ფაფა
+    tr: папа
+    ru: каша
+    image: {kind: emoji, value: "🥣"}
+  - slug: banana
+    ka: ბანანი
+    tr: банани
+    ru: банан
+    image: {kind: emoji, value: "🍌"}
+  - slug: pear
+    ka: მსხალი
+    tr: мсхали
+    ru: груша
+    image: {kind: emoji, value: "🍐"}
+  - slug: grape
+    ka: ყურძენი
+    tr: курдзени
+    ru: виноград
+    image: {kind: emoji, value: "🍇"}
+  - slug: watermelon
+    ka: საზამთრო
+    tr: сазамтро
+    ru: арбуз
+    image: {kind: emoji, value: "🍉"}
+  - slug: tomato
+    ka: პომიდორი
+    tr: помидори
+    ru: помидор
+    image: {kind: emoji, value: "🍅"}
+  - slug: cucumber
+    ka: კიტრი
+    tr: китри
+    ru: огурец
+    image: {kind: emoji, value: "🥒"}
+  - slug: potato
+    ka: კარტოფილი
+    tr: картопили
+    ru: картошка
+    image: {kind: emoji, value: "🥔"}
+  - slug: carrot
+    ka: სტაფილო
+    tr: стапило
+    ru: морковь
+    image: {kind: emoji, value: "🥕"}
+  - slug: candy
+    ka: კანფეტი
+    tr: канпети
+    ru: конфета
+    image: {kind: emoji, value: "🍬"}
+  - slug: cake
+    ka: ტორტი
+    tr: торти
+    ru: торт
+    image: {kind: emoji, value: "🎂"}
+  - slug: tea
+    ka: ჩაი
+    tr: чаи
+    ru: чай
+    image: {kind: emoji, value: "🍵"}
+  - slug: juice
+    ka: წვენი
+    tr: цвени
+    ru: сок
+    image: {kind: emoji, value: "🧃"}

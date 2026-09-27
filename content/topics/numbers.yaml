@@ -1,0 +1,56 @@
+slug: numbers
+title_ru: Числа
+title_ka: რიცხვები
+icon: "🔢"
+order: 9
+words:
+  - slug: one
+    ka: ერთი
+    tr: эрти
+    ru: один
+    image: {kind: emoji, value: "1️⃣"}
+  - slug: two
+    ka: ორი
+    tr: ори
+    ru: два
+    image: {kind: emoji, value: "2️⃣"}
+  - slug: three
+    ka: სამი
+    tr: сами
+    ru: три
+    image: {kind: emoji, value: "3️⃣"}
+  - slug: four
+    ka: ოთხი
+    tr: отхи
+    ru: четыре
+    image: {kind: emoji, value: "4️⃣"}
+  - slug: five
+    ka: ხუთი
+    tr: хути
+    ru: пять
+    image: {kind: emoji, value: "5️⃣"}
+  - slug: six
+    ka: ექვსი
+    tr: эквси
+    ru: шесть
+    image: {kind: emoji, value: "6️⃣"}
+  - slug: seven
+    ka: შვიდი
+    tr: швиди
+    ru: семь
+    image: {kind: emoji, value: "7️⃣"}
+  - slug: eight
+    ka: რვა
+    tr: рва
+    ru: восемь
+    image: {kind: emoji, value: "8️⃣"}
+  - slug: nine
+    ka: ცხრა
+    tr: цхра
+    ru: девять
+    image: {kind: emoji, value: "9️⃣"}
+  - slug: ten
+    ka: ათი
+    tr: ати
+    ru: десять
+    image: {kind: emoji, value: "🔟"}

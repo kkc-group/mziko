@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Child, Session, Topic, Word, WordProgress
+from app.models import Child, ImageKind, Session, Topic, Word, WordProgress
 from app.schemas.lesson import AnswerIn
 from app.services import coins, learning
 from app.services.errors import InvalidStep, NotFound
@@ -95,6 +95,53 @@ async def test_empty_plan_when_nothing_to_learn_or_review(db: AsyncSession, chil
 async def test_unknown_topic_raises(db: AsyncSession, child: Child) -> None:
     with pytest.raises(NotFound):
         await learning.build_session(db, child, "nope", at(DAY1))
+
+
+async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
+    db: AsyncSession, child: Child
+) -> None:
+    anchor = {"ka": "ბურთი", "tr": "бурти", "ru": "мяч", "emoji": "⚽"}
+    topic = Topic(
+        slug=f"letters-{uuid.uuid4().hex[:6]}",
+        title_ru="Буквы",
+        title_ka="ასოები",
+        icon="🔤",
+        order=99,
+    )
+    db.add(topic)
+    await db.flush()
+    for i, letter in enumerate("ბდლმსა"):
+        db.add(
+            Word(
+                topic_id=topic.id,
+                slug=f"l{i}",
+                ka=letter,
+                tr="?",
+                ru=f"буква {letter}",
+                image_kind=ImageKind.text,
+                image_value=letter,
+                anchor=anchor,
+                order=i,
+            )
+        )
+    await db.flush()
+
+    # Nothing here is committed: the shared database must not gain a topic other tests count.
+    first = await learning.build_session(db, child, topic.slug, at(DAY1))
+    assert first is not None
+    intro = steps_of(first)[0]
+    assert intro.word.image.kind is ImageKind.text
+    assert intro.word.anchor is not None and intro.word.anchor.emoji == "⚽"
+    for index, _ in quiz_steps(first):
+        await answer_correctly(db, child, first, index, at(DAY1))
+
+    # Day 2: the letters come back for review; whatever the dice say, never `recall`.
+    for seed in range(10):
+        session = await learning.build_session(db, child, topic.slug, at(DAY2), random.Random(seed))
+        assert session is not None
+        review = [s for s in steps_of(session) if s.type != "intro"]
+        assert review and all(s.type == "listen" for s in review)
+        assert all(len(s.options) == 4 for s in review)
 
 
 # --- answers, stages and coins -----------------------------------------------

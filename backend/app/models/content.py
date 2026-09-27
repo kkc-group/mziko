@@ -1,8 +1,10 @@
 """Topics and words. Loaded from content/topics/*.yaml by `python -m app.seed`."""
 
 import enum
+from typing import Any
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, IntPK
@@ -12,6 +14,8 @@ class ImageKind(enum.StrEnum):
     emoji = "emoji"
     color = "color"
     file = "file"
+    # No picture: the value (a letter or a word) is rendered as large Georgian text.
+    text = "text"
 
 
 class Topic(Base):
@@ -45,6 +49,9 @@ class Word(Base):
         Enum(ImageKind, name="image_kind", native_enum=True), nullable=False
     )
     image_value: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Letters only: an example word starting with the letter, shown on the intro card.
+    # Shape: {"ka": ..., "tr": ..., "ru": ..., "emoji": ... | null}, see app.seed.AnchorSpec.
+    anchor: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     # Position within the topic; equals the index in the YAML file.
     order: Mapped[int] = mapped_column(Integer, nullable=False)
 

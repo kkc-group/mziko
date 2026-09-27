@@ -1,0 +1,71 @@
+slug: home
+title_ru: Дом
+title_ka: სახლში
+icon: "🛏️"
+order: 16
+words:
+  - slug: door
+    ka: კარი
+    tr: кари
+    ru: дверь
+    image: {kind: emoji, value: "🚪"}
+  - slug: window
+    ka: ფანჯარა
+    tr: панджара
+    ru: окно
+    image: {kind: emoji, value: "🪟"}
+  - slug: bed
+    ka: საწოლი
+    tr: сацоли
+    ru: кровать
+    image: {kind: emoji, value: "🛏️"}
+  - slug: key
+    ka: გასაღები
+    tr: гасагеби
+    ru: ключ
+    image: {kind: emoji, value: "🔑"}
+  - slug: kitchen
+    ka: სამზარეულო
+    tr: самзареуло
+    ru: кухня
+    image: {kind: emoji, value: "🍳"}
+  - slug: cup
+    ka: ჭიქა
+    tr: чика
+    ru: чашка
+    image: {kind: emoji, value: "☕"}
+  - slug: plate
+    ka: თეფში
+    tr: тепши
+    ru: тарелка
+    image: {kind: emoji, value: "🍽️"}
+  - slug: spoon
+    ka: კოვზი
+    tr: ковзи
+    ru: ложка
+    image: {kind: emoji, value: "🥄"}
+  - slug: phone
+    ka: ტელეფონი
+    tr: телефони
+    ru: телефон
+    image: {kind: emoji, value: "📱"}
+  - slug: tv
+    ka: ტელევიზორი
+    tr: телевизори
+    ru: телевизор
+    image: {kind: emoji, value: "📺"}
+  - slug: table
+    ka: მაგიდა
+    tr: магида
+    ru: стол
+    image: {kind: text, value: მაგიდა}  # TODO picture
+  - slug: lamp
+    ka: ნათურა
+    tr: натура
+    ru: лампа
+    image: {kind: emoji, value: "💡"}
+  - slug: bath
+    ka: აბაზანა
+    tr: абазана
+    ru: ванна
+    image: {kind: emoji, value: "🛁"}

@@ -1,0 +1,56 @@
+slug: greetings
+title_ru: Приветствия
+title_ka: მისალმება
+icon: "👋"
+order: 8
+words:
+  - slug: hello
+    ka: გამარჯობა
+    tr: гамарджоба
+    ru: привет
+    image: {kind: text, value: გამარჯობა}
+  - slug: goodbye
+    ka: ნახვამდის
+    tr: нахвамдис
+    ru: до свидания
+    image: {kind: text, value: ნახვამდის}
+  - slug: thank-you
+    ka: მადლობა
+    tr: мадлоба
+    ru: спасибо
+    image: {kind: text, value: მადლობა}
+  - slug: please
+    ka: თუ შეიძლება
+    tr: ту шеидзлеба
+    ru: пожалуйста
+    image: {kind: text, value: თუ შეიძლება}
+  - slug: "yes"
+    ka: კი
+    tr: ки
+    ru: да
+    image: {kind: text, value: კი}
+  - slug: "no"
+    ka: არა
+    tr: ара
+    ru: нет
+    image: {kind: text, value: არა}
+  - slug: good-morning
+    ka: დილა მშვიდობისა
+    tr: дила мшвидобиса
+    ru: доброе утро
+    image: {kind: text, value: დილა მშვიდობისა}
+  - slug: good-night
+    ka: ღამე მშვიდობისა
+    tr: гаме мшвидобиса
+    ru: спокойной ночи
+    image: {kind: text, value: ღამე მშვიდობისა}
+  - slug: sorry
+    ka: ბოდიში
+    tr: бодиши
+    ru: извини
+    image: {kind: text, value: ბოდიში}
+  - slug: how-are-you
+    ka: როგორ ხარ
+    tr: рогор хар
+    ru: как дела
+    image: {kind: text, value: როგორ ხარ}

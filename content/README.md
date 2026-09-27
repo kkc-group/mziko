@@ -22,8 +22,41 @@ words:
 ```
 
 `image.kind` is one of `emoji` (value is the emoji), `color` (value is a hex
-colour, rendered as a blob of that colour) or `file` (value is a path under
-`/media/images`, reserved for later).
+colour, rendered as a blob of that colour), `file` (value is a path under
+`/media/images`, reserved for later) or `text` (no picture: the value, a letter
+or the word itself, is drawn as large Georgian text).
+
+## Letters, syllables and text cards
+
+The first-grade programme (`letters-1` … `letters-4`, `syllables`, then the
+vocabulary topics) uses `text` cards. Rules the loader enforces:
+
+- A text card may wrap at spaces but never inside a word: no run of letters
+  longer than 10 (`დილა მშვიდობისა` fits, one 12-letter word does not).
+- Within a topic, slugs, Georgian words and pictures are all unique. Quiz
+  distractors come from the same topic, so two words sharing a picture would
+  make "listen and find" unanswerable.
+- A Georgian word appears in one topic only (checked by `tests/test_seed.py`);
+  syllables are exempt (`მე` the syllable may equal `მე` the word).
+
+Text cards only get the "listen and find" game; "recall the word" is skipped
+because the card *is* the word. A letter may carry an `anchor`, the example word
+shown under it on the intro card:
+
+```yaml
+  - slug: ban
+    ka: ბ
+    tr: б
+    ru: буква б
+    image: {kind: text, value: ბ}
+    anchor: {ka: ბურთი, tr: бурти, ru: мяч, emoji: "⚽"}   # emoji is optional
+```
+
+Words that still lack a good picture are text cards marked `# TODO picture`;
+`grep -rn "TODO picture" content/topics` lists them. Letter order follows the
+primer tradition (Deda Ena), not the alphabet; reorder by moving lines.
+
+Slugs `on`, `yes`, `no` must be quoted: bare, YAML reads them as booleans.
 
 ## Native speaker review required
 

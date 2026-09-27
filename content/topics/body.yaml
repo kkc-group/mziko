@@ -1,0 +1,66 @@
+slug: body
+title_ru: Тело
+title_ka: სხეული
+icon: "🖐️"
+order: 12
+words:
+  - slug: head
+    ka: თავი
+    tr: тави
+    ru: голова
+    image: {kind: emoji, value: "🙂"}
+  - slug: eye
+    ka: თვალი
+    tr: твали
+    ru: глаз
+    image: {kind: emoji, value: "👁️"}
+  - slug: ear
+    ka: ყური
+    tr: кури
+    ru: ухо
+    image: {kind: emoji, value: "👂"}
+  - slug: nose
+    ka: ცხვირი
+    tr: цхвири
+    ru: нос
+    image: {kind: emoji, value: "👃"}
+  - slug: mouth
+    ka: პირი
+    tr: пири
+    ru: рот
+    image: {kind: emoji, value: "👄"}
+  - slug: tooth
+    ka: კბილი
+    tr: кбили
+    ru: зуб
+    image: {kind: emoji, value: "🦷"}
+  - slug: hand
+    ka: ხელი
+    tr: хели
+    ru: рука
+    image: {kind: emoji, value: "✋"}
+  - slug: leg
+    ka: ფეხი
+    tr: пехи
+    ru: нога
+    image: {kind: emoji, value: "🦵"}
+  - slug: finger
+    ka: თითი
+    tr: тити
+    ru: палец
+    image: {kind: emoji, value: "👆"}
+  - slug: heart
+    ka: გული
+    tr: гули
+    ru: сердце
+    image: {kind: emoji, value: "❤️"}
+  - slug: tongue
+    ka: ენა
+    tr: эна
+    ru: язык
+    image: {kind: emoji, value: "👅"}
+  - slug: belly
+    ka: მუცელი
+    tr: муцели
+    ru: живот
+    image: {kind: text, value: მუცელი}  # TODO picture

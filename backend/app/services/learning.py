@@ -13,8 +13,18 @@ from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import local_date
-from app.models import Answer, Child, CoinReason, Session, Topic, Word, WordProgress
+from app.models import (
+    Answer,
+    Child,
+    CoinReason,
+    ImageKind,
+    Session,
+    Topic,
+    Word,
+    WordProgress,
+)
 from app.schemas.lesson import (
+    AnchorOut,
     AnswerIn,
     AnswerResult,
     ImageOut,
@@ -42,6 +52,7 @@ def word_out(word: Word, topic_slug: str) -> WordOut:
         tr=word.tr,
         ru=word.ru,
         image=ImageOut(kind=word.image_kind, value=word.image_value),
+        anchor=AnchorOut.model_validate(word.anchor) if word.anchor else None,
         audio_url=f"/media/audio/{topic_slug}/{word.slug}.mp3",
     )
 
@@ -155,9 +166,15 @@ async def build_session(
         rng.shuffle(options)
         return Step(type="recall", word=out(word), options=[out(o) for o in options])
 
+    def review_step(word: Word) -> Step:
+        # A text card *is* the word, so "picture -> pick the word" would give the answer away.
+        if word.image_kind is ImageKind.text:
+            return listen_step(word)
+        return rng.choice((listen_step, recall_step))(word)
+
     steps: list[Step] = [Step(type="intro", word=out(w)) for w in new_words]
     quiz: list[Step] = [listen_step(w) for w in new_words]
-    quiz += [rng.choice((listen_step, recall_step))(w) for w in review_words]
+    quiz += [review_step(w) for w in review_words]
     rng.shuffle(quiz)
     steps += quiz
 

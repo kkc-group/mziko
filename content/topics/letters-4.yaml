@@ -1,0 +1,61 @@
+# Georgian alphabet, part 4 of 4 (primer order, see letters-1.yaml).
+slug: letters-4
+title_ru: Буквы 4
+title_ka: ასოები 4
+icon: "🎓"
+order: 4
+words:
+  - slug: zhan
+    ka: ჟ
+    tr: ж
+    ru: буква ж
+    image: {kind: text, value: ჟ}
+    anchor: {ka: ჟირაფი, tr: жирапи, ru: жираф, emoji: "🦒"}
+  - slug: tsan
+    ka: ც
+    tr: ц
+    ru: буква ц
+    image: {kind: text, value: ც}
+    anchor: {ka: ცხენი, tr: цхени, ru: лошадь, emoji: "🐴"}
+  - slug: dzil
+    ka: ძ
+    tr: дз
+    ru: буква дз
+    image: {kind: text, value: ძ}
+    anchor: {ka: ძაღლი, tr: дзагли, ru: собака, emoji: "🐶"}
+  - slug: phar
+    ka: ფ
+    tr: п
+    ru: буква п (с придыханием)
+    image: {kind: text, value: ფ}
+    anchor: {ka: ფოთოლი, tr: потоли, ru: лист, emoji: "🍃"}
+  - slug: qar
+    ka: ყ
+    tr: къ
+    ru: буква къ
+    image: {kind: text, value: ყ}
+    anchor: {ka: ყვავილი, tr: квавили, ru: цветок, emoji: "🌸"}
+  - slug: khar
+    ka: ქ
+    tr: к
+    ru: буква к (с придыханием)
+    image: {kind: text, value: ქ}
+    anchor: {ka: ქუდი, tr: куди, ru: шапка, emoji: "🧢"}
+  - slug: jan
+    ka: ჯ
+    tr: дж
+    ru: буква дж
+    image: {kind: text, value: ჯ}
+    anchor: {ka: ჯინსი, tr: джинси, ru: джинсы, emoji: "👖"}
+  - slug: char
+    ka: ჭ
+    tr: ч
+    ru: буква ч (твёрдая)
+    image: {kind: text, value: ჭ}
+    anchor: {ka: ჭიანჭველა, tr: чианчвела, ru: муравей, emoji: "🐜"}
+  - slug: hae
+    ka: ჰ
+    tr: х
+    ru: буква х (лёгкая)
+    image: {kind: text, value: ჰ}
+    anchor: {ka: ჰაერი, tr: хаэри, ru: воздух, emoji: "🌬️"}

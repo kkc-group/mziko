@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Занятие: карточки без картинки (буква, слово)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped, so light and dark frames sit side by side */
+.th-light {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+.th-dark {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.blob {
+  display: inline-block; width: var(--s, 64px); height: var(--s, 64px); background: var(--c);
+  border: 3px solid var(--blob-edge); border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
+  box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.08);
+}
+.learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }
+.stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }
+.stk .blob { border-width: 2px; }
+.stk.lock { filter: grayscale(1); opacity: 0.35; }
+
+.lesson {
+  position: fixed; inset: 0; z-index: 20; background: var(--bg); display: flex; flex-direction: column;
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+}
+.lbar { display: flex; align-items: center; gap: 12px; max-width: 540px; width: 100%; margin: 0 auto; }
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; }
+.minijar { display: flex; align-items: center; gap: 4px; font-weight: 900; font-size: 18px; }
+.minijar svg { width: 34px; height: 34px; }
+.stage { flex: 1; max-width: 540px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 10px 0; overflow-y: auto; }
+.prompt { text-align: center; font-weight: 800; font-size: 20px; color: var(--muted); margin: 0; }
+.pic { width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; --s: 96px; flex: none; }
+.word { text-align: center; }
+.word .ka { font-size: 54px; line-height: 1.2; color: var(--word-color); display: block; }
+.word .tr { font-size: 18px; color: var(--muted); font-weight: 700; }
+.speak { width: 84px; height: 84px; margin: 0 auto; border-radius: 50%; background: var(--sun); box-shadow: 0 5px 0 var(--sun-dark); display: grid; place-items: center; flex: none; }
+.speak svg { width: 40px; height: 40px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile { aspect-ratio: 1 / 1; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; box-shadow: 0 5px 0 var(--line); --s: 64px; }
+.ok { border-color: var(--mint) !important; background: var(--mint-soft) !important; box-shadow: 0 5px 0 var(--mint) !important; }
+.bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.next { display: block; width: 100%; min-height: 56px; padding: 18px; border-radius: 22px; background: var(--mint); color: #fff; font-size: 22px; font-weight: 900; box-shadow: 0 5px 0 var(--mint-dark); }
+.toast { max-width: 540px; width: 100%; margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; font-weight: 900; font-size: 20px; }
+.toast.good { color: var(--mint); }
+.toast.try { color: var(--pom); }
+.toast.offline { color: var(--muted); font-size: 17px; }
+.retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+.mascot { flex: none; }
+
+/* ---------- proposed: image.kind = text ---------- */
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.pic.txt { width: 100%; max-width: 360px; border-radius: 26px; padding: 0 16px; container-type: inline-size; }
+.pic.txt .glyph.w { font-size: min(54px, 15cqi); line-height: 1.2; text-wrap: balance; }
+.tile.txt { container-type: inline-size; padding: 6px; }
+.tile .glyph.w { font-size: 13cqi; line-height: 1.15; text-wrap: balance; overflow-wrap: normal; hyphens: none; }
+.stk .glyph.l { line-height: 1; }
+.stk.txt { width: auto; min-width: 48px; padding: 0 12px; }
+.stk .glyph.w { font-size: 18px; line-height: 1; white-space: nowrap; }
+.anchor {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 auto;
+  padding: 8px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); --s: 34px;
+}
+.anchor .ka { font-size: 28px; line-height: 1.2; color: var(--ink); }
+.anchor .ka b { color: var(--word-color); font-weight: 800; }
+.anchor small { color: var(--muted); font-weight: 700; font-size: 16px; }
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1900px; margin: 0 auto; padding: 32px 28px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 48px 0 4px; padding-top: 20px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 10px; max-width: 410px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 14px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .lesson { position: absolute; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; }
+.pad-wrap { width: 461px; height: 660px; }
+.pad { width: 840px; height: 1200px; border-radius: 38px; --safe-top: 24px; --safe-bottom: 20px; transform: scale(0.55); transform-origin: 0 0; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; }
+.phone .sbar { height: 47px; }
+.pad .sbar { height: 24px; font-size: 13px; padding: 0 22px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.pad .hbar { width: 220px; margin-left: -110px; bottom: 7px; }
+.sheet { padding: 22px 24px; border-radius: 24px; background: var(--bg); border: 10px solid #0d0d12; width: 560px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Занятие · карточка без картинки (<code>image.kind: text</code>)</h1>
+  <p class="lead">Экран <code>.lesson</code> из Lesson.tsx. Токены и классы — из styles.css; новые — <code>.glyph</code>, <code>.pic.txt</code>, <code>.tile.txt</code>, <code>.stk.txt</code>, <code>.anchor</code>. Телефон 390×844, iPad портрет 820×1180 (в масштабе 0,55).</p>
+
+  <h2>1 · intro — буква</h2>
+  <p class="lead">ka «ბ», tr «б», ru «буква б» (в aria-label). Опорное слово «ბურთი» — ссылка на уже существующее слово <code>ball</code> (⚽), первая буква подсвечена.</p>
+  <div class="row" id="s1"></div>
+
+  <h2>2 · listen — буквы ბ დ ლ მ</h2>
+  <p class="lead">Звучит «ბ». Похожие по форме буквы. Неверная плитка трясётся 0,35 с, краснеет и блокируется до конца шага.</p>
+  <div class="row" id="s2"></div>
+
+  <h2>3 · intro — слово без картинки</h2>
+  <p class="lead">ka «მადლობა», tr «мадлоба», ru «спасибо». Слово стоит в зоне картинки; строка <code>.word .ka</code> не дублирует его — остаётся только подсказка.</p>
+  <div class="row" id="s3"></div>
+
+  <h2>4 · listen — слова без картинки, с длинным</h2>
+  <p class="lead">Звучит «მადლობა». Размер шрифта в плитке — 13% её ширины; перенос только по пробелу, слово не рвётся.</p>
+  <div class="row" id="s4"></div>
+
+  <h2>5 · наклейки на главном</h2>
+  <p class="lead">Тот же <code>.stk</code> 48×48 и <code>.stk.lock</code>. Буква — квадрат, слово — плашка по ширине текста в одну строку.</p>
+  <div class="row" id="s5"></div>
+</main>
+
+<script>
+const SPK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#4a3200"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="#4a3200" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+const JAR = '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 14 H46 L44 20 Q56 30 52 48 Q48 60 32 60 Q16 60 12 48 Q8 30 20 20Z" fill="#C8683E"/><path d="M18 14 H46 L44 20 H20Z" fill="#A4532F"/><path d="M14 38 Q32 44 50 38" stroke="#E7A07A" stroke-width="3" fill="none"/><circle cx="32" cy="10" r="6" fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="2"/></svg>';
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+
+const toast = {
+  none: '<div class="toast" aria-live="polite"></div>',
+  good: `<div class="toast good">${MASCOT(44)}Молодец! +1 🪙</div>`,
+  plain: `<div class="toast good">${MASCOT(44)}Правильно!</div>`,
+  try: '<div class="toast try">Почти! Попробуй ещё</div>',
+  offline: '<div class="toast offline">Нет связи. Проверь интернет<button type="button" class="retry">Повторить</button></div>',
+};
+
+function lesson(prog, coins, stage, t) {
+  return `<div class="lesson" role="dialog" aria-label="Занятие">
+    <div class="lbar"><button type="button" class="x" aria-label="Закрыть">✕</button>
+      <div class="prog"><i style="width:${prog}%"></i></div>
+      <div class="minijar">${JAR}<span>${coins}</span></div></div>
+    <div class="stage">${stage}</div>${t}</div>`;
+}
+function phone(theme, body) {
+  return `<div class="dev phone th-${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div>`;
+}
+function pad(theme, body) {
+  return `<div class="pad-wrap"><div class="dev pad th-${theme}"><div class="sbar"><span>9:41 Вс 27 сент.</span><span>100%</span></div>${body}<div class="hbar"></div></div></div>`;
+}
+function fig(title, sub, frame) {
+  return `<figure><figcaption>${title}<span>${sub}</span></figcaption>${frame}</figure>`;
+}
+
+/* ---- 1 · intro letter ---- */
+const introLetter = hint => `
+  <p class="prompt">Новая буква!</p>
+  <div class="pic"><span class="glyph l ka" role="img" aria-label="буква б">ბ</span></div>
+  ${hint ? '<div class="word"><span class="tr">б</span></div>' : ''}
+  <div class="anchor" aria-label="ბურთი — мяч"><span class="emoji">⚽</span><span class="ka"><b>ბ</b>ურთი</span>${hint ? '<small>бурти</small>' : ''}</div>
+  <button type="button" class="speak" aria-label="Послушать">${SPK}</button>
+  <button type="button" class="next">Дальше</button>`;
+
+document.getElementById('s1').innerHTML = [
+  fig('Телефон · светлая', 'подсказка кириллицей включена', phone('light', lesson(0, 12, introLetter(true), toast.none))),
+  fig('Телефон · тёмная', 'подсказка включена', phone('dark', lesson(0, 12, introLetter(true), toast.none))),
+  fig('Телефон · подсказка выключена', 'родитель снял «Подсказку кириллицей»: нет «б» и «бурти»', phone('light', lesson(0, 12, introLetter(false), toast.none))),
+  fig('iPad портрет · светлая', 'колонка 540 px по центру, как во всём занятии', pad('light', lesson(0, 12, introLetter(true), toast.none))),
+].join('');
+
+/* ---- 2 · listen letters ---- */
+const LET = [['ბ', 'буква б', 'b'], ['დ', 'буква д', 'd'], ['ლ', 'буква л', 'l'], ['მ', 'буква м', 'm']];
+const listen = (items, state, cls) => `
+  <p class="prompt">Послушай и найди</p>
+  <button type="button" class="speak" aria-label="Послушать ещё раз">${SPK}</button>
+  <div class="grid">${items.map(([ka, ru, id]) => {
+    const s = state[id] || '';
+    const locked = state.locked || s;
+    return `<button type="button" class="tile txt ${s}" aria-label="${ru}"${locked ? ' disabled' : ''}><span class="glyph ${cls} ka">${ka}</span></button>`;
+  }).join('')}</div>`;
+
+document.getElementById('s2').innerHTML = [
+  fig('Исходное', 'звучит «ბ» (автоплей через 300 мс)', phone('light', lesson(43, 12, listen(LET, {}, 'l'), toast.none))),
+  fig('Неверно', 'тронул «დ»: красная, заблокирована; слово звучит ещё раз', phone('light', lesson(43, 12, listen(LET, { d: 'bad' }, 'l'), toast.try))),
+  fig('Верно с первой попытки', 'зелёная, все плитки заблокированы, монета летит в копилку', phone('light', lesson(43, 13, listen(LET, { b: 'ok', locked: 1 }, 'l'), toast.good))),
+  fig('Верно после ошибки · тёмная', 'красная остаётся; монеты нет — сервер даёт +1 только с первой попытки', phone('dark', lesson(43, 12, listen(LET, { d: 'bad', b: 'ok', locked: 1 }, 'l'), toast.plain))),
+  fig('Верно, но нет связи · тёмная', 'ответ не ушёл: плитка зелёная, копилка не выросла, «Повторить»', phone('dark', lesson(43, 12, listen(LET, { b: 'ok', locked: 1 }, 'l'), toast.offline))),
+].join('');
+
+/* ---- 3 · intro word ---- */
+const introWord = (ka, tr, ru) => `
+  <p class="prompt">Новое слово!</p>
+  <div class="pic txt"><span class="glyph w ka" role="img" aria-label="${ru}">${ka}</span></div>
+  <div class="word"><span class="tr">${tr}</span></div>
+  <button type="button" class="speak" aria-label="Послушать">${SPK}</button>
+  <button type="button" class="next">Дальше</button>`;
+
+document.getElementById('s3').innerHTML = [
+  fig('Телефон · светлая', 'слово 54 px — тот же размер, что у .word .ka', phone('light', lesson(14, 12, introWord('მადლობა', 'мадлоба', 'спасибо'), toast.none))),
+  fig('Телефон · тёмная', '', phone('dark', lesson(14, 12, introWord('მადლობა', 'мадлоба', 'спасибо'), toast.none))),
+  fig('Длинное слово', '«დილა მშვიდობისა»: перенос по пробелу, шрифт уменьшается до влезания самого длинного слова', phone('light', lesson(14, 12, introWord('დილა მშვიდობისა', 'дила мшвидобиса', 'доброе утро'), toast.none))),
+].join('');
+
+/* ---- 4 · listen words ---- */
+const WRD = [['გამარჯობა', 'привет', 'hi'], ['ნახვამდის', 'до свидания', 'bye'], ['მადლობა', 'спасибо', 'thx'], ['დილა მშვიდობისა', 'доброе утро', 'morning']];
+document.getElementById('s4').innerHTML = [
+  fig('Телефон · светлая · исходное', 'плитка 173 px → шрифт ~20 px', phone('light', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
+  fig('Телефон · тёмная · неверно', 'тронул длинную плитку', phone('dark', lesson(57, 12, listen(WRD, { morning: 'bad' }, 'w'), toast.try))),
+  fig('Телефон · светлая · верно', '', phone('light', lesson(57, 13, listen(WRD, { thx: 'ok', locked: 1 }, 'w'), toast.good))),
+  fig('iPad портрет · светлая', 'плитка 264 px → шрифт ~33 px', pad('light', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
+  fig('iPad портрет · тёмная', '', pad('dark', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
+].join('');
+
+/* ---- 5 · stickers ---- */
+const stickers = `
+  <div class="learned">Наклейки: 6 из 12</div>
+  <div class="stickers">
+    <div class="stk" title="собака"><span class="emoji" role="img" aria-label="собака">🐶</span></div>
+    <div class="stk" title="буква б"><span class="glyph l ka" role="img" aria-label="буква б">ბ</span></div>
+    <div class="stk txt" title="спасибо"><span class="glyph w ka" role="img" aria-label="спасибо">მადლობა</span></div>
+    <div class="stk" title="буква м"><span class="glyph l ka" role="img" aria-label="буква м">მ</span></div>
+    <div class="stk" title="красный"><span class="blob" style="--c:#e23b55" role="img" aria-label="красный"></span></div>
+    <div class="stk lock" title="буква д"><span class="glyph l ka" role="img" aria-label="буква д">დ</span></div>
+    <div class="stk lock" title="буква л"><span class="glyph l ka" role="img" aria-label="буква л">ლ</span></div>
+    <div class="stk txt lock" title="доброе утро"><span class="glyph w ka" role="img" aria-label="доброе утро">დილა მშვიდობისა</span></div>
+    <div class="stk txt lock" title="до свидания"><span class="glyph w ka" role="img" aria-label="до свидания">ნახვამდის</span></div>
+    <div class="stk lock" title="мяч"><span class="emoji" role="img" aria-label="мяч">⚽</span></div>
+    <div class="stk txt" title="привет"><span class="glyph w ka" role="img" aria-label="привет">გამარჯობა</span></div>
+    <div class="stk lock" title="кошка"><span class="emoji" role="img" aria-label="кошка">🐱</span></div>
+  </div>`;
+document.getElementById('s5').innerHTML = [
+  fig('Светлая', 'выученные цветные, невыученные серые (.lock)', `<div class="sheet th-light">${stickers}</div>`),
+  fig('Тёмная', 'глиф в --word-color: жёлтый на тёмном', `<div class="sheet th-dark">${stickers}</div>`),
+].join('');
+</script>
+</body>
+</html>

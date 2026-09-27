@@ -1,0 +1,76 @@
+slug: animals
+title_ru: Животные
+title_ka: ცხოველები
+icon: "🐻"
+order: 13
+words:
+  - slug: bear
+    ka: დათვი
+    tr: датви
+    ru: медведь
+    image: {kind: emoji, value: "🐻"}
+  - slug: wolf
+    ka: მგელი
+    tr: мгели
+    ru: волк
+    image: {kind: emoji, value: "🐺"}
+  - slug: fox
+    ka: მელია
+    tr: мелиа
+    ru: лиса
+    image: {kind: emoji, value: "🦊"}
+  - slug: hare
+    ka: კურდღელი
+    tr: курдгели
+    ru: заяц
+    image: {kind: emoji, value: "🐰"}
+  - slug: cow
+    ka: ძროხა
+    tr: дзроха
+    ru: корова
+    image: {kind: emoji, value: "🐄"}
+  - slug: pig
+    ka: ღორი
+    tr: гори
+    ru: свинья
+    image: {kind: emoji, value: "🐷"}
+  - slug: chicken
+    ka: ქათამი
+    tr: катами
+    ru: курица
+    image: {kind: emoji, value: "🐔"}
+  - slug: sheep
+    ka: ცხვარი
+    tr: цхвари
+    ru: овца
+    image: {kind: emoji, value: "🐑"}
+  - slug: bird
+    ka: ჩიტი
+    tr: чити
+    ru: птица
+    image: {kind: emoji, value: "🐦"}
+  - slug: butterfly
+    ka: პეპელა
+    tr: пепела
+    ru: бабочка
+    image: {kind: emoji, value: "🦋"}
+  - slug: frog
+    ka: ბაყაყი
+    tr: бакаки
+    ru: лягушка
+    image: {kind: emoji, value: "🐸"}
+  - slug: mouse
+    ka: თაგვი
+    tr: тагви
+    ru: мышь
+    image: {kind: emoji, value: "🐭"}
+  - slug: lion
+    ka: ლომი
+    tr: ломи
+    ru: лев
+    image: {kind: emoji, value: "🦁"}
+  - slug: elephant
+    ka: სპილო
+    tr: спило
+    ru: слон
+    image: {kind: emoji, value: "🐘"}

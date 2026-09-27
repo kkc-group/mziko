@@ -1,0 +1,81 @@
+slug: school
+title_ru: Школа
+title_ka: სკოლა
+icon: "🎒"
+order: 11
+words:
+  - slug: school
+    ka: სკოლა
+    tr: скола
+    ru: школа
+    image: {kind: emoji, value: "🏫"}
+  - slug: teacher
+    ka: მასწავლებელი
+    tr: масцавлебели
+    ru: учитель
+    image: {kind: emoji, value: "🧑‍🏫"}
+  - slug: lesson
+    ka: გაკვეთილი
+    tr: гакветили
+    ru: урок
+    image: {kind: emoji, value: "📝"}
+  - slug: bell
+    ka: ზარი
+    tr: зари
+    ru: звонок
+    image: {kind: emoji, value: "🔔"}
+  - slug: backpack
+    ka: ზურგჩანთა
+    tr: зургчанта
+    ru: рюкзак
+    image: {kind: emoji, value: "🎒"}
+  - slug: chair
+    ka: სკამი
+    tr: сками
+    ru: стул
+    image: {kind: emoji, value: "🪑"}
+  - slug: book
+    ka: წიგნი
+    tr: цигни
+    ru: книга
+    image: {kind: emoji, value: "📕"}
+  - slug: notebook
+    ka: რვეული
+    tr: рвеули
+    ru: тетрадь
+    image: {kind: emoji, value: "📓"}
+  - slug: pen
+    ka: კალამი
+    tr: калами
+    ru: ручка
+    image: {kind: emoji, value: "🖊️"}
+  - slug: pencil
+    ka: ფანქარი
+    tr: панкари
+    ru: карандаш
+    image: {kind: emoji, value: "✏️"}
+  - slug: ruler
+    ka: სახაზავი
+    tr: сахазави
+    ru: линейка
+    image: {kind: emoji, value: "📏"}
+  - slug: scissors
+    ka: მაკრატელი
+    tr: макратели
+    ru: ножницы
+    image: {kind: emoji, value: "✂️"}
+  - slug: desk
+    ka: მერხი
+    tr: мерхи
+    ru: парта
+    image: {kind: text, value: მერხი}  # TODO picture
+  - slug: board
+    ka: დაფა
+    tr: дапа
+    ru: доска
+    image: {kind: text, value: დაფა}  # TODO picture
+  - slug: glue
+    ka: წებო
+    tr: цебо
+    ru: клей
+    image: {kind: text, value: წებო}  # TODO picture

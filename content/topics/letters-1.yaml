@@ -1,0 +1,57 @@
+# Georgian alphabet, part 1 of 4. Letter order follows the primer tradition
+# (Deda Ena): vowels and the most frequent consonants first, not alphabetical.
+# `ka` is what the voice reads; `anchor` is the example word shown under the letter.
+slug: letters-1
+title_ru: Буквы 1
+title_ka: ასოები 1
+icon: "🔤"
+order: 1
+words:
+  - slug: an
+    ka: ა
+    tr: а
+    ru: буква а
+    image: {kind: text, value: ა}
+    anchor: {ka: ავტობუსი, tr: автобуси, ru: автобус, emoji: "🚌"}
+  - slug: in
+    ka: ი
+    tr: и
+    ru: буква и
+    image: {kind: text, value: ი}
+    anchor: {ka: ინდაური, tr: индаури, ru: индюк, emoji: "🦃"}
+  - slug: tan
+    ka: თ
+    tr: т
+    ru: буква т
+    image: {kind: text, value: თ}
+    anchor: {ka: თევზი, tr: тевзи, ru: рыба, emoji: "🐟"}
+  - slug: "on"  # quoted: bare `on` is a YAML boolean
+    ka: ო
+    tr: о
+    ru: буква о
+    image: {kind: text, value: ო}
+    anchor: {ka: ობობა, tr: обоба, ru: паук, emoji: "🕷️"}
+  - slug: san
+    ka: ს
+    tr: с
+    ru: буква с
+    image: {kind: text, value: ს}
+    anchor: {ka: სახლი, tr: сахли, ru: дом, emoji: "🏠"}
+  - slug: en
+    ka: ე
+    tr: э
+    ru: буква э
+    image: {kind: text, value: ე}
+    anchor: {ka: ექიმი, tr: экими, ru: врач, emoji: "🩺"}
+  - slug: las
+    ka: ლ
+    tr: л
+    ru: буква л
+    image: {kind: text, value: ლ}
+    anchor: {ka: ლომი, tr: ломи, ru: лев, emoji: "🦁"}
+  - slug: un
+    ka: უ
+    tr: у
+    ru: буква у
+    image: {kind: text, value: უ}
+    anchor: {ka: უთო, tr: уто, ru: утюг}

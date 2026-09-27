@@ -1,0 +1,55 @@
+# Georgian alphabet, part 2 of 4 (primer order, see letters-1.yaml).
+slug: letters-2
+title_ru: Буквы 2
+title_ka: ასოები 2
+icon: "✏️"
+order: 2
+words:
+  - slug: vin
+    ka: ვ
+    tr: в
+    ru: буква в
+    image: {kind: text, value: ვ}
+    anchor: {ka: ვაშლი, tr: вашли, ru: яблоко, emoji: "🍎"}
+  - slug: don
+    ka: დ
+    tr: д
+    ru: буква д
+    image: {kind: text, value: დ}
+    anchor: {ka: დათვი, tr: датви, ru: медведь, emoji: "🐻"}
+  - slug: man
+    ka: მ
+    tr: м
+    ru: буква м
+    image: {kind: text, value: მ}
+    anchor: {ka: მზე, tr: мзе, ru: солнце, emoji: "☀️"}
+  - slug: kan
+    ka: კ
+    tr: к
+    ru: буква к
+    image: {kind: text, value: კ}
+    anchor: {ka: კატა, tr: ката, ru: кошка, emoji: "🐱"}
+  - slug: rae
+    ka: რ
+    tr: р
+    ru: буква р
+    image: {kind: text, value: რ}
+    anchor: {ka: რადიო, tr: радио, ru: радио, emoji: "📻"}
+  - slug: nar
+    ka: ნ
+    tr: н
+    ru: буква н
+    image: {kind: text, value: ნ}
+    anchor: {ka: ნავი, tr: нави, ru: лодка, emoji: "⛵"}
+  - slug: ban
+    ka: ბ
+    tr: б
+    ru: буква б
+    image: {kind: text, value: ბ}
+    anchor: {ka: ბურთი, tr: бурти, ru: мяч, emoji: "⚽"}
+  - slug: tar
+    ka: ტ
+    tr: т
+    ru: буква т (твёрдая)
+    image: {kind: text, value: ტ}
+    anchor: {ka: ტორტი, tr: торти, ru: торт, emoji: "🎂"}

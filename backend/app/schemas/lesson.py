@@ -19,6 +19,15 @@ class ImageOut(BaseModel):
     value: str
 
 
+class AnchorOut(BaseModel):
+    """Example word for a letter card: "ბ as in ბურთი"."""
+
+    ka: str
+    tr: str
+    ru: str
+    emoji: str | None = None
+
+
 class WordOut(BaseModel):
     slug: str
     topic_slug: str
@@ -26,6 +35,7 @@ class WordOut(BaseModel):
     tr: str
     ru: str
     image: ImageOut
+    anchor: AnchorOut | None = None
     audio_url: str
 
 

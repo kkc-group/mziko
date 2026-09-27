@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,10 +21,33 @@ from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.models import ImageKind, Topic, Word
 
+# Longest run of letters a text card can show without breaking the answer tile grid
+# (see docs/mockups/letter-cards.html). Text may wrap at spaces, never inside a word.
+TEXT_CHUNK_MAX = 10
+
 
 class ImageSpec(BaseModel):
     kind: ImageKind
     value: str
+
+    @model_validator(mode="after")
+    def text_fits_a_tile(self) -> "ImageSpec":
+        if self.kind is ImageKind.text:
+            too_long = [c for c in self.value.split() if len(c) > TEXT_CHUNK_MAX]
+            if too_long:
+                raise ValueError(
+                    f"text image {self.value!r}: {too_long} longer than {TEXT_CHUNK_MAX} letters"
+                )
+        return self
+
+
+class AnchorSpec(BaseModel):
+    """Example word for a letter: shown as "⚽ ბურთი" under the letter on the intro card."""
+
+    ka: str
+    tr: str
+    ru: str
+    emoji: str | None = None
 
 
 class WordSpec(BaseModel):
@@ -33,6 +56,7 @@ class WordSpec(BaseModel):
     tr: str
     ru: str
     image: ImageSpec
+    anchor: AnchorSpec | None = None
 
 
 class TopicSpec(BaseModel):
@@ -42,6 +66,21 @@ class TopicSpec(BaseModel):
     icon: str
     order: int
     words: list[WordSpec] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def words_are_distinguishable(self) -> "TopicSpec":
+        # Quiz distractors come from the same topic: two words sharing a picture (or a
+        # slug) would make "listen and find" unanswerable.
+        for field in ("slug", "ka"):
+            values = [getattr(w, field) for w in self.words]
+            dups = sorted({v for v in values if values.count(v) > 1})
+            if dups:
+                raise ValueError(f"topic {self.slug!r}: duplicate {field} {dups}")
+        pictures = [w.image.value for w in self.words]
+        dups = sorted({p for p in pictures if pictures.count(p) > 1})
+        if dups:
+            raise ValueError(f"topic {self.slug!r}: several words share the picture {dups}")
+        return self
 
 
 def load_topics(content_dir: Path) -> list[TopicSpec]:
@@ -88,6 +127,7 @@ async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[i
                 ru=word.ru,
                 image_kind=word.image.kind,
                 image_value=word.image.value,
+                anchor=word.anchor.model_dump() if word.anchor else None,
                 order=position,
             )
             word_stmt = word_stmt.on_conflict_do_update(
@@ -98,6 +138,7 @@ async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[i
                     "ru": word.ru,
                     "image_kind": word.image.kind,
                     "image_value": word.image.value,
+                    "anchor": word.anchor.model_dump() if word.anchor else None,
                     "order": position,
                 },
             )

@@ -1,0 +1,76 @@
+slug: actions
+title_ru: Действия
+title_ka: მოქმედებები
+icon: "🏃"
+order: 18
+words:
+  - slug: run
+    ka: სირბილი
+    tr: сирбили
+    ru: бегать
+    image: {kind: emoji, value: "🏃"}
+  - slug: sleep
+    ka: ძილი
+    tr: дзили
+    ru: спать
+    image: {kind: emoji, value: "😴"}
+  - slug: eat
+    ka: ჭამა
+    tr: чама
+    ru: есть
+    image: {kind: emoji, value: "🍽️"}
+  - slug: read
+    ka: კითხვა
+    tr: китхва
+    ru: читать
+    image: {kind: emoji, value: "📖"}
+  - slug: write
+    ka: წერა
+    tr: цера
+    ru: писать
+    image: {kind: emoji, value: "✍️"}
+  - slug: draw
+    ka: ხატვა
+    tr: хатва
+    ru: рисовать
+    image: {kind: emoji, value: "🎨"}
+  - slug: sing
+    ka: სიმღერა
+    tr: симгера
+    ru: петь
+    image: {kind: emoji, value: "🎤"}
+  - slug: dance
+    ka: ცეკვა
+    tr: цеква
+    ru: танцевать
+    image: {kind: emoji, value: "💃"}
+  - slug: jump
+    ka: ხტომა
+    tr: хтома
+    ru: прыгать
+    image: {kind: emoji, value: "🤸"}
+  - slug: wash
+    ka: დაბანა
+    tr: дабана
+    ru: умываться
+    image: {kind: emoji, value: "🚿"}
+  - slug: swim
+    ka: ცურვა
+    tr: цурва
+    ru: плавать
+    image: {kind: emoji, value: "🏊"}
+  - slug: laugh
+    ka: სიცილი
+    tr: сицили
+    ru: смеяться
+    image: {kind: emoji, value: "😂"}
+  - slug: drink
+    ka: სმა
+    tr: сма
+    ru: пить
+    image: {kind: emoji, value: "🥤"}
+  - slug: play
+    ka: თამაში
+    tr: тамаши
+    ru: играть
+    image: {kind: emoji, value: "🧸"}

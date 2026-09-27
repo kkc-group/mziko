@@ -2,6 +2,7 @@ import { fmtLari } from '../fx'
 import type { Me, TopicOut } from '../types'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { WordImage } from '../components/WordImage'
+import { textClass } from '../wordText'
 
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -79,7 +80,7 @@ export function Home({
         {me.stickers.map((s) => (
           <div
             key={`${s.word.topic_slug}/${s.word.slug}`}
-            className={`stk${s.learned ? '' : ' lock'}`}
+            className={`stk${textClass(s.word)}${s.learned ? '' : ' lock'}`}
             title={s.word.ru}
           >
             <WordImage word={s.word} />

@@ -1,0 +1,66 @@
+slug: clothes
+title_ru: Одежда
+title_ka: ტანსაცმელი
+icon: "👕"
+order: 15
+words:
+  - slug: shirt
+    ka: პერანგი
+    tr: пэранги
+    ru: рубашка
+    image: {kind: emoji, value: "👕"}
+  - slug: pants
+    ka: შარვალი
+    tr: шарвали
+    ru: штаны
+    image: {kind: emoji, value: "👖"}
+  - slug: dress
+    ka: კაბა
+    tr: каба
+    ru: платье
+    image: {kind: emoji, value: "👗"}
+  - slug: jacket
+    ka: ქურთუკი
+    tr: куртуки
+    ru: куртка
+    image: {kind: emoji, value: "🧥"}
+  - slug: hat
+    ka: ქუდი
+    tr: куди
+    ru: шапка
+    image: {kind: emoji, value: "🧢"}
+  - slug: scarf
+    ka: შარფი
+    tr: шарфи
+    ru: шарф
+    image: {kind: emoji, value: "🧣"}
+  - slug: socks
+    ka: წინდა
+    tr: цинда
+    ru: носки
+    image: {kind: emoji, value: "🧦"}
+  - slug: boots
+    ka: ჩექმა
+    tr: чекма
+    ru: сапоги
+    image: {kind: emoji, value: "👢"}
+  - slug: gloves
+    ka: ხელთათმანი
+    tr: хелтатмани
+    ru: перчатки
+    image: {kind: emoji, value: "🧤"}
+  - slug: glasses
+    ka: სათვალე
+    tr: сатвале
+    ru: очки
+    image: {kind: emoji, value: "👓"}
+  - slug: skirt
+    ka: ქვედაბოლო
+    tr: кведаболо
+    ru: юбка
+    image: {kind: text, value: ქვედაბოლო}  # TODO picture
+  - slug: sweater
+    ka: სვიტერი
+    tr: свитери
+    ru: свитер
+    image: {kind: text, value: სვიტერი}  # TODO picture

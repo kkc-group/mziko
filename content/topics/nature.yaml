@@ -1,0 +1,81 @@
+slug: nature
+title_ru: Природа и погода
+title_ka: ბუნება
+icon: "🌦️"
+order: 17
+words:
+  - slug: tree
+    ka: ხე
+    tr: хе
+    ru: дерево
+    image: {kind: emoji, value: "🌳"}
+  - slug: moon
+    ka: მთვარე
+    tr: мтваре
+    ru: луна
+    image: {kind: emoji, value: "🌙"}
+  - slug: star
+    ka: ვარსკვლავი
+    tr: варсквлави
+    ru: звезда
+    image: {kind: emoji, value: "⭐"}
+  - slug: cloud
+    ka: ღრუბელი
+    tr: грубели
+    ru: облако
+    image: {kind: emoji, value: "☁️"}
+  - slug: rain
+    ka: წვიმა
+    tr: цвима
+    ru: дождь
+    image: {kind: emoji, value: "🌧️"}
+  - slug: snow
+    ka: თოვლი
+    tr: товли
+    ru: снег
+    image: {kind: emoji, value: "❄️"}
+  - slug: wind
+    ka: ქარი
+    tr: кари
+    ru: ветер
+    image: {kind: emoji, value: "💨"}
+  - slug: mountain
+    ka: მთა
+    tr: мта
+    ru: гора
+    image: {kind: emoji, value: "⛰️"}
+  - slug: sea
+    ka: ზღვა
+    tr: згва
+    ru: море
+    image: {kind: emoji, value: "🌊"}
+  - slug: river
+    ka: მდინარე
+    tr: мдинаре
+    ru: река
+    image: {kind: emoji, value: "🏞️"}
+  - slug: leaf
+    ka: ფოთოლი
+    tr: потоли
+    ru: лист
+    image: {kind: emoji, value: "🍃"}
+  - slug: grass
+    ka: ბალახი
+    tr: балахи
+    ru: трава
+    image: {kind: emoji, value: "🌿"}
+  - slug: fire
+    ka: ცეცხლი
+    tr: цецхли
+    ru: огонь
+    image: {kind: emoji, value: "🔥"}
+  - slug: rainbow
+    ka: ცისარტყელა
+    tr: цисарткела
+    ru: радуга
+    image: {kind: emoji, value: "🌈"}
+  - slug: stone
+    ka: ქვა
+    tr: ква
+    ru: камень
+    image: {kind: emoji, value: "🪨"}

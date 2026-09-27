@@ -1,6 +1,15 @@
 // Mirrors backend/app/schemas/*.py. Keep field names identical to the API.
 
-export type ImageKind = 'emoji' | 'color' | 'file'
+// `text`: no picture, the value (a letter or a word) is drawn as large Georgian text.
+export type ImageKind = 'emoji' | 'color' | 'file' | 'text'
+
+/** Example word for a letter card: "ბ as in ⚽ ბურთი". */
+export interface AnchorOut {
+  ka: string
+  tr: string
+  ru: string
+  emoji: string | null
+}
 
 export interface WordOut {
   slug: string
@@ -9,6 +18,7 @@ export interface WordOut {
   tr: string
   ru: string
   image: { kind: ImageKind; value: string }
+  anchor: AnchorOut | null
   audio_url: string
 }
 

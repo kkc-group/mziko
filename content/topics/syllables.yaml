@@ -1,0 +1,33 @@
+# Open syllables for first reading: five frequent consonants with the five vowels.
+# Text cards: the child hears a syllable and finds it among four written ones.
+slug: syllables
+title_ru: Слоги
+title_ka: მარცვლები
+icon: "🧩"
+order: 5
+words:
+  - {slug: ba, ka: ბა, tr: ба, ru: слог ба, image: {kind: text, value: ბა}}
+  - {slug: be, ka: ბე, tr: бэ, ru: слог бэ, image: {kind: text, value: ბე}}
+  - {slug: bi, ka: ბი, tr: би, ru: слог би, image: {kind: text, value: ბი}}
+  - {slug: bo, ka: ბო, tr: бо, ru: слог бо, image: {kind: text, value: ბო}}
+  - {slug: bu, ka: ბუ, tr: бу, ru: слог бу, image: {kind: text, value: ბუ}}
+  - {slug: ma, ka: მა, tr: ма, ru: слог ма, image: {kind: text, value: მა}}
+  - {slug: me, ka: მე, tr: мэ, ru: слог мэ, image: {kind: text, value: მე}}
+  - {slug: mi, ka: მი, tr: ми, ru: слог ми, image: {kind: text, value: მი}}
+  - {slug: mo, ka: მო, tr: мо, ru: слог мо, image: {kind: text, value: მო}}
+  - {slug: mu, ka: მუ, tr: му, ru: слог му, image: {kind: text, value: მუ}}
+  - {slug: da, ka: და, tr: да, ru: слог да, image: {kind: text, value: და}}
+  - {slug: de, ka: დე, tr: дэ, ru: слог дэ, image: {kind: text, value: დე}}
+  - {slug: di, ka: დი, tr: ди, ru: слог ди, image: {kind: text, value: დი}}
+  - {slug: do, ka: დო, tr: до, ru: слог до, image: {kind: text, value: დო}}
+  - {slug: du, ka: დუ, tr: ду, ru: слог ду, image: {kind: text, value: დუ}}
+  - {slug: la, ka: ლა, tr: ла, ru: слог ла, image: {kind: text, value: ლა}}
+  - {slug: le, ka: ლე, tr: лэ, ru: слог лэ, image: {kind: text, value: ლე}}
+  - {slug: li, ka: ლი, tr: ли, ru: слог ли, image: {kind: text, value: ლი}}
+  - {slug: lo, ka: ლო, tr: ло, ru: слог ло, image: {kind: text, value: ლო}}
+  - {slug: lu, ka: ლუ, tr: лу, ru: слог лу, image: {kind: text, value: ლუ}}
+  - {slug: sa, ka: სა, tr: са, ru: слог са, image: {kind: text, value: სა}}
+  - {slug: se, ka: სე, tr: сэ, ru: слог сэ, image: {kind: text, value: სე}}
+  - {slug: si, ka: სი, tr: си, ru: слог си, image: {kind: text, value: სი}}
+  - {slug: so, ka: სო, tr: со, ru: слог со, image: {kind: text, value: სო}}
+  - {slug: su, ka: სუ, tr: су, ru: слог су, image: {kind: text, value: სუ}}

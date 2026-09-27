@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, withRetry, type AnswerBody } from '../api'
 import type { Speaker } from '../audio'
 import { flyCoins, fmtLari, uuid } from '../fx'
-import type { SessionSummary, Step, WordOut } from '../types'
+import type { AnchorOut, SessionSummary, Step, WordOut } from '../types'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { SpeakButton } from '../components/SpeakButton'
 import { WordImage } from '../components/WordImage'
+import { isLetter, isText, textClass } from '../wordText'
 
 type Toast = { kind: 'good' | 'try' | 'offline'; text: string } | null
 
@@ -123,7 +124,7 @@ export function Lesson({
                   setToast({
                     kind: 'good',
                     text: r.word_learned
-                      ? `Слово выучено! +${r.coins_gained} 🪙`
+                      ? `${isLetter(step.word) ? 'Буква выучена' : 'Слово выучено'}! +${r.coins_gained} 🪙`
                       : r.coins_gained
                         ? `Молодец! +${r.coins_gained} 🪙`
                         : 'Правильно!',
@@ -165,21 +166,41 @@ function Intro({
   showHint: boolean
   onNext: () => void
 }) {
+  const { word } = step
+  const letter = isLetter(word)
   return (
     <>
-      <p className="prompt">Новое слово!</p>
-      <div className="pic">
-        <WordImage word={step.word} />
+      <p className="prompt">{letter ? 'Новая буква!' : 'Новое слово!'}</p>
+      <div className={`pic${textClass(word)}`}>
+        <WordImage word={word} />
       </div>
-      <div className="word">
-        <span className="ka">{step.word.ka}</span>
-        {showHint && <span className="tr">{step.word.tr}</span>}
-      </div>
-      <SpeakButton word={step.word} speaker={speaker} />
+      {/* A text card already shows the word in the picture slot: do not repeat it below. */}
+      {(!isText(word) || showHint) && (
+        <div className="word">
+          {!isText(word) && <span className="ka">{word.ka}</span>}
+          {showHint && <span className="tr">{word.tr}</span>}
+        </div>
+      )}
+      {word.anchor && <Anchor letter={word.image.value} anchor={word.anchor} showHint={showHint} />}
+      <SpeakButton word={word} speaker={speaker} />
       <button type="button" className="next" onClick={onNext}>
         Дальше
       </button>
     </>
+  )
+}
+
+/** "ბ as in ⚽ ბურთი": the example word under a letter, its first letter highlighted. */
+function Anchor({ letter, anchor, showHint }: { letter: string; anchor: AnchorOut; showHint: boolean }) {
+  const rest = anchor.ka.startsWith(letter) ? anchor.ka.slice(letter.length) : anchor.ka
+  return (
+    <div className="anchor" aria-label={`${anchor.ka} — ${anchor.ru}`}>
+      {anchor.emoji ? <span className="emoji">{anchor.emoji}</span> : <small>{anchor.ru}</small>}
+      <span className="ka">
+        {rest === anchor.ka ? anchor.ka : <><b>{letter}</b>{rest}</>}
+      </span>
+      {showHint && <small>{anchor.tr}</small>}
+    </div>
   )
 }
 
@@ -227,7 +248,7 @@ function Quiz({
             <button
               key={o.slug}
               type="button"
-              className={cls(o, 'tile')}
+              className={cls(o, `tile${textClass(o)}`)}
               disabled={locked || wrong.includes(o.slug)}
               aria-label={o.ru}
               onClick={(e) => void pick(o, e.currentTarget)}
@@ -290,7 +311,7 @@ function Done({
                 <p className="strong">Новые наклейки:</p>
                 <div className="stickers">
                   {summary.learned.map((w) => (
-                    <div className="stk" key={`${w.topic_slug}/${w.slug}`} title={w.ru}>
+                    <div className={`stk${textClass(w)}`} key={`${w.topic_slug}/${w.slug}`} title={w.ru}>
                       <WordImage word={w} />
                     </div>
                   ))}
