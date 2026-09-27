@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -36,6 +37,19 @@ DEFAULT_RATE = "-15%"  # slightly slower than natural: easier for a child to rep
 # Silence added after the letter's sound, before the anchor word. edge-tts leaves
 # ~0.3 s of its own tail after trimming, so the audible pause is about 0.9 s.
 LETTER_PAUSE_SEC = 0.6
+# A lone sound is read at this rate (the anchor word keeps --rate): stretched a
+# little, it is easier to catch. Rate and punctuation change its length only
+# slightly (0.2-0.3 s for a consonant), so the level is what matters most.
+LETTER_RATE = "-40%"
+# A lone consonant comes out ~10 dB quieter than a word (peak -15 dB vs -5 dB)
+# and is simply not heard before the word; the clip is levelled to this peak.
+LETTER_PEAK_DB = -2.0
+# Trim the synthesizer's silence around the sound: ~0.25 s in front (keep 50 ms)
+# and ~1.5 s of tail, so the pause is ours, not edge-tts's.
+TRIM = (
+    "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-40dB:"
+    "stop_periods=1:stop_duration=0.15:stop_threshold=-40dB"
+)
 
 # Spoken feedback in the quiz, media/audio/ui/<name>.mp3. Georgian like everything else.
 PHRASES = {
@@ -73,24 +87,52 @@ async def synthesize(text: str, out: Path, voice: str, rate: str) -> None:
 
 
 async def synthesize_parts(parts: list[str], out: Path, voice: str, rate: str) -> None:
-    """One clip per part, joined with LETTER_PAUSE_SEC of silence between them."""
+    """One clip per part, joined with LETTER_PAUSE_SEC of silence between them.
+
+    Every part but the last is a lone sound: read at LETTER_RATE, trimmed and
+    levelled to LETTER_PEAK_DB. The last part (the anchor word) is left as read.
+    """
     if len(parts) == 1:
         await synthesize(parts[0], out, voice, rate)
         return
     with tempfile.TemporaryDirectory() as tmp:
         clips = [Path(tmp) / f"{i}.mp3" for i in range(len(parts))]
-        for text, clip in zip(parts, clips, strict=True):
-            await synthesize(text, clip, voice, rate)
+        for i, (text, clip) in enumerate(zip(parts, clips, strict=True)):
+            await synthesize(
+                text, clip, voice, LETTER_RATE if i < len(parts) - 1 else rate
+            )
         join_with_pauses(clips, out)
 
 
+def peak_db(clip: Path) -> float:
+    """Peak level of the clip in dBFS, from ffmpeg's volumedetect (printed on stderr)."""
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-i",
+        str(clip),
+        "-af",
+        "volumedetect",
+        "-f",
+        "null",
+        "-",
+    ]
+    err = subprocess.run(cmd, capture_output=True, text=True, check=True).stderr
+    m = re.search(r"max_volume: (-?[\d.]+) dB", err)
+    return float(m.group(1)) if m else 0.0
+
+
 def join_with_pauses(clips: list[Path], out: Path) -> None:
-    """Trim each clip's trailing silence (edge-tts pads ~1.5 s), pad the pause, concat."""
+    """Level, trim and pad every sound clip, then concat them with the final word.
+
+    Levelling goes before trimming: "ვ" peaks at -34 dB as read, and the -40 dB
+    trim threshold would swallow it whole.
+    """
     chain = []
     for i in range(len(clips) - 1):
+        gain = LETTER_PEAK_DB - peak_db(clips[i])
         chain.append(
-            f"[{i}:a]silenceremove=stop_periods=1:stop_duration=0.15:stop_threshold=-40dB,"
-            f"apad=pad_dur={LETTER_PAUSE_SEC}[p{i}]"
+            f"[{i}:a]volume={gain:.1f}dB,{TRIM},apad=pad_dur={LETTER_PAUSE_SEC}[p{i}]"
         )
     inputs = "".join(f"[p{i}]" for i in range(len(clips) - 1)) + f"[{len(clips) - 1}:a]"
     chain.append(f"{inputs}concat=n={len(clips)}:v=0:a=1[o]")
