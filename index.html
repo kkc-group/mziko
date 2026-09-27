@@ -227,19 +227,38 @@ const fmt=n=>n.toString().replace('.',',');
 const MAX=RATE*CAP;
 const blob=w=>`<span class="blob" style="--c:${w.c}" role="img" aria-label="${w.ru}"></span>`;
 
-/* speech */
+/* speech: recorded Georgian mp3 first, browser synthesis only when a file is missing */
+const AUDIO={},MISSING=new Set();let unlocked=false;
+WORDS.forEach(w=>{
+  const a=new Audio(`media/audio/colors/${w.id}.mp3`);a.preload='auto';
+  a.addEventListener('error',()=>MISSING.add(w.id));AUDIO[w.id]=a;
+});
+/* iOS allows programmatic playback only for elements once played from a tap: call inside the tap that starts the lesson */
+function unlockAudio(){
+  if(unlocked)return;unlocked=true;
+  Object.values(AUDIO).forEach(a=>{a.muted=true;a.play().then(()=>{a.pause();a.currentTime=0}).catch(()=>{}).finally(()=>{a.muted=false})});
+}
+function stopAudio(){
+  Object.values(AUDIO).forEach(a=>{if(!a.paused)a.pause()});
+  try{speechSynthesis.cancel()}catch(e){}
+}
 let voices=[];
 function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){}}
 try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices}catch(e){}
-function say(w,btn){
-  if(btn){btn.classList.remove('playing');void btn.offsetWidth;btn.classList.add('playing')}
+function speak(w){
   try{
-    speechSynthesis.cancel();
     const ka=voices.find(v=>(v.lang||'').toLowerCase().startsWith('ka'));
     const u=new SpeechSynthesisUtterance(ka?w.ka:w.tr);
     if(ka){u.voice=ka;u.lang=ka.lang}else{const ru=voices.find(v=>(v.lang||'').toLowerCase().startsWith('ru'));if(ru)u.voice=ru;u.lang=ru?ru.lang:'ru-RU'}
     u.rate=.75;speechSynthesis.speak(u);
   }catch(e){}
+}
+function say(w,btn){
+  if(btn){btn.classList.remove('playing');void btn.offsetWidth;btn.classList.add('playing')}
+  stopAudio();
+  const a=AUDIO[w.id];
+  if(a&&!MISSING.has(w.id)){a.currentTime=0;a.play().catch(()=>speak(w));return}
+  speak(w);
 }
 const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#4a3200"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="#4a3200" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
 
@@ -279,11 +298,12 @@ function buildPlan(){
 let plan=[],idx=0,sessCoins=0,sessLearned=[],tries=0;
 $('playBtn').onclick=()=>{
   plan=buildPlan();if(!plan.length)return;
+  unlockAudio();
   idx=0;sessCoins=0;sessLearned=[];
   $('lesson').classList.add('on');$('lCoins').textContent=S.weekCoins;
   step();
 };
-$('closeBtn').onclick=()=>{try{speechSynthesis.cancel()}catch(e){};$('lesson').classList.remove('on');render()};
+$('closeBtn').onclick=()=>{stopAudio();$('lesson').classList.remove('on');render()};
 
 function step(){
   $('toast').textContent='';$('toast').className='toast';
