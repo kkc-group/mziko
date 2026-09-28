@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, ApiError, getToken, setToken } from './api'
 import { Speaker } from './audio'
 import { Hills } from './components/Mascot'
+import { ReplaySheet } from './components/ReplaySheet'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
 import { Lessons } from './screens/Lessons'
 import { Login } from './screens/Login'
-import type { LessonOut, Me, Step } from './types'
+import type { LessonOut, Me, SessionOut, Step, TopicOut } from './types'
 
 type Screen =
   | { kind: 'login'; code: string | null }
@@ -46,6 +47,8 @@ export default function App() {
   const [view, setView] = useState<View>('home')
   const [menuOpen, setMenuOpen] = useState(false)
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
+  /** The done lesson whose «Повторить» was tapped: the replay sheet is open for it. */
+  const [replay, setReplay] = useState<LessonOut | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const speaker = useMemo(() => new Speaker(), [])
@@ -76,11 +79,12 @@ export default function App() {
     if (getToken() && !loginCodeFromUrl()) void loadMe()
   }, [loadMe])
 
-  const startLesson = async (lesson: LessonOut | null) => {
+  /** Ask the server for a session and open it; the replay sheet closes either way. */
+  const openSession = async (load: () => Promise<SessionOut>) => {
     setBusy(true)
     setNotice(null)
     try {
-      const s = await api.startSession(lesson ? lesson.number : null)
+      const s = await load()
       if (!s.session_id || s.steps.length === 0) {
         setNotice('На сегодня всё! Завтра новые слова')
         await loadMe()
@@ -101,14 +105,25 @@ export default function App() {
       }
     } finally {
       setBusy(false)
+      setReplay(null)
     }
   }
+
+  const startLesson = (lesson: LessonOut | null) =>
+    openSession(() => api.startSession(lesson ? lesson.number : null))
+
+  const restartTopic = (topic: TopicOut) => openSession(() => api.restartTopic(topic.slug))
 
   const closeLesson = () => {
     setLesson(null)
     setView('home')
     reload()
   }
+
+  const replayTopic =
+    replay && screen.kind === 'home'
+      ? screen.me.topics.find((t) => t.slug === replay.topic_slug)
+      : undefined
 
   const openLessons = () => {
     setMenuOpen(false)
@@ -135,6 +150,7 @@ export default function App() {
           me={screen.me}
           busy={busy}
           onPlay={startLesson}
+          onReplay={setReplay}
           menuOpen={menuOpen}
           onOpenMenu={() => setMenuOpen(true)}
           onCloseMenu={() => setMenuOpen(false)}
@@ -142,7 +158,23 @@ export default function App() {
         />
       )}
       {screen.kind === 'home' && view === 'lessons' && (
-        <Lessons me={screen.me} busy={busy} onPlay={startLesson} onBack={() => setView('home')} />
+        <Lessons
+          me={screen.me}
+          busy={busy}
+          onPlay={startLesson}
+          onReplay={setReplay}
+          onBack={() => setView('home')}
+        />
+      )}
+      {replay && replayTopic && screen.kind === 'home' && !lesson && (
+        <ReplaySheet
+          lesson={replay}
+          topic={replayTopic}
+          busy={busy}
+          onClose={() => setReplay(null)}
+          onQuiz={startLesson}
+          onRestart={restartTopic}
+        />
       )}
       {notice && (
         <div className="notice" role="status" onClick={() => setNotice(null)}>

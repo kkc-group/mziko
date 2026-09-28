@@ -68,6 +68,15 @@ async def start_session(body: SessionIn, db: Db, now: Now, child: CurrentChild) 
     return SessionOut(session_id=session.id, steps=[Step.model_validate(s) for s in session.steps])
 
 
+@router.post("/topics/{slug}/restart", response_model=SessionOut)
+async def restart_topic(slug: str, db: Db, now: Now, child: CurrentChild) -> SessionOut:
+    """Start the topic over from its first lesson; 404 unknown topic, 409 locked today."""
+    session = await learning.restart_topic(db, child, slug, now)
+    if session is None:
+        return SessionOut(session_id=None, steps=[])
+    return SessionOut(session_id=session.id, steps=[Step.model_validate(s) for s in session.steps])
+
+
 @router.post("/sessions/{session_id}/answers", response_model=AnswerResult)
 async def answer(
     session_id: uuid.UUID, body: AnswerIn, db: Db, now: Now, child: CurrentChild
