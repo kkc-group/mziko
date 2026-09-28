@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мзико — руководство для родителей</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css / index.html ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --bezel: var(--ink);
+  --demo-h: 52px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+    --bezel: var(--line);
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  --bezel: var(--line);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.5; -webkit-tap-highlight-color: transparent; overflow-x: hidden;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; color: var(--word-color); }
+a { color: var(--word-color); font-weight: 800; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .86em; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 1px 6px; white-space: nowrap; color: var(--ink); }
+b, strong { font-weight: 900; }
+.muted { color: var(--muted); }
+
+/* ---------- demo panel (mockup only) ---------- */
+.demo { position: fixed; top: 0; left: 0; right: 0; height: var(--demo-h); z-index: 100; display: flex; align-items: center; gap: 18px; padding: 0 14px; overflow-x: auto; white-space: nowrap;
+  background: var(--surface); border-bottom: 2px dashed var(--line); font-size: 14px; color: var(--muted); font-weight: 700; }
+.demo .grp { display: flex; align-items: center; gap: 4px; }
+.demo button { font: inherit; font-weight: 800; color: var(--ink); background: var(--bg); border: 2px solid var(--line); border-radius: 12px; padding: 5px 10px; cursor: pointer; }
+.demo button[aria-pressed='true'] { background: var(--grape); border-color: var(--grape); color: #fff; }
+body { padding-top: var(--demo-h); }
+body[data-vw='390'], body[data-vw='1100'] { background: repeating-linear-gradient(45deg, var(--bg) 0 14px, var(--surface) 14px 28px); }
+body[data-vw='390'] .site { width: 390px; margin: 16px auto; outline: 2px solid var(--line); border-radius: 0; }
+body[data-vw='1100'] .site { width: 1100px; margin: 16px auto; outline: 2px solid var(--line); }
+.sbar { display: none; }
+body[data-vw='390'] .sbar { display: flex; justify-content: space-between; align-items: center; height: 47px; padding: 0 30px; font-weight: 900; font-size: 15px; background: var(--bg); }
+body[data-vw='390'] .sbar i { width: 110px; height: 32px; border-radius: 18px; background: var(--ink); }
+.homebar { display: none; }
+body[data-vw='390'] .homebar { display: block; height: 34px; position: relative; background: var(--hill2); }
+body[data-vw='390'] .homebar::after { content: ''; position: absolute; left: 50%; bottom: 9px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: var(--ink); }
+
+/* ---------- site ---------- */
+.site { container: site / inline-size; background: var(--bg); margin: 0 auto; }
+.in { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+.in > * { min-width: 0; }
+.hero .in, .guide .in { grid-template-columns: minmax(0, 1fr); }
+
+/* hero */
+.hero { padding: 28px 0 8px; }
+.hero .in { display: grid; gap: 26px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 84px; height: 84px; flex: none; }
+.brand h1 { margin: 0; font-size: 44px; font-weight: 900; line-height: 1; }
+.brand small { display: block; color: var(--muted); font-weight: 800; font-size: 16px; margin-top: 4px; }
+.lead { font-size: 19px; font-weight: 700; margin: 16px 0 0; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 22px; border-radius: 22px; font-size: 19px; font-weight: 900; text-decoration: none; }
+.btn.pri { background: var(--pom); color: #fff; box-shadow: 0 5px 0 var(--pom-dark); }
+.btn.alt { background: var(--surface); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 5px 0 var(--line); }
+.btn:active { transform: translateY(3px); }
+.btn svg { width: 22px; height: 22px; }
+
+.devices { display: flex; justify-content: center; align-items: flex-end; padding: 6px 0 10px; }
+.devices figure { margin: 0; width: 31%; }
+.devices figure:nth-child(2) { width: 38%; margin: 0 -3%; z-index: 2; position: relative; }
+.devices figure:nth-child(1) { transform: rotate(-4deg); }
+.devices figure:nth-child(3) { transform: rotate(4deg); }
+
+/* device frame + broken placeholder */
+.dev { background: var(--bezel); border-radius: 24px; padding: 7px; box-shadow: 0 8px 0 var(--blob-edge); }
+.scr { position: relative; aspect-ratio: var(--ar, 820 / 1180); border-radius: 18px; overflow: hidden; background: var(--surface); }
+.scr img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.ph { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px; text-align: center;
+  border: 2px dashed var(--line); border-radius: 18px; color: var(--muted); font-weight: 800; font-size: 14px; line-height: 1.3; }
+.ph svg { width: 52px; height: 52px; filter: grayscale(1); opacity: .45; }
+.ph small { font-weight: 600; font-size: 12px; overflow-wrap: anywhere; }
+.broken .scr img { display: none; }
+.broken .ph { display: flex; }
+
+/* how it works */
+.how { padding: 26px 0 10px; }
+.how .in { display: grid; gap: 14px; }
+.hcard { background: var(--surface); border: 2px solid var(--line); border-radius: 24px; padding: 18px 20px; display: grid; grid-template-columns: 56px 1fr; gap: 4px 14px; align-items: start; align-content: start; }
+.hcard .ic { grid-row: span 2; width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; font-size: 30px; }
+.hcard:nth-child(1) .ic { background: var(--mint-soft); }
+.hcard:nth-child(2) .ic { background: var(--bg); }
+.hcard:nth-child(3) .ic { background: var(--sun); }
+.hcard h3 { margin: 0; font-size: 19px; font-weight: 900; line-height: 1.25; }
+.hcard p { margin: 0; color: var(--muted); font-weight: 700; font-size: 16px; }
+.duo { margin: 6px 0 0; color: var(--muted); font-weight: 700; }
+
+/* guide layout */
+.guide { padding: 18px 0 40px; }
+.guide .in { display: grid; gap: 0; }
+.chips { position: sticky; top: var(--demo-h); z-index: 20; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 10px 16px; margin: 0 -16px 8px;
+  background: var(--bg); border-bottom: 2px solid var(--line); scroll-behavior: smooth; }
+body[data-vw='390'] .chips { top: var(--demo-h); }
+.chips::-webkit-scrollbar { display: none; }
+.chips a { flex: none; padding: 7px 14px; border-radius: 999px; background: var(--surface); border: 2px solid var(--line); color: var(--ink); font-size: 15px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.chips a.on { background: var(--grape); border-color: var(--grape); color: #fff; }
+.toc { display: none; }
+
+.sec { background: var(--surface); border: 2px solid var(--line); border-radius: 26px; padding: 22px 18px; margin-top: 16px; scroll-margin-top: calc(var(--demo-h) + 70px); }
+.sec h2 { margin: 0 0 12px; font-size: 26px; font-weight: 900; line-height: 1.2; }
+.sec h2 .n { display: inline-grid; place-items: center; width: 40px; height: 40px; margin-right: 8px; border-radius: 50%; background: var(--sun); color: #4a3200; font-size: 21px; vertical-align: 3px; }
+.sec h3 { margin: 26px 0 8px; font-size: 20px; font-weight: 900; line-height: 1.25; scroll-margin-top: calc(var(--demo-h) + 70px); }
+.sec p { margin: 10px 0; }
+.sec ul, .sec ol { padding-left: 22px; margin: 10px 0; }
+.sec li { margin: 6px 0; }
+.sec li::marker { color: var(--muted); font-weight: 900; }
+
+.steps { list-style: none; padding: 0 !important; counter-reset: st; }
+.steps > li { counter-increment: st; position: relative; padding-left: 50px; margin: 14px 0 !important; min-height: 38px; }
+.steps > li::before { content: counter(st); position: absolute; left: 0; top: -2px; width: 38px; height: 38px; border-radius: 50%; background: var(--mint); color: #fff; font-weight: 900; display: grid; place-items: center; }
+
+/* tables */
+.tbl { overflow-x: auto; margin: 12px 0; border: 2px solid var(--line); border-radius: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; line-height: 1.35; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
+thead th { border-top: 0; background: var(--bg); color: var(--muted); font-weight: 900; font-size: 14px; }
+.cmd td:first-child { white-space: nowrap; }
+.coins td:nth-child(2), .coins td:nth-child(3), .coins th:nth-child(2), .coins th:nth-child(3) { white-space: nowrap; }
+.coins tr:last-child td { background: var(--mint-soft); font-weight: 800; }
+.prog td.s { font-weight: 900; background: var(--bg); }
+.prog td.c { white-space: nowrap; font-weight: 800; }
+.prog td.t { font-weight: 800; white-space: nowrap; }
+.prog tr.g { display: none; }
+
+/* bot chat */
+.chat { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; padding: 14px; border-radius: 22px; background: var(--bg); border: 2px solid var(--line); }
+.msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 90%; }
+.msg.me { align-self: flex-end; align-items: flex-end; }
+.who { font-size: 12px; font-weight: 900; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin: 0 10px 2px; }
+.bb { background: var(--surface); border: 2px solid var(--line); border-radius: 18px 18px 18px 6px; padding: 8px 13px; overflow-wrap: anywhere; font-size: 16px; line-height: 1.42; }
+.me .bb { background: var(--grape); border-color: var(--grape); color: #fff; border-radius: 18px 18px 6px 18px; }
+.bb .ln { display: block; }
+.bb .gap { display: block; height: 8px; }
+.bb .dots { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -1px; color: var(--mint); margin-right: 6px; }
+.kb { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.kb .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.kb .row > i { font-style: normal; font-size: 13px; font-weight: 800; color: var(--muted); width: 100%; }
+.kb span { padding: 6px 13px; border-radius: 999px; background: var(--surface); border: 2px solid var(--word-color); color: var(--word-color); font-weight: 900; font-size: 14px; line-height: 1.25; }
+.kb span.sel { background: var(--word-color); color: var(--surface); }
+.chat.inl { margin: 8px 0; padding: 10px; }
+
+/* screenshots */
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.shots.three { grid-template-columns: 1fr 1fr 1fr; }
+.shots figure { margin: 0; }
+.shots figcaption { margin-top: 10px; font-size: 14px; font-weight: 700; color: var(--muted); line-height: 1.35; }
+
+.faq { display: grid; gap: 10px; margin-top: 10px; }
+.faq p { margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--bg); border: 2px solid var(--line); }
+.faq b { display: block; margin-bottom: 2px; }
+.trap { padding: 12px 14px; border-radius: 16px; background: var(--pom-soft); border: 2px solid var(--pom); }
+
+/* footer */
+.foot { position: relative; padding: 34px 0 150px; text-align: center; color: var(--muted); font-weight: 700; font-size: 15px; overflow: hidden; }
+.foot p { margin: 4px 0; position: relative; z-index: 1; }
+.foot .hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 120px; }
+
+/* ---------- narrow: phone (< 700) ---------- */
+@container site (max-width: 699px) {
+  .brand h1 { font-size: 38px; }
+  .lead { font-size: 18px; }
+  .btn { flex: 1 1 100%; }
+  .sec { border-radius: 22px; padding: 20px 16px; margin-left: -4px; margin-right: -4px; }
+  .sec h2 { font-size: 23px; }
+  .shots, .shots.three { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; margin: 16px -16px; padding: 0 16px 6px; scrollbar-width: none; }
+  .shots::-webkit-scrollbar { display: none; }
+  .shots figure { flex: 0 0 72%; scroll-snap-align: center; }
+  table { font-size: 15px; }
+  th, td { padding: 9px 10px; }
+  /* programme table becomes a list of cards */
+  .prog thead { display: none; }
+  .prog, .prog tbody { display: block; }
+  .prog tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .prog tr.g { display: block; background: var(--bg); color: var(--muted); font-weight: 900; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; padding: 8px 12px; }
+  .prog tr.g:first-child { border-top: 0; }
+  .prog td { display: block; padding: 0; border: 0; }
+  .prog td.s { display: none; }
+  .prog td.t { white-space: normal; }
+  .prog td.c { text-align: right; color: var(--muted); font-size: 14px; }
+  .prog td.c::after { content: ' карт.'; }
+  .prog td.w { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
+  .prog td.w:empty { display: none; }
+  .coins td:first-child { min-width: 170px; }
+}
+
+/* ---------- mid: tablet (≥ 700) ---------- */
+@container site (min-width: 700px) {
+  .in { padding: 0 28px; }
+  .chips { margin: 0 -28px 8px; padding: 10px 28px; }
+  .how .in { grid-template-columns: 1fr 1fr 1fr; }
+  .hcard { grid-template-columns: 1fr; }
+  .hcard .ic { grid-row: auto; margin-bottom: 8px; }
+  .sec { padding: 28px 30px; }
+}
+
+/* ---------- wide: desktop (≥ 1000) ---------- */
+@container site (min-width: 1000px) {
+  .hero { padding: 54px 0 18px; }
+  .hero .in { grid-template-columns: 1.05fr 1fr; align-items: center; gap: 40px; }
+  .brand svg { width: 110px; height: 110px; }
+  .brand h1 { font-size: 60px; }
+  .lead { font-size: 21px; max-width: 540px; }
+  .guide .in { grid-template-columns: 270px minmax(0, 1fr); gap: 32px; align-items: start; }
+  .chips { display: none; }
+  .toc { display: block; position: sticky; top: calc(var(--demo-h) + 18px); margin-top: 16px; padding: 14px 10px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); max-height: calc(100vh - var(--demo-h) - 36px); overflow-y: auto; }
+  .toc b { display: block; padding: 2px 12px 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc a { display: block; padding: 7px 12px; border-radius: 14px; color: var(--ink); text-decoration: none; font-weight: 800; font-size: 15px; line-height: 1.3; border-left: 4px solid transparent; }
+  .toc a:hover { background: var(--bg); }
+  .toc a.on { background: var(--bg); border-left-color: var(--grape); color: var(--word-color); }
+  .toc ol ol { display: none; margin: 2px 0 6px 16px; }
+  .toc li.open > ol { display: block; }
+  .toc ol ol a { font-size: 14px; font-weight: 700; color: var(--muted); padding: 4px 10px; }
+  .toc ol ol a.on { color: var(--word-color); background: none; }
+  .sec { padding: 32px 40px; }
+  .chat { max-width: 640px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+</style>
+</head>
+<body data-vw="auto">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="sun" viewBox="0 0 120 120">
+    <g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3">
+      <path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/>
+      <path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/>
+      <path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/>
+      <path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/>
+      <circle cx="60" cy="60" r="36"/>
+    </g>
+    <circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/>
+    <circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/>
+    <circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/>
+    <path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="demo" role="toolbar" aria-label="Состояния макета">
+  <span>Состояния макета:</span>
+  <div class="grp" data-set="vw">Ширина
+    <button data-v="auto" aria-pressed="true">Окно</button>
+    <button data-v="390" aria-pressed="false">Телефон 390</button>
+    <button data-v="1100" aria-pressed="false">Десктоп 1100</button>
+  </div>
+  <div class="grp" data-set="theme">Тема
+    <button data-v="auto" aria-pressed="true">Как в системе</button>
+    <button data-v="light" aria-pressed="false">Светлая</button>
+    <button data-v="dark" aria-pressed="false">Тёмная</button>
+  </div>
+  <div class="grp" data-set="img">Снимки
+    <button data-v="ok" aria-pressed="true">Загрузились</button>
+    <button data-v="broken" aria-pressed="false">Один битый</button>
+  </div>
+</div>
+
+<div class="site">
+<div class="sbar" aria-hidden="true"><span>9:41</span><i></i><span>●●● ▮</span></div>
+
+<!-- ============ 1. hero ============ -->
+<header class="hero">
+  <div class="in">
+    <div>
+      <div class="brand">
+        <svg aria-label="Мзико"><use href="#sun"/></svg>
+        <div><h1>Мзико</h1><small>руководство для родителей</small></div>
+      </div>
+      <p class="lead">Мзико учит ребёнка грузинским буквам, слогам и словам по карточкам с картинкой и звуком. За верные ответы ребёнок получает монеты, в воскресенье монеты превращаются в лари, а вы выдаёте их наличными. Ребёнок занимается в приложении на планшете или телефоне, вы управляете всем через Telegram-бота.</p>
+      <div class="cta">
+        <a class="btn pri" href="https://t.me/…">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.5 4.2 2.9 11.4c-1 .4-1 1.8.1 2.1l4.6 1.5 1.8 5.5c.3.9 1.4 1.1 2 .4l2.6-2.8 4.7 3.5c.8.6 1.9.1 2.1-.9L23.9 5.6c.2-1.1-.9-1.9-1.9-1.5l-.5.1Z" fill="#fff"/></svg>
+          Написать боту
+        </a>
+        <a class="btn alt" href="#s1">Как начать</a>
+      </div>
+    </div>
+    <div class="devices">
+      <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/home-after.png" alt="Главный экран после занятия"></div></div></figure>
+      <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-listen.png" alt="Послушай и найди"></div></div></figure>
+      <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-done.png" alt="Итог занятия"></div></div></figure>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 2. how it works ============ -->
+<section class="how" aria-label="Как это устроено">
+  <div class="in">
+    <div class="hcard"><div class="ic">🧒</div><h3>Ребёнок — приложение с карточками</h3><p>Ребёнок занимается в приложении на планшете или телефоне: буквы, слоги и слова по карточкам с картинкой и звуком. Ребёнок видит только приложение.</p></div>
+    <div class="hcard"><div class="ic">💬</div><h3>Родитель — Telegram-бот</h3><p>Вы управляете всем через Telegram-бота. Родитель видит только бота.</p></div>
+    <div class="hcard"><div class="ic">🪙</div><h3>Монеты — лари по воскресеньям</h3><p>За верные ответы ребёнок получает монеты, в воскресенье монеты превращаются в лари, а вы выдаёте их наличными.</p></div>
+  </div>
+</section>
+
+<!-- ============ guide ============ -->
+<main class="guide">
+  <div class="in">
+    <nav class="chips" aria-label="Разделы руководства">
+      <a href="#s1">1. Быстрый старт за пять минут</a>
+      <a href="#s2">2. Бот: команды и кнопки</a>
+      <a href="#s3">3. Приложение ребёнка: что он видит</a>
+      <a href="#s4">4. Что учим: программа</a>
+      <a href="#s5">5. Как считаются монеты и лари</a>
+      <a href="#s6">6. Установка на планшет и телефон</a>
+      <a href="#s7">7. Частые ситуации</a>
+      <a href="#s8">8. Чего приложение пока не умеет</a>
+    </nav>
+
+    <nav class="toc" aria-label="Оглавление">
+      <b>Руководство</b>
+      <ol>
+        <li><a href="#s1">1. Быстрый старт за пять минут</a></li>
+        <li><a href="#s2">2. Бот: команды и кнопки</a>
+          <ol>
+            <li><a href="#s2-start">Регистрация: /start</a></li>
+            <li><a href="#s2-cmds">Список команд</a></li>
+            <li><a href="#s2-code">/code: вход ребёнка</a></li>
+            <li><a href="#s2-devices">/devices: устройства ребёнка</a></li>
+            <li><a href="#s2-settings">/settings: курс, лимит, подсказка</a></li>
+            <li><a href="#s2-report">/report и воскресный отчёт</a></li>
+            <li><a href="#s2-progress">/progress: прогресс по словам</a></li>
+            <li><a href="#s2-kids">Несколько детей и второй родитель</a></li>
+            <li><a href="#s2-reset">/reset: сброс и отключение</a></li>
+          </ol>
+        </li>
+        <li><a href="#s3">3. Приложение ребёнка: что он видит</a>
+          <ol>
+            <li><a href="#s3-login">Вход</a></li>
+            <li><a href="#s3-home">Главный экран</a></li>
+            <li><a href="#s3-lessons">Экран «Уроки»: три раздела и правило дня</a></li>
+            <li><a href="#s3-lesson">Занятие</a></li>
+            <li><a href="#s3-sound">Звук и картинки</a></li>
+          </ol>
+        </li>
+        <li><a href="#s4">4. Что учим: программа</a></li>
+        <li><a href="#s5">5. Как считаются монеты и лари</a></li>
+        <li><a href="#s6">6. Установка на планшет и телефон</a></li>
+        <li><a href="#s7">7. Частые ситуации</a></li>
+        <li><a href="#s8">8. Чего приложение пока не умеет</a></li>
+      </ol>
+    </nav>
+
+    <div class="content">
+      <p class="duo">Участников двое: <b>ребёнок</b> видит только приложение, <b>родитель</b> видит только бота. Ниже описано и то, и другое, чтобы вы понимали, что происходит у ребёнка на экране.</p>
+
+      <!-- ===== 1 ===== -->
+      <section class="sec" id="s1">
+        <h2><span class="n">1</span>Быстрый старт за пять минут</h2>
+        <ol class="steps">
+          <li><b>Напишите боту <code>/start</code></b> и ответьте на два вопроса: как вас зовут и как зовут ребёнка. Можно нажать кнопку «Я — Имя Фамилия» вместо набора имени.</li>
+          <li><b>Получите код входа.</b> Бот сразу пришлёт код вида <code>LOMI-7241</code> и ссылку.</li>
+          <li><b>Откройте ссылку на устройстве ребёнка</b> или введите код на экране входа приложения. Ребёнок увидит «Привет, Сандро!» и главный экран.</li>
+          <li><b>Добавьте приложение на экран «Домой»</b> (Safari → «Поделиться» → «На экран Домой»), чтобы оно открывалось как обычное приложение с иконкой Мзико.</li>
+          <li><b>В воскресенье в 20:00</b> вам придёт отчёт: сколько дней занимался, сколько слов выучил, сколько лари заработал. Выдайте деньги и нажмите «Выплачено».</li>
+        </ol>
+        <p class="muted">Всё остальное в этом документе — подробности каждого шага.</p>
+      </section>
+
+      <!-- ===== 2 ===== -->
+      <section class="sec" id="s2">
+        <h2><span class="n">2</span>Бот: команды и кнопки</h2>
+        <p>Бот отвечает только зарегистрированным родителям. Незнакомцу на любую команду, кроме <code>/start</code> и <code>/help</code>, он не ответит вообще.</p>
+
+        <h3 id="s2-start">Регистрация: <code>/start</code></h3>
+        <p>Диалог из двух вопросов. Пример:</p>
+        <div class="chat">
+          <div class="msg me"><span class="who">Вы</span><div class="bb">/start</div></div>
+          <div class="msg"><span class="who">Бот</span><div class="bb">Привет! Я Мзико, бот для родителей. Здесь вы добавляете ребёнка, выдаёте ему код для входа в приложение и видите, сколько слов он выучил и сколько лари заработал. Два вопроса, и готово. Как вас зовут?</div>
+            <div class="kb"><span>Я — Нино Беридзе</span></div></div>
+          <div class="msg me"><span class="who">Вы</span><div class="bb">Нино</div></div>
+          <div class="msg"><span class="who">Бот</span><div class="bb">Записал: <b>Нино</b>. Как зовут ребёнка? С этим именем приложение будет с ним здороваться. Если ребёнок уже занимается у другого родителя, пришлите вместо имени его код, например LOMI-7241.</div></div>
+          <div class="msg me"><span class="who">Вы</span><div class="bb">Сандро</div></div>
+          <div class="msg"><span class="who">Бот</span><div class="bb">Готово! Вы в Мзико как <b>Нино</b>, добавил: <b>Сандро</b>.<span class="ln">Дальше: /settings — курс, лимит, подсказка; /report — итоги недели…</span></div></div>
+          <div class="msg"><span class="who">Бот</span><div class="bb">Код для входа Сандро: <b>LOMI-7241</b>. Ссылка для входа: https://…/c/LOMI-7241 …</div></div>
+        </div>
+        <p>Что полезно знать:</p>
+        <ul>
+          <li>Имя ребёнка появится в приложении: «Привет, Сандро!».</li>
+          <li>Если у ребёнка уже есть аккаунт (его завёл второй родитель), на второй вопрос пришлите <b>код ребёнка</b> вместо имени. Вы подключитесь к тому же ребёнку, и прогресс у вас будет общий. Код можно писать как угодно: <code>LOMI-7241</code>, <code>lomi 7241</code>, <code>LOMI7241</code>.</li>
+          <li>Стикер, голосовое или фото бот не примет: «Нужен текст».</li>
+          <li>Ушли посреди регистрации? Напишите <code>/start</code> снова, бот продолжит с того места, где остановились: «С возвращением! Остался один вопрос».</li>
+          <li><code>/cancel</code> прерывает регистрацию. <code>/help</code> показывает список команд.</li>
+        </ul>
+
+        <h3 id="s2-cmds">Список команд</h3>
+        <div class="tbl"><table class="cmd">
+          <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
+          <tbody>
+            <tr><td><code>/report</code></td><td>Итоги текущей недели: дни, выученные слова, монеты и лари, кнопка «Выплачено»</td></tr>
+            <tr><td><code>/progress</code></td><td>Прогресс по каждой теме и каждому слову</td></tr>
+            <tr><td><code>/settings</code></td><td>Курс монет, недельный лимит, подсказка кириллицей</td></tr>
+            <tr><td><code>/code</code></td><td>Код и ссылка для входа ребёнка, кнопка «Новые цифры»</td></tr>
+            <tr><td><code>/devices</code></td><td>Устройства, на которых ребёнок вошёл, с кнопкой «Отключить»</td></tr>
+            <tr><td><code>/reset</code></td><td>Сбросить прогресс ребёнка или отключить ребёнка от себя</td></tr>
+            <tr><td><code>/addchild Имя</code></td><td>Добавить ещё одного ребёнка</td></tr>
+            <tr><td><code>/addchild LOMI-7241</code></td><td>Подключить уже существующего ребёнка по его коду</td></tr>
+            <tr><td><code>/help</code></td><td>Список команд</td></tr>
+          </tbody>
+        </table></div>
+        <p>Если у вас <b>несколько детей</b>, на каждую команду бот сначала спросит «Кто?» и покажет кнопки с именами. Нажмите нужную, и команда выполнится для этого ребёнка.</p>
+
+        <h3 id="s2-code"><code>/code</code>: вход ребёнка</h3>
+        <p>Бот показывает код, ссылку и короткую инструкцию:</p>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb">Код для входа Сандро: <b>LOMI-7241</b><span class="ln">Ссылка для входа: https://mziko.example.com/c/LOMI-7241</span><span class="ln">Ребёнок вводит код на экране входа на любом устройстве, или откройте ссылку там.</span><span class="ln">Три ошибки подряд закрывают вход на час; «Новые цифры» открывают его сразу и меняют цифры (слово остаётся).</span></div>
+            <div class="kb"><span>Новые цифры</span></div></div>
+        </div>
+        <ul>
+          <li>Код <b>постоянный</b>: слово из четырёх латинских букв даётся один раз и не меняется, четыре цифры вы можете перевыпустить кнопкой «Новые цифры».</li>
+          <li>Код <b>многоразовый</b>: им можно войти на планшете, телефоне мамы и телефоне бабушки. Прогресс и монеты у ребёнка одни на всех устройствах.</li>
+          <li>Знание кода равно доступу к ребёнку: не публикуйте его в общих чатах.</li>
+        </ul>
+        <p><b>Ребёнок ошибся три раза подряд.</b> Вход с этого устройства закрывается на час, на экране появляется таймер и подсказка позвать родителей. Нажмите «Новые цифры» в <code>/code</code>: блокировка снимется сразу, ребёнок увидит «Код открыт! Цифры теперь новые — посмотри в Telegram», и вы продиктуете новые цифры. Если ребёнок три раза ошибся в самих <b>буквах</b> кода, снять блокировку нечем: она пройдёт сама через час.</p>
+
+        <h3 id="s2-devices"><code>/devices</code>: устройства ребёнка</h3>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb">Устройства Сандро:<span class="ln">• iPad — с 14.09.2026, был 27.09 18:40</span><span class="ln">• Safari — с 20.09.2026, был 21.09 09:12</span></div>
+            <div class="kb"><span>Отключить: iPad (14.09)</span><span>Отключить: Safari (20.09)</span></div></div>
+        </div>
+        <p>«Отключить» разлогинивает устройство: при следующем открытии приложения оно покажет экран входа. Так убирают потерянный планшет или телефон, которым больше не пользуются. Прогресс не трогается. Если устройств нет, бот напомнит про <code>/code</code>.</p>
+
+        <h3 id="s2-settings"><code>/settings</code>: курс, лимит, подсказка</h3>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb"><b>Настройки Сандро</b><span class="ln">Курс: 10 монет = 1 ₾</span><span class="ln">Лимит: до 15 ₾ в неделю</span><span class="ln">Подсказка кириллицей: вкл</span></div>
+            <div class="kb">
+              <div class="row"><i>Курс, монет за 1 ₾:</i><span>5</span><span class="sel">✓ 10</span><span>15</span><span>20</span><span>30</span></div>
+              <div class="row"><i>Лимит в неделю, ₾:</i><span>5</span><span>10</span><span class="sel">✓ 15</span><span>20</span><span>30</span></div>
+              <div class="row"><span>Подсказка кириллицей: вкл ✓</span></div>
+            </div></div>
+        </div>
+        <ul>
+          <li><b>Курс</b> — сколько монет стоит один лари. Курс 10 значит 10 монет = 1 ₾. Хотите платить меньше за те же успехи — поставьте 20 или 30.</li>
+          <li><b>Лимит</b> — потолок выплаты за неделю в лари. Монеты сверх лимита не начисляются, в отчёте появится пометка «(достигнут лимит)».</li>
+          <li><b>Подсказка кириллицей</b> — показывать ли под грузинским словом его приблизительное чтение русскими буквами («<span class="ka">ძაღლი</span> — дзагли»). Когда ребёнок начнёт читать по-грузински сам, подсказку можно выключить.</li>
+        </ul>
+        <p>Настройки применяются сразу, кнопка «Сохранено» подтверждает. Смена курса посреди недели меняет пересчёт монет в лари для этой недели: монеты остаются, сумма в лари пересчитывается по новому курсу.</p>
+
+        <h3 id="s2-report"><code>/report</code> и воскресный отчёт</h3>
+        <p>Отчёт приходит сам каждое <b>воскресенье в 20:00 по Тбилиси</b> всем родителям ребёнка. В любой другой момент его можно запросить командой <code>/report</code>.</p>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb"><b>Неделя 21.09–27.09: итоги Сандро</b><span class="ln">Занимался 5 из 7 дней</span><span class="ln">Выучено слов: 4 (🐶 🍎 ☀️ 🏠)</span><span class="ln">Монет: 37 → <b>3,7 ₾</b></span><span class="ln">Выдайте наличные и нажмите «Выплачено».</span></div>
+            <div class="kb"><span>Выплачено</span><span>Слова недели</span></div></div>
+        </div>
+        <ul>
+          <li><b>«Выплачено»</b> закрывает неделю: сообщение меняется на «✅ Выплачено 3,7 ₾». Нажать дважды нельзя: второе нажатие ответит «Уже было выплачено: 3,7 ₾».</li>
+          <li><b>«Слова недели»</b> присылает список слов, выученных за неделю, с чтением и переводом:
+            <div class="chat inl"><div class="msg"><span class="who">Бот</span><div class="bb">Слова недели:<span class="ln">🐶 <b class="ka">ძაღლი</b> — дзагли · собака</span><span class="ln">🍎 <b class="ka">ვაშლი</b> — вашли · яблоко</span></div></div></div>
+          </li>
+          <li><b>Забыли нажать «Выплачено»?</b> Ничего не потеряется. Новая неделя всё равно начнётся с нуля, а старая появится в следующих отчётах отдельной строкой:
+            <div class="chat inl"><div class="msg"><span class="who">Бот</span><div class="bb">К выплате за прошлые недели:<span class="ln">• 14.09–20.09 — 5,2 ₾ (52 монеты)</span></div><div class="kb"><span>Выплачено за 14.09–20.09</span></div></div></div>
+          </li>
+        </ul>
+        <p>«Занимался N из 7 дней» считает дни, в которые ребёнок довёл занятие до конца, до экрана «Ура, занятие готово!». Прерванное на середине занятие день не засчитывает.</p>
+
+        <h3 id="s2-progress"><code>/progress</code>: прогресс по словам</h3>
+        <p>Бот показывает все темы по порядку, внутри каждой все слова с тремя точками:</p>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb"><b>Прогресс Сандро</b><span class="gap"></span>
+            <span class="ln">🔤 <b>Буквы 1</b> — 6 из 8</span>
+            <span class="ln"><span class="dots">●●●</span><span class="ka">ა</span> · буква а</span>
+            <span class="ln"><span class="dots">●●●</span><span class="ka">ი</span> · буква и</span>
+            <span class="ln"><span class="dots">●●○</span><span class="ka">თ</span> · буква т</span>
+            <span class="ln"><span class="dots">○○○</span><span class="ka">ს</span> · буква с</span>
+            <span class="ln">…</span>
+            <span class="ln">🐶 <b>Первые слова</b> — 2 из 12</span>
+            <span class="ln"><span class="dots">●●●</span><span class="ka">ძაღლი</span> · собака</span>
+            <span class="ln"><span class="dots">●○○</span><span class="ka">კატა</span> · кошка</span>
+            <span class="ln">…</span>
+          </div></div>
+        </div>
+        <p>Точки — это ступени слова. Ступень растёт на единицу за верный ответ, но не чаще <b>одного раза в день</b>. Три ступени <code>●●●</code> означают: ребёнок ответил верно в три разных дня, слово выучено. Сообщение длинное, тем 19 и карточек 228.</p>
+
+        <h3 id="s2-kids">Несколько детей и второй родитель</h3>
+        <ul>
+          <li><b>Второй ребёнок:</b> <code>/addchild Лиза</code>. Бот ответит «Добавил: Лиза. Код для входа: /code». Дальше на каждую команду бот будет спрашивать «Кто?».</li>
+          <li><b>Второй родитель</b> (папа, бабушка): пусть напишет боту <code>/start</code>, назовёт себя и на вопрос об имени ребёнка пришлёт <b>код</b> ребёнка из вашего <code>/code</code>. Он увидит того же ребёнка, те же настройки и получит тот же воскресный отчёт. «Выплачено» нажимает любой из вас, один раз на неделю.</li>
+          <li><b>Подключить ребёнка</b> уже зарегистрированному родителю: <code>/addchild LOMI-7241</code>.</li>
+        </ul>
+
+        <h3 id="s2-reset"><code>/reset</code>: сброс и отключение</h3>
+        <p>Обе операции требуют подтверждения кнопкой, до неё ничего не меняется.</p>
+        <div class="chat">
+          <div class="msg"><span class="who">Бот</span><div class="bb">Что сделать с Сандро?</div>
+            <div class="kb"><span>Сбросить прогресс</span><span>Отключить ребёнка</span><span>Отмена</span></div></div>
+        </div>
+        <ul>
+          <li><b>Сбросить прогресс.</b> Уходят все выученные слова, занятия, монеты и недели. Ребёнок, его код и вошедшие устройства остаются: планшет просто начнёт с первого урока, входить заново не нужно. Пригодится, если приложение начнёт младший ребёнок под тем же именем или вы хотите пройти всё с чистого листа.</li>
+          <li><b>Отключить ребёнка.</b> Удаляется только связь между вами и ребёнком: он пропадает из ваших команд и воскресных отчётов. Сам ребёнок с прогрессом, кодом и устройствами остаётся, у второго родителя ничего не меняется. Бот напомнит дорогу назад: «Подключить обратно: /addchild LOMI-7241».</li>
+        </ul>
+      </section>
+
+      <!-- ===== 3 ===== -->
+      <section class="sec" id="s3">
+        <h2><span class="n">3</span>Приложение ребёнка: что он видит</h2>
+
+        <h3 id="s3-login">Вход</h3>
+        <p>Экран входа — восемь клеток и своя экранная клавиатура: сначала латинские буквы, после четвёртой она сама переключается на цифры. Системная клавиатура не вызывается, чтобы планшет не подсовывал кириллицу и автозамену. Кнопка «Войти» загорается, когда набраны все восемь знаков.</p>
+        <ul>
+          <li><b>Ссылка из бота</b> входит без набора: «Проверяем код…», затем «Привет, Сандро!».</li>
+          <li><b>Ошибка</b>: цифры подсвечиваются, «Не тот код», показано, сколько попыток осталось. Перед третьей: «Последняя попытка — потом код закроется на час».</li>
+          <li><b>Блокировка</b>: после трёх ошибок таймер на час и подсказка попросить родителей. Как снять, описано в разделе <code>/code</code>.</li>
+          <li>После успешного входа устройство запоминается, экран входа больше не показывается. Исключение: на iPad и iPhone иконка на «Домой» и Safari хранят данные раздельно, поэтому после установки иконки код вводится ещё один раз.</li>
+        </ul>
+        <div class="shots">
+          <figure id="demo-broken"><div class="dev"><div class="scr"><img src="../general/parent-guide/login.png" alt="Экран входа: три буквы набраны"></div></div><figcaption>Экран входа: набраны три буквы, клавиатура ещё буквенная</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/login-wrong.png" alt="Ошибка кода"></div></div><figcaption>Ошибка: цифры подсвечены, показано, сколько попыток осталось</figcaption></figure>
+        </div>
+
+        <h3 id="s3-home">Главный экран</h3>
+        <ul>
+          <li><b>Мзико и приветствие</b> «<span class="ka">გამარჯობა!</span>» с именем ребёнка.</li>
+          <li><b>Копилка</b>: монеты текущей недели и подпись «это 3,7 ₾ на сладости». Это те же цифры, что в вашем <code>/report</code>. В понедельник копилка обнуляется, новая неделя.</li>
+          <li><b>Семь кружков недели</b>: звёздочка за каждый день с законченным занятием.</li>
+          <li><b>Карточка урока на сегодня</b>: тема, которую ребёнок выбрал сегодня, «показано 6 из 8», полоска прогресса и большая кнопка «Играть». Когда все слова урока показаны, кнопка меняется на «Повторить» и появляется подпись «Новый урок — завтра». Если сегодня ещё ничего не выбрано, вместо карточки приглашение «Выбери урок на сегодня» и кнопка «К урокам».</li>
+          <li><b>Строка «Другие уроки»</b> ведёт на экран «Уроки».</li>
+          <li><b>Наклейки</b>: все 228 карточек лентой, выученные цветные, остальные серые, и счётчик «12 слов выучено».</li>
+          <li><b>Меню</b> (кнопка-«бургер» вверху справа): пункты «Уроки» и «Настройки · скоро».</li>
+        </ul>
+        <p>Когда все уроки пройдены, на месте карточки надпись «Всё закреплено!» и кнопка «Повторить слова»: занятие только из повторений.</p>
+        <div class="shots three">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/home-start.png" alt="Главный экран до выбора урока"></div></div><figcaption>Утро: урок ещё не выбран, копилка пустая, наклейки серые</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/home-after.png" alt="Главный экран после занятия"></div></div><figcaption>После занятия: звёздочка за день, монеты, карточка темы дня</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/menu.png" alt="Меню"></div></div><figcaption>Меню: «Уроки» и «Настройки · скоро»</figcaption></figure>
+        </div>
+
+        <h3 id="s3-lessons">Экран «Уроки»: три раздела и правило дня</h3>
+        <p>Подсказка Мзико наверху: «Каждый день — одна тема из каждого раздела».</p>
+        <div class="tbl"><table>
+          <thead><tr><th>Раздел</th><th>Темы</th><th>Уроков</th></tr></thead>
+          <tbody>
+            <tr><td><b>Буквы</b></td><td>Буквы 1, 2, 3, 4</td><td>по одному на тему</td></tr>
+            <tr><td><b>Слоги</b></td><td>Слоги</td><td>3</td></tr>
+            <tr><td><b>Слова</b></td><td>14 словарных тем</td><td>1–2 на тему</td></tr>
+          </tbody>
+        </table></div>
+        <p>Как это работает:</p>
+        <ul>
+          <li><b>В день одна тема из каждого раздела.</b> Первое занятие по теме делает её «темой дня» в своём разделе, остальные темы раздела закрываются замком с подписью «завтра». Разделы друг другу не мешают: за день можно пройти «Буквы 2», «Слоги» и «Еду».</li>
+          <li><b>Внутри темы уроки по порядку.</b> «Еда · 2» откроется после «Еда · 1», оба можно пройти за один день. Порядок тем в разделе «Слова» не навязан: ребёнок может начать с «Животных», а «Цвета» взять потом.</li>
+          <li><b>Повторять можно всегда.</b> Пройденную раньше тему можно выбрать темой дня снова: все её уроки станут «Повторить». Монеты за повтор платятся по обычному правилу: раз в день за слово.</li>
+          <li><b>Три новых карточки за заход.</b> Урок из восьми слов проходится за три захода в один день или за три дня, как удобно ребёнку.</li>
+        </ul>
+        <p>Пример недели: в понедельник ребёнок берёт «Буквы 1» и «Первые слова», во вторник «Буквы 1» ещё раз (доучить оставшиеся буквы) и «Цвета», в среду «Слоги» и снова «Первые слова», потому что там ещё есть непоказанные слова.</p>
+        <div class="shots">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lessons.png" alt="Экран Уроки утром"></div></div><figcaption>Утром открыты все темы: галочка у пройденных, «Повторить» вместо «Играть»</figcaption></figure>
+          <figure><div class="dev"><div class="scr" style="--ar: 820 / 930"><img src="../general/parent-guide/lessons-today.png" alt="Раздел Слова после выбора темы"></div></div><figcaption>После занятия по «Животным»: тема раскрыта, второй урок «после 1», остальные темы раздела до завтра</figcaption></figure>
+        </div>
+
+        <h3 id="s3-lesson">Занятие</h3>
+        <p>Занятие занимает 5–7 минут: сверху крестик (выйти), полоска прогресса и мини-копилка. Три вида шагов:</p>
+        <ol class="steps">
+          <li><b>Знакомство.</b> «Новое слово!» или «Новая буква!»: большая картинка или буква, грузинское слово, подсказка кириллицей (если включена), звук. Для буквы ещё опорное слово: «<span class="ka">ბ</span> как в ⚽ <span class="ka">ბურთი</span>». Кнопка «Дальше».</li>
+          <li><b>«Послушай и найди».</b> Звучит слово, ребёнок выбирает из четырёх картинок. Для букв и слогов вместо картинок четыре написанных буквы или слога: так учат различать похожие формы <span class="ka">ბ, დ, ლ, მ</span>. Кнопка «Послушать ещё раз».</li>
+          <li><b>«Вспомни слово».</b> Показана картинка, ребёнок выбирает одно из трёх грузинских слов, у каждого своя кнопка озвучки. Для букв и слогов этот шаг не даётся, картинка и ответ совпали бы.</li>
+        </ol>
+        <p>Что происходит при ответе:</p>
+        <ul>
+          <li><b>Верно.</b> На карточке загорается большая зелёная галочка, голос говорит «<span class="ka">სწორია! ყოჩაღ!</span>» (правильно, молодец), монеты летят в копилку. За выученное слово тост «Слово выучено! +6 🪙».</li>
+          <li><b>Неверно.</b> Красная тряска, «Почти! Попробуй ещё», голос говорит «<span class="ka">არა, ეს არასწორია. სცადე კიდევ.</span>» (нет, неправильно, попробуй ещё). Неверный вариант гаснет, ребёнок пробует снова. Ничего не отнимается, но монета за этот шаг уже не даётся.</li>
+          <li><b>Итог.</b> «Ура, занятие готово!», монеты за занятие, «В копилке 37 монет — это 3,7 ₾», новые наклейки и кнопка «Домой». Именно этот экран ставит звёздочку дня.</li>
+        </ul>
+        <p>Если сети нет, ответы ждут и отправляются повторно; после нескольких неудач появится «Нет связи. Проверь интернет» с кнопкой «Повторить». Монеты не теряются и не удваиваются.</p>
+        <div class="shots">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-intro.png" alt="Знакомство с новым словом"></div></div><figcaption>Знакомство: картинка, слово, подсказка кириллицей, звук, «Дальше»</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-listen.png" alt="Послушай и найди"></div></div><figcaption>«Послушай и найди»: звучит слово, четыре картинки из той же темы</figcaption></figure>
+        </div>
+        <div class="shots">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-listen-letters.png" alt="Послушай и найди для букв"></div></div><figcaption>То же для букв: четыре похожие буквы вместо картинок</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-wrong.png" alt="Неверный ответ"></div></div><figcaption>Неверно: красная карточка, «Почти! Попробуй ещё», вариант гаснет</figcaption></figure>
+        </div>
+        <div class="shots">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-correct.png" alt="Верный ответ"></div></div><figcaption>Верно: зелёная галочка на выбранной карточке</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-recall.png" alt="Вспомни слово"></div></div><figcaption>«Вспомни слово»: картинка и три слова, у каждого своя озвучка</figcaption></figure>
+        </div>
+        <div class="shots">
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-recall-correct.png" alt="Верный ответ во Вспомни слово"></div></div><figcaption>Верный ответ: галочка и «Молодец! +1», монета летит в копилку</figcaption></figure>
+          <figure><div class="dev"><div class="scr"><img src="../general/parent-guide/lesson-done.png" alt="Итог занятия"></div></div><figcaption>Итог: монеты за занятие, сумма в копилке, кнопка «Домой»</figcaption></figure>
+        </div>
+
+        <h3 id="s3-sound">Звук и картинки</h3>
+        <p>Все слова озвучены грузинским голосом. Согласная буква читается слогом с «а» и опорным словом: «<span class="ka">ბა … ბურთი</span>», гласная сама по себе: «<span class="ka">ა … ავტობუსი</span>». Картинки одинаковые на любом устройстве и работают без интернета после первого занятия.</p>
+        <p class="trap">Одна ловушка для русского уха, о которой стоит сказать ребёнку заранее: по-грузински <b class="ka">მამა</b> (мама) значит «папа», а <b class="ka">დედა</b> (деда) значит «мама».</p>
+      </section>
+
+      <!-- ===== 4 ===== -->
+      <section class="sec" id="s4">
+        <h2><span class="n">4</span>Что учим: программа</h2>
+        <p>Программа повторяет первый класс грузинской школы: 19 тем, 228 карточек, 31 урок.</p>
+        <div class="tbl"><table class="prog">
+          <thead><tr><th>Раздел</th><th>Тема</th><th>Карточек</th><th>Что внутри</th></tr></thead>
+          <tbody>
+            <tr class="g"><td colspan="4">Буквы</td></tr>
+            <tr><td class="s">Буквы</td><td class="t">Буквы 1–4</td><td class="c">33</td><td class="w">Алфавит четырьмя группами в порядке букваря: гласные и частые согласные сначала. У каждой буквы опорное слово</td></tr>
+            <tr class="g"><td colspan="4">Слоги</td></tr>
+            <tr><td class="s">Слоги</td><td class="t">Слоги</td><td class="c">25</td><td class="w">Пять частых согласных с пятью гласными: <span class="ka">ბა, ბე, ბი…</span> Первое чтение</td></tr>
+            <tr class="g"><td colspan="4">Слова</td></tr>
+            <tr><td class="s" rowspan="14">Слова</td><td class="t">Первые слова 🐶</td><td class="c">12</td><td class="w">собака, кошка, яблоко, солнце, дом, хлеб, мяч…</td></tr>
+            <tr><td class="t">Цвета 🎨</td><td class="c">10</td><td class="w">красный, синий, зелёный… картинка — цветная клякса</td></tr>
+            <tr><td class="t">Школьные предметы 📚</td><td class="c">8</td><td class="w">парта, стул, доска, мел, шкаф, книга, полка, стол, с фотографиями</td></tr>
+            <tr><td class="t">Приветствия 👋</td><td class="c">10</td><td class="w"><span class="ka">გამარჯობა, მადლობა, კი, არა</span> и другие слова вежливости</td></tr>
+            <tr><td class="t">Числа 🔢</td><td class="c">10</td><td class="w">от одного до десяти</td></tr>
+            <tr><td class="t">Семья 👨‍👩‍👧</td><td class="c">12</td><td class="w">мама, папа, бабушка, дедушка, брат…</td></tr>
+            <tr><td class="t">Школа 🎒</td><td class="c">11</td><td class="w">школа, учитель, урок, звонок, рюкзак…</td></tr>
+            <tr><td class="t">Тело 🖐️</td><td class="c">12</td><td class="w">голова, глаз, ухо, нос, рот…</td></tr>
+            <tr><td class="t">Животные 🐻</td><td class="c">14</td><td class="w">медведь, волк, лиса, заяц, корова…</td></tr>
+            <tr><td class="t">Еда 🍽️</td><td class="c">18</td><td class="w"></td></tr>
+            <tr><td class="t">Одежда 👕</td><td class="c">12</td><td class="w"></td></tr>
+            <tr><td class="t">Дом 🛏️</td><td class="c">12</td><td class="w"></td></tr>
+            <tr><td class="t">Природа и погода 🌦️</td><td class="c">15</td><td class="w"></td></tr>
+            <tr><td class="t">Действия 🏃</td><td class="c">14</td><td class="w">глаголы: бегать, спать, есть, читать, писать…</td></tr>
+          </tbody>
+        </table></div>
+        <p>Тема длиннее десяти слов делится на два или три урока: «Еда · 1», «Еда · 2». По три новые карточки за заход весь путь занимает 76 заходов: примерно два с половиной месяца по одному заходу в день, или быстрее, если ребёнок берёт по теме из каждого раздела.</p>
+        <p>Транскрипции кириллицей приблизительные: грузинские звуки <span class="ka">თ/ტ, კ/ქ/ყ, პ/ფ</span> русскими буквами не различаются. Подсказка нужна на старте, потом её лучше выключить в <code>/settings</code>.</p>
+      </section>
+
+      <!-- ===== 5 ===== -->
+      <section class="sec" id="s5">
+        <h2><span class="n">5</span>Как считаются монеты и лари</h2>
+        <p>Правила простые, и их стоит один раз объяснить ребёнку.</p>
+        <ol class="steps">
+          <li><b>Монета за верный ответ с первой попытки.</b> Ошибся и потом угадал — монеты нет, но и штрафа нет.</li>
+          <li><b>Одна монета за слово в день.</b> Сколько бы раз ребёнок ни повторял урок за день, второй раз то же слово не платит. Повторять можно, зарабатывать на повторе одного и того же нельзя.</li>
+          <li><b>Ступень растёт раз в день.</b> Верный ответ поднимает слово на ступень (○○○ → ●○○ → ●●○ → ●●●), но не чаще одного раза в день. Поэтому выучить слово за один вечер невозможно: нужны три верных ответа в <b>три разных дня</b>.</li>
+          <li><b>Выученное слово: +5 монет.</b> Третья ступень даёт бонус, на экране тост «Слово выучено! +6 🪙» (монета за ответ плюс пять за слово).</li>
+          <li><b>Лари = монеты ÷ курс</b>, округление вниз до 0,1 ₾, но не больше лимита.</li>
+          <li><b>Неделя с понедельника по воскресенье по времени Тбилиси.</b> В полночь на понедельник копилка обнуляется, монеты прошлой недели ждут вашего «Выплачено».</li>
+        </ol>
+        <p>Пример при курсе 10 и лимите 15 ₾:</p>
+        <div class="tbl"><table class="coins">
+          <thead><tr><th>Что случилось</th><th>Монет</th><th>В копилке</th></tr></thead>
+          <tbody>
+            <tr><td>Пн: занятие, 7 верных ответов с первой попытки</td><td>+7</td><td>7</td></tr>
+            <tr><td>Вт: занятие, 6 верных, одно слово дошло до третьей ступени</td><td>+6 +5</td><td>18</td></tr>
+            <tr><td>Ср: пропустил</td><td>0</td><td>18</td></tr>
+            <tr><td>Чт: два занятия, 9 верных ответов, два слова выучены</td><td>+9 +10</td><td>37</td></tr>
+            <tr><td>Вс 20:00: отчёт</td><td></td><td>37 монет → <b>3,7 ₾</b></td></tr>
+          </tbody>
+        </table></div>
+        <p>При курсе 20 те же 37 монет дали бы 1,8 ₾. Лимит 15 ₾ при курсе 10 означает потолок 150 монет в неделю, дальше монеты не начисляются, и в отчёте появится «(достигнут лимит)».</p>
+      </section>
+
+      <!-- ===== 6 ===== -->
+      <section class="sec" id="s6">
+        <h2><span class="n">6</span>Установка на планшет и телефон</h2>
+        <p>Мзико — веб-приложение, ставить из App Store ничего не нужно.</p>
+        <ol class="steps">
+          <li>Откройте ссылку из <code>/code</code> в Safari (iPad, iPhone) или Chrome (Android).</li>
+          <li>Войдите по коду или через ссылку.</li>
+          <li><b>iPad, iPhone:</b> «Поделиться» → «На экран Домой». <b>Android:</b> меню Chrome → «Добавить на главный экран» или «Установить приложение».</li>
+          <li>Откройте иконку Мзико с рабочего стола. На iPad и iPhone код нужно ввести ещё один раз: иконка и Safari хранят данные раздельно.</li>
+        </ol>
+        <p>Приложение работает в портретной и альбомной ориентации, подстраивается под тёмную тему устройства. Картинки и звук уже показанных слов сохраняются на устройстве, поэтому при слабом интернете занятие не тормозит на загрузке. Совсем без сети заниматься нельзя: занятие собирает и ответы засчитывает сервер.</p>
+      </section>
+
+      <!-- ===== 7 ===== -->
+      <section class="sec" id="s7">
+        <h2><span class="n">7</span>Частые ситуации</h2>
+        <div class="faq">
+          <p><b>Ребёнок говорит, что приложение не даёт новый урок.</b> Проверьте экран «Уроки»: скорее всего, в этом разделе тема дня уже выбрана, остальные закрыты замком «завтра». Можно взять тему из другого раздела или повторить сегодняшнюю.</p>
+          <p><b>Ребёнок прошёл урок, а звёздочки за день нет.</b> Занятие не было доведено до экрана «Ура, занятие готово!». Крестик посреди занятия сохраняет монеты за уже данные ответы, но день не засчитывает.</p>
+          <p><b>Копилка в приложении и отчёт в боте не совпадают.</b> Они считаются из одних данных. Закройте и откройте приложение заново: главный экран подтягивает свежие цифры при открытии.</p>
+          <p><b>Потерялся планшет.</b> <code>/devices</code> → «Отключить» на этом устройстве. Затем «Новые цифры» в <code>/code</code>, чтобы старый код не открыл вход снова.</p>
+          <p><b>Ребёнок сам нашёл код в вашем телефоне и вошёл на другом устройстве.</b> Это не страшно: прогресс общий, монеты одни. Лишнее устройство можно отключить.</p>
+          <p><b>Хочу начать всё заново.</b> <code>/reset</code> → «Сбросить прогресс» → «Да, сбросить».</p>
+          <p><b>Хочу, чтобы отчёт получал и второй родитель.</b> Пусть напишет боту <code>/start</code> и пришлёт код ребёнка вместо имени. Отчёт придёт обоим, «Выплачено» нажимает тот, кто выдал деньги.</p>
+          <p><b>Не успел нажать «Выплачено» в воскресенье.</b> Нажмите в любой день: сумма за прошлую неделю остаётся в отчёте отдельной кнопкой «Выплачено за 14.09–20.09», пока не закроете.</p>
+          <p><b>Двое детей на одном планшете.</b> У каждого свой код. Второму придётся выйти из первого: отключите устройство первого ребёнка в <code>/devices</code> и введите код второго. Удобнее дать каждому своё устройство: код можно вводить где угодно.</p>
+        </div>
+      </section>
+
+      <!-- ===== 8 ===== -->
+      <section class="sec" id="s8">
+        <h2><span class="n">8</span>Чего приложение пока не умеет</h2>
+        <ul>
+          <li>Своего экрана настроек у ребёнка нет, всё меняет родитель через бота.</li>
+          <li>Нельзя закрыть или открыть отдельную тему по желанию родителя: порядок задаёт правило «одна тема раздела в день».</li>
+          <li>Нельзя поменять своё имя родителя после регистрации из бота.</li>
+          <li>Ребёнок не говорит в микрофон: приложение проверяет узнавание на слух и чтение, а не произношение.</li>
+          <li>Звук пока синтезирован, записи носителя языка появятся позже; транскрипции кириллицей ждут проверки.</li>
+          <li>Карточек с фотографией вместо эмодзи пока восемь (тема «Школьные предметы»), часть слов без картинки показана крупным текстом.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <p>Руководство обновляется вместе с приложением</p>
+  <p>Обновлено: ДД.ММ.ГГГГ</p>
+  <p><a href="https://github.com/kkc-group/mziko">github.com/kkc-group/mziko</a></p>
+  <svg class="hills" viewBox="0 0 540 120" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 70 Q120 0 260 60 T540 40 V120 H0Z" fill="var(--hill1)"/>
+    <path d="M0 100 Q160 50 320 90 T540 80 V120 H0Z" fill="var(--hill2)"/>
+  </svg>
+</footer>
+<div class="homebar" aria-hidden="true"></div>
+</div>
+
+<script>
+/* broken screenshot: placeholder with the caption kept, never an empty hole */
+function markBroken(img) {
+  const fig = img.closest('figure'); if (!fig) return;
+  const scr = img.parentNode;
+  if (!scr.querySelector('.ph')) {
+    const ph = document.createElement('div'); ph.className = 'ph';
+    ph.innerHTML = '<svg><use href="#sun"/></svg><span>Снимок не загрузился</span><small></small>';
+    ph.querySelector('small').textContent = img.getAttribute('alt') || '';
+    scr.appendChild(ph);
+  }
+  fig.classList.add('broken');
+}
+document.querySelectorAll('.scr img').forEach(img => {
+  img.addEventListener('error', () => markBroken(img));
+  img.addEventListener('load', () => img.closest('figure').classList.remove('broken'));
+  if (img.complete && img.naturalWidth === 0) markBroken(img);
+});
+
+/* demo panel */
+const root = document.documentElement;
+const demoFig = document.getElementById('demo-broken').querySelector('img');
+const demoSrc = demoFig.getAttribute('src');
+document.querySelectorAll('.demo .grp').forEach(g => g.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  g.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  const v = b.dataset.v, set = g.dataset.set;
+  if (set === 'vw') document.body.dataset.vw = v;
+  if (set === 'theme') { if (v === 'auto') delete root.dataset.theme; else root.dataset.theme = v; }
+  if (set === 'img') {
+    if (v === 'broken') { demoFig.src = '../general/parent-guide/login-missing.png'; document.getElementById('demo-broken').scrollIntoView({ block: 'center' }); }
+    else demoFig.src = demoSrc;
+  }
+}));
+
+/* scroll-spy: active section in the TOC and in the chip row */
+const links = [...document.querySelectorAll('.toc a, .chips a')];
+const targets = [...document.querySelectorAll('.sec, .sec h3[id]')];
+const chips = document.querySelector('.chips');
+let current = null;
+function activate(id) {
+  if (id === current) return; current = id;
+  const top = id.split('-')[0];
+  links.forEach(a => {
+    const h = a.getAttribute('href').slice(1);
+    a.classList.toggle('on', h === id || h === top);
+  });
+  document.querySelectorAll('.toc > ol > li').forEach(li => {
+    li.classList.toggle('open', li.querySelector('a').getAttribute('href') === '#' + top);
+  });
+  const chip = chips.querySelector('a[href="#' + top + '"]');
+  if (chip) chips.scrollTo({ left: chip.offsetLeft - 16, behavior: 'smooth' });
+}
+function spy() {
+  const line = innerHeight * 0.3;
+  let best = null;
+  for (const t of targets) { if (t.getBoundingClientRect().top <= line) best = t; }
+  if (best) activate(best.id);
+  else { current = null; links.forEach(a => a.classList.remove('on')); document.querySelectorAll('.toc li.open').forEach(li => li.classList.remove('open')); }
+}
+addEventListener('scroll', spy, { passive: true });
+addEventListener('resize', spy);
+spy();
+</script>
+</body>
+</html>
