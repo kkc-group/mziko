@@ -29,16 +29,6 @@ words:
     tr: зургчанта
     ru: рюкзак
     image: {kind: emoji, value: "🎒"}
-  - slug: chair
-    ka: სკამი
-    tr: сками
-    ru: стул
-    image: {kind: emoji, value: "🪑"}
-  - slug: book
-    ka: წიგნი
-    tr: цигни
-    ru: книга
-    image: {kind: emoji, value: "📕"}
   - slug: notebook
     ka: რვეული
     tr: рвеули
@@ -64,16 +54,6 @@ words:
     tr: макратели
     ru: ножницы
     image: {kind: emoji, value: "✂️"}
-  - slug: desk
-    ka: მერხი
-    tr: мерхи
-    ru: парта
-    image: {kind: text, value: მერხი}  # TODO picture
-  - slug: board
-    ka: დაფა
-    tr: дапа
-    ru: доска
-    image: {kind: text, value: დაფა}  # TODO picture
   - slug: glue
     ka: წებო
     tr: цебо

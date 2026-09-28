@@ -54,11 +54,6 @@ words:
     tr: телевизори
     ru: телевизор
     image: {kind: emoji, value: "📺"}
-  - slug: table
-    ka: მაგიდა
-    tr: магида
-    ru: стол
-    image: {kind: text, value: მაგიდა}  # TODO picture
   - slug: lamp
     ka: ნათურა
     tr: натура
