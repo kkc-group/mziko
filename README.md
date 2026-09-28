@@ -15,6 +15,7 @@
 | `backend/app` | FastAPI: модели, миграции Alembic, логика обучения и монет, HTTP-ручки |
 | `backend/bot` | Telegram-бот на aiogram 3 с недельным планировщиком |
 | `backend/tests` | pytest + testcontainers (нужен Docker) |
+| `admin` | Бэк-офис владельца: FastAPI + Jinja2, вход через Google, читает `/api/admin/*` |
 | `frontend` | React + TypeScript + Vite, PWA |
 | `content/topics` | Слова по темам в YAML, порядок = порядок изучения |
 | `media/audio` | Звук слов, `<тема>/<slug>.mp3` |
@@ -46,6 +47,11 @@ make token                  # общая ссылка с тестовым ток
 
 Если API слушает другой порт: `API_URL=http://localhost:8001 make web`.
 
+Бэк-офис локально: заполните блок «Back office» в `.env` (см. ниже) и
+`PUBLIC_URL=http://localhost:8080 make admin`, страница входа —
+http://localhost:8080/admin/login. Как это устроено:
+[docs/features/back-office.md](docs/features/back-office.md).
+
 Проверки:
 
 ```sh
@@ -70,11 +76,15 @@ make lint   # ruff, mypy, oxlint, tsc
      (без домена `:80` и `PUBLIC_URL=http://<ip>`);
    - `PUBLIC_URL=https://mziko.example.com` — попадает в ссылки для входа;
    - `BOT_TOKEN` от @BotFather, `ADMIN_TELEGRAM_IDS=[123456789]` — ваш id;
-   - `BOT_API_TOKEN` — секрет между ботом и API, `openssl rand -hex 32`.
+   - `BOT_API_TOKEN` — секрет между ботом и API, `openssl rand -hex 32`;
+   - бэк-офис: `ADMIN_EMAIL` — ваша почта Google, `ADMIN_API_TOKEN` и
+     `ADMIN_SESSION_SECRET` — два секрета `openssl rand -hex 32`,
+     `GOOGLE_CLIENT_ID` и `GOOGLE_CLIENT_SECRET` — OAuth-клиент из Google Cloud
+     Console с адресом возврата `https://mziko.example.com/admin/login/callback`.
 3. Ключ деплоя: публичная часть в `~/.ssh/authorized_keys` пользователя SSH,
    приватная — в секрет GitHub `DO_SSH_KEY`; ещё `DO_HOST` (IP) и `DO_USER`.
 4. Пуш в `main` или «Run workflow» в Actions. Поднимутся `db`, `api` (накатит
-   миграции и слова), `bot` и `web`.
+   миграции и слова), `bot`, `admin` и `web`. Бэк-офис: `https://mziko.example.com/admin/`.
 5. В Telegram: `/start`, `/addchild Сандро`, `/code`. Ссылку из ответа открыть на iPad,
    затем «Поделиться → На экран Домой».
 

@@ -47,6 +47,16 @@ services:
       api:
         condition: service_healthy
 
+  admin:
+    image: ghcr.io/kkc-group/mziko-admin:${IMAGE_TAG:-latest}
+    env_file: .env
+    environment:
+      API_URL: http://api:8000
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
   web:
     image: ghcr.io/kkc-group/mziko-web:${IMAGE_TAG:-latest}
     ports:
@@ -60,6 +70,7 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+      - admin
 
 volumes:
   pgdata:

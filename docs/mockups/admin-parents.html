@@ -1,0 +1,365 @@
+ <!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — бэк-офис: список родителей</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--grape); outline-offset: 3px; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+/* verbatim from styles.css: the small secondary button */
+.retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+
+/* ---------- new: back-office shell (built from the tokens above only) ---------- */
+.adm { background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.4; min-height: 100%; }
+.ahd { display: flex; align-items: center; gap: 28px; height: 56px; padding: 0 24px; background: var(--surface); border-bottom: 2px solid var(--line); }
+.brand { flex: none; font-size: 18px; font-weight: 900; white-space: nowrap; }
+.brand span { color: var(--muted); font-weight: 800; }
+.nav { display: flex; align-self: stretch; gap: 20px; }
+.nav a { display: flex; align-items: center; color: var(--muted); font-weight: 800; text-decoration: none; }
+.nav a.on { color: var(--ink); box-shadow: inset 0 -3px 0 var(--word-color); }
+.acct { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ava { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--grape); color: #fff; font-weight: 900; font-size: 14px; line-height: 1; }
+.mail { color: var(--muted); font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.retry.sm { min-height: 34px; padding: 4px 12px; border-radius: 10px; font-size: 14px; }
+
+.abody { padding: 20px 24px 28px; }
+.tools { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.tools h1 { margin: 0; font-size: 24px; font-weight: 900; line-height: 1; }
+.cnt { color: var(--muted); font-weight: 800; font-size: 14px; white-space: nowrap; }
+.srch { position: relative; margin-left: auto; width: 360px; flex: none; }
+.srch svg { position: absolute; left: 11px; top: 10px; width: 18px; height: 18px; color: var(--muted); }
+.srch input { width: 100%; height: 38px; padding: 0 34px 0 36px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; font-size: 14px; }
+.srch input::placeholder { color: var(--muted); font-weight: 600; }
+.srch input:disabled { background: transparent; border-style: dashed; }
+.srch .clr { position: absolute; right: 6px; top: 6px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); font-weight: 900; }
+.srch.on input { border-color: var(--word-color); }
+
+/* table */
+.tw { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; overflow-x: auto; }
+table.pt { width: 100%; min-width: 1060px; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.pt th { text-align: left; vertical-align: bottom; padding: 10px 12px 8px; border-bottom: 2px solid var(--line); color: var(--muted); font-weight: 800; font-size: 13px; line-height: 1.2; white-space: nowrap; background: var(--surface); }
+.pt th small { display: block; font-weight: 700; font-size: 12px; }
+.pt th.srt { cursor: pointer; }
+.pt th.srt.on { color: var(--ink); }
+.pt th .ar { color: var(--word-color); font-weight: 900; margin-left: 3px; }
+.pt th.r, .pt td.r { text-align: right; }
+.pt td { vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.pt tbody tr:last-child td { border-bottom: 0; }
+.pt tbody tr.row { cursor: pointer; }
+.pt tbody tr.row:hover td, .pt tbody tr.row.hov td { background: var(--bg); }
+.pt .c-p { position: sticky; left: 0; z-index: 1; width: 196px; min-width: 180px; }
+.pt th.c-p { z-index: 2; }
+.pt .c-l { width: 108px; }
+.pt .c-k { min-width: 280px; }
+.pt .c-w { width: 150px; }
+.pt .c-v { width: 150px; }
+.pt .c-d { width: 112px; }
+.pt .c-go { width: 32px; padding-left: 0; padding-right: 10px; color: var(--muted); font-weight: 900; font-size: 18px; line-height: 22px; text-align: right; }
+
+.pn { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pn.none { color: var(--muted); font-weight: 700; }
+.tg { margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* one child = one 22px line; the children, this-week and last-week cells share it, so lines stay aligned across columns */
+.ln { height: 22px; line-height: 22px; white-space: nowrap; }
+.ln + .ln { margin-top: 4px; }
+.kid { display: grid; grid-template-columns: minmax(0, 1fr) 70px 96px; gap: 10px; }
+.kid b { font-weight: 800; overflow: hidden; text-overflow: ellipsis; }
+.kid .wd { text-align: right; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.kid .ls { color: var(--muted); font-weight: 700; }
+.kid .ls.now { color: var(--ink); font-weight: 800; }
+.none-k { color: var(--muted); font-weight: 700; }
+.last { font-weight: 800; line-height: 22px; white-space: nowrap; }
+.last.old { color: var(--muted); font-weight: 700; }
+.last.today::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--mint); vertical-align: 1px; }
+.wk { text-align: right; font-variant-numeric: tabular-nums; }
+.wk b { font-weight: 800; }
+.wk small { color: var(--muted); font-weight: 700; font-size: 12px; margin-left: 4px; }
+.cap { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 6px; background: var(--sun); color: #4a3200; font-size: 11px; font-weight: 900; line-height: 18px; vertical-align: 1px; }
+.chip { display: inline-block; padding: 0 8px; border-radius: 8px; font-size: 13px; font-weight: 800; line-height: 20px; font-variant-numeric: tabular-nums; }
+.chip.paid { background: var(--mint-soft); }
+.chip.paid::before { content: '✓ '; color: var(--mint); font-weight: 900; }
+.chip.due { background: var(--pom-soft); }
+.dash { color: var(--muted); font-weight: 700; }
+
+.more-row td { text-align: center; color: var(--muted); font-weight: 800; font-size: 13px; background: var(--bg); padding: 6px; }
+.foot { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 0 0; color: var(--muted); font-weight: 800; font-size: 14px; }
+
+/* skeleton */
+.sk { display: block; height: 12px; border-radius: 6px; background: var(--line); animation: skp 1.2s ease-in-out infinite; }
+.sk + .sk { margin-top: 8px; }
+@keyframes skp { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+
+/* in-table / page messages */
+.msgc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 48px 20px; text-align: center; }
+.msgc b { font-size: 18px; font-weight: 900; }
+.msgc b.err { color: var(--pom); }
+.msgc p { margin: 0 0 8px; max-width: 460px; color: var(--muted); font-weight: 700; }
+.msgc code { font-size: 13px; color: var(--ink); }
+.deny { max-width: 420px; margin: 72px auto; padding: 24px; border-radius: 16px; background: var(--surface); border: 2px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.deny svg { width: 32px; height: 32px; color: var(--muted); }
+.deny b { font-size: 20px; font-weight: 900; }
+.deny p { margin: 0 0 8px; color: var(--muted); font-weight: 700; }
+.deny p span { color: var(--ink); font-weight: 800; overflow-wrap: anywhere; }
+
+/* narrow window: the table scrolls sideways under a pinned parent column; the header drops the e-mail */
+.narrow .mail { display: none; }
+.narrow .ahd { gap: 16px; padding: 0 16px; }
+.narrow .abody { padding: 16px; }
+.narrow .tools { flex-wrap: wrap; gap: 10px; }
+.narrow .srch { width: 100%; margin-left: 0; order: 3; }
+.narrow .pt .c-p { box-shadow: 2px 0 0 var(--line); }
+
+/* ---------- mockup chrome (not product) — same family as lessons-menu.html ---------- */
+.mk { max-width: 1260px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+figure { margin: 18px 0 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.stage { overflow-x: auto; padding-bottom: 4px; }
+.win { width: 1180px; border: 8px solid #0d0d12; border-radius: 14px; overflow: hidden; background: var(--bg); color: var(--ink); }
+.win.nw { width: 640px; }
+.url { height: 28px; display: flex; align-items: center; padding: 0 12px; background: #0d0d12; color: #aba5d3; font-size: 12px; font-weight: 700; }
+.pair { display: grid; grid-template-columns: 1fr; gap: 0; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Бэк-офис · список родителей</h1>
+  <p class="lead">Эталонный экран бэк-офиса: по его шапке, сетке и таблице пойдут карточка родителя и экран входа. Токены и шрифт — дословно из styles.css, тёмная тема тем же способом (<code>prefers-color-scheme</code> + <code>data-theme</code>); холмов, маскота и детских карточек нет. Рамка 1180 px, ниже — узкое окно 640 px. «Сегодня» на макете — четверг, 1 октября 2026; неделя — пн–вс по Тбилиси, как в <code>weeks.week_start</code>.</p>
+
+  <h2>1 · Обычное состояние</h2>
+  <p class="lead">8 родителей, сортировка по последнему занятию (↓). Строка целиком — ссылка на карточку родителя <code>/parents/{id}</code> (вторая волна); вторая строка показана под курсором. Нино и Гиорги — родители одних и тех же детей (связь многие-ко-многим), поэтому дети в счётчике считаются без повторов.</p>
+  <figure><figcaption>Светлая тема</figcaption><div class="stage" id="f-light"></div></figure>
+  <figure><figcaption>Тёмная тема<span>data-theme="dark"; акцент (активный пункт, стрелка сортировки) — <code>--word-color</code>, то есть солнце, как слово в приложении</span></figcaption><div class="stage" id="f-dark"></div></figure>
+
+  <h2>2 · Пусто — первый запуск</h2>
+  <p class="lead">Родителей в базе нет. Поиск выключен (нечего искать), таблицы нет. Текст правдив для нынешнего кода: родитель заводится только из <code>ADMIN_TELEGRAM_IDS</code> при старте API.</p>
+  <figure><div class="stage" id="f-empty"></div></figure>
+
+  <h2>3 · Загрузка</h2>
+  <p class="lead">Шапка таблицы настоящая, строки — скелетон той же высоты, что строка с одним ребёнком; счётчик тоже скелетон, поиск уже доступен для ввода.</p>
+  <figure><div class="stage" id="f-load"></div></figure>
+
+  <h2>4 · Ошибка — API не ответил</h2>
+  <p class="lead">Список не показан вовсе: старые цифры без пометки хуже, чем их отсутствие. Кнопка — существующий <code>.retry</code>.</p>
+  <figure><div class="stage" id="f-err"></div></figure>
+
+  <h2>5 · Переполнение</h2>
+  <p class="lead">137 родителей, первые 50 и «Показать ещё». Длинные имена родителя — до двух строк, потом многоточие; имя ребёнка — одна строка с многоточием (полное — во всплывающей подсказке и в карточке). Родитель с 4 детьми показан целиком: скрыть ребёнка значило бы скрыть и его невыданные лари. Ставка 20 монет за лари и потолок 30 ₾ — 600 монет, метка «потолок».</p>
+  <figure><div class="stage" id="f-over"></div></figure>
+
+  <h2>6 · Поиск ничего не нашёл</h2>
+  <p class="lead">Поиск идёт по имени родителя, имени ребёнка и Telegram ID. Заголовки таблицы остаются — видно, что это пустой результат, а не пустая база.</p>
+  <figure><div class="stage" id="f-nf"></div></figure>
+
+  <h2>7 · Доступ не выдан</h2>
+  <p class="lead">Вход через Google прошёл, но почта не владельца. Шапка без навигации, вместо таблицы — один блок; «Выйти» и кнопка в блоке делают одно и то же.</p>
+  <figure><div class="stage" id="f-deny"></div></figure>
+
+  <h2>8 · Узкое окно (640 px)</h2>
+  <p class="lead">Таблица не сворачивается, а прокручивается вбок; колонка «Родитель» прибита слева, почта в шапке уходит, остаётся кружок и «Выйти», поиск падает на свою строку. Кадр прокручен вправо на 110 px: «Последнее занятие» ушло под прибитую колонку, имена детей видны.</p>
+  <figure><div class="stage" id="f-narrow"></div></figure>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Порядок колонок: Родитель · Последнее занятие · Дети · Эта неделя · Прошлая неделя · Регистрация · ›.</b> Главный вопрос владельца — «кто живой»; поэтому последнее занятие стоит сразу за именем и по нему сортировка по умолчанию. Широкие «Дети» — в середине, деньги — после детей, дата регистрации нужна реже всего и стоит последней.</li>
+    <li><b>Неделя считается по ребёнку, а не по родителю</b> — так устроены <code>weeks</code> (у каждого ребёнка своя ставка и потолок, монеты разных детей не складываются). Поэтому «Дети», «Эта неделя» и «Прошлая неделя» — построчно по ребёнку, строки выровнены по одной высоте 22 px через три колонки.</li>
+    <li><b>Эта неделя</b> — лари жирно (что выдадут), монеты мелко; если потолок достигнут, вместо монет стоит метка «потолок» (число монет — в подсказке); лари посчитаны как в <code>coins.lari_for</code>: вниз до 0,1 и не выше потолка. <b>Прошлая неделя</b>: «✓ выдано N ₾» (<code>status = paid</code>, <code>lari_paid</code>), «к выдаче N ₾» (<code>open</code>, монет больше нуля), «—» (монет не было).</li>
+    <li><b>Что уступает при нехватке места.</b> Имя ребёнка сжимается первым (многоточие), число слов и «когда» — никогда. Имя родителя переносится на 2 строки, Telegram ID не переносится. В узком окне колонки не прячутся — работает горизонтальная прокрутка с прибитым родителем.</li>
+    <li><b>Время:</b> «сегодня» (с зелёной точкой) · «вчера» · «N дн. назад» до 13 дней · дальше дата «8 сен». «не занимался» — дети есть, уроков нет; «—» — детей нет.</li>
+  </ul>
+</main>
+<script>
+/* ---------- helpers ---------- */
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const wordsW = n => `${n} ${plural(n, 'слово', 'слова', 'слов')}`;
+const parentsW = n => `${n} ${plural(n, 'родитель', 'родителя', 'родителей')}`;
+const kidsW = n => `${n} ${plural(n, 'ребёнок', 'ребёнка', 'детей')}`;
+const gel = x => x.toFixed(1).replace('.', ',') + ' ₾';
+/* coins.lari_for: floor to 0.1, capped */
+const lari = (coins, rate, cap) => Math.min(Math.floor(coins * 10 / rate) / 10, cap);
+/* today = Thu 1 Oct 2026; d = days ago (number) or null = never */
+const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+function ago(d) {
+  if (d === null) return 'не занимался';
+  if (d === 0) return 'сегодня';
+  if (d === 1) return 'вчера';
+  if (d <= 13) return `${d} дн. назад`;
+  const t = new Date(2026, 9, 1 - d);
+  return `${t.getDate()} ${MONTHS[t.getMonth()]}`;
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+const SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.6" fill="none"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+
+/* ---------- data: only fields that exist in the models ----------
+   kid: n name · w words at stage 3 · d days since the latest session.study_date (null = none)
+        c coins this week · r rate · cap cap_lari · p last week: ['paid', lari_paid] | ['due', coins] | null */
+const K = (n, w, d, c, r, cap, p) => ({ n, w, d, c, r, cap, p });
+const sandro = K('Сандро', 42, 0, 64, 10, 15, ['paid', 15.0]);
+const mariam = K('Мариам', 17, 1, 30, 10, 15, ['due', 82]);
+const NORMAL = [
+  { name: 'Нино Беридзе', tg: 318552904, reg: '12.08.2026', kids: [sandro, mariam] },
+  { name: 'Гиорги Беридзе', tg: 402118377, reg: '13.08.2026', kids: [sandro, mariam] },
+  { name: 'Кетеван Абашидзе', tg: 1187340562, reg: '15.09.2026', kids: [K('Лизи', 12, 0, 40, 20, 10, ['paid', 3.5])] },
+  { name: 'Анна Смирнова', tg: 764205319, reg: '20.08.2026', kids: [K('Лука', 88, 1, 150, 10, 15, ['paid', 15.0])] },
+  { name: 'Тамар Гелашвили', tg: 5530981274, reg: '01.09.2026', kids: [K('Саба', 60, 3, 20, 10, 15, ['paid', 9.3]), K('Дачи', 26, 5, 0, 10, 15, ['due', 45]), K('Элене', 0, null, 0, 10, 15, null)] },
+  { name: 'Мариам Чхеидзе', tg: 921667013, reg: '18.08.2026', kids: [K('Илья', 31, 23, 0, 10, 15, null)] },
+  { name: null, tg: 5902117648, reg: '02.08.2026', kids: [K('Ника', 0, null, 0, 10, 15, null)] },
+  { name: 'Дмитрий Козлов', tg: 687120455, reg: '27.09.2026', kids: [] },
+];
+const OVER = [
+  { name: 'Александра-Николетта Дадиани-Церетели', tg: 6021554873, reg: '30.09.2026', kids: [K('Анастасия-Мариам Дадиани-Церетели', 3, 0, 45, 5, 30, null)] },
+  { name: 'Екатерина Константинопольская-Джапаридзе', tg: 1402998315, reg: '04.08.2026', kids: [
+    K('Иоанн-Александр', 112, 0, 600, 20, 30, ['paid', 30.0]), K('Мариам-Софио', 97, 1, 212, 20, 30, ['paid', 21.4]),
+    K('Георгий', 54, 2, 35, 20, 30, ['due', 180]), K('Нино-Элисабед', 8, 6, 0, 20, 30, ['due', 20])] },
+  { name: 'Лаша Кобахидзе', tg: 530771204, reg: '09.08.2026', kids: [K('Торнике', 71, 0, 88, 10, 15, ['paid', 12.0])] },
+  { name: 'Ольга Воронцова', tg: 7011245893, reg: '22.08.2026', kids: [K('Варвара', 45, 0, 52, 15, 20, ['paid', 7.8]), K('Святослав', 39, 1, 17, 15, 20, ['due', 61])] },
+  { name: 'Давит Мчедлишвили', tg: 288314560, reg: '11.08.2026', kids: [K('Гига', 23, 1, 9, 10, 15, ['paid', 4.1])] },
+  { name: null, tg: 6655120937, reg: '28.09.2026', kids: [K('Анано', 2, 1, 14, 10, 15, null)] },
+  { name: 'Натия Квирикашвили', tg: 845503218, reg: '03.09.2026', kids: [K('Элисо', 19, 2, 26, 30, 30, ['paid', 2.1])] },
+  { name: 'Ирина Соколова', tg: 190334876, reg: '25.08.2026', kids: [K('Тимофей', 50, 4, 0, 10, 5, ['paid', 5.0])] },
+  { name: 'Леван Джапаридзе', tg: 5120663948, reg: '14.09.2026', kids: [K('Цотне', 14, 7, 0, 10, 15, ['due', 33])] },
+  { name: 'Софико Чиковани', tg: 403377812, reg: '06.08.2026', kids: [K('Ана', 64, 12, 0, 10, 15, null)] },
+  { name: 'Алексей Морозов', tg: 991020447, reg: '19.09.2026', kids: [K('Ева', 0, null, 0, 10, 15, null)] },
+  { name: 'Эка Гогуа', tg: 736219085, reg: '29.09.2026', kids: [] },
+];
+
+/* ---------- pieces ---------- */
+const lastOf = p => {
+  if (!p.kids.length) return { t: '—', cls: 'old' };
+  const ds = p.kids.map(k => k.d).filter(d => d !== null);
+  if (!ds.length) return { t: 'не занимался', cls: 'old' };
+  const d = Math.min(...ds);
+  return { t: ago(d), cls: d === 0 ? 'today' : d > 13 ? 'old' : '' };
+};
+const kidLine = k => `<div class="ln kid"><b title="${esc(k.n)}">${k.n}</b><span class="wd">${wordsW(k.w)}</span><span class="ls${k.d === 0 ? ' now' : ''}">${ago(k.d)}</span></div>`;
+const weekLine = k => k.c
+  ? `<div class="ln wk"${k.c >= k.r * k.cap ? ` title="${k.c} мон."` : ''}><b>${gel(lari(k.c, k.r, k.cap))}</b>${k.c >= k.r * k.cap ? '<span class="cap">потолок</span>' : `<small>${k.c} мон.</small>`}</div>`
+  : '<div class="ln wk"><span class="dash">0</span></div>';
+const prevLine = k => {
+  if (!k.p) return '<div class="ln"><span class="dash">—</span></div>';
+  if (k.p[0] === 'paid') return `<div class="ln"><span class="chip paid">выдано ${gel(k.p[1])}</span></div>`;
+  return `<div class="ln"><span class="chip due">к выдаче ${gel(lari(k.p[1], k.r, k.cap))}</span></div>`;
+};
+function row(p, hov) {
+  const l = lastOf(p), none = !p.kids.length;
+  return `<tr class="row${hov ? ' hov' : ''}" title="Открыть карточку родителя">
+    <td class="c-p">${p.name ? `<div class="pn">${p.name}</div>` : '<div class="pn none">— без имени</div>'}<div class="tg">${p.tg}</div></td>
+    <td class="c-l"><span class="last ${l.cls}">${l.t}</span></td>
+    <td class="c-k">${none ? '<div class="ln none-k">детей нет</div>' : p.kids.map(kidLine).join('')}</td>
+    <td class="c-w r">${none ? '<div class="ln"><span class="dash">—</span></div>' : p.kids.map(weekLine).join('')}</td>
+    <td class="c-v">${none ? '<div class="ln"><span class="dash">—</span></div>' : p.kids.map(prevLine).join('')}</td>
+    <td class="c-d"><div class="ln muted">${p.reg}</div></td>
+    <td class="c-go">›</td>
+  </tr>`;
+}
+const TH = `<thead><tr>
+  <th class="c-p srt">Родитель</th>
+  <th class="c-l srt on">Последнее<br>занятие<span class="ar">↓</span></th>
+  <th class="c-k">Дети<small>выучено слов · последний урок</small></th>
+  <th class="c-w r srt">Эта неделя<small>28 сен – 4 окт</small></th>
+  <th class="c-v">Прошлая неделя<small>21–27 сен</small></th>
+  <th class="c-d srt">Регистрация</th>
+  <th class="c-go"></th>
+</tr></thead>`;
+const table = body => `<div class="tw"><table class="pt">${TH}<tbody>${body}</tbody></table></div>`;
+const msgRow = inner => `<tr><td colspan="7"><div class="msgc">${inner}</div></td></tr>`;
+
+function header(opts = {}) {
+  const email = opts.email || 'mziko.owner@gmail.com';
+  return `<header class="ahd"><div class="brand">Мзико <span>· бэк-офис</span></div>${
+    opts.noNav ? '' : '<nav class="nav"><a href="#" class="on">Родители</a></nav>'
+  }<div class="acct"><span class="ava">${email[0].toUpperCase()}</span><span class="mail">${email}</span><button type="button" class="retry sm">Выйти</button></div></header>`;
+}
+function tools({ count = '', q = '', disabled = false, skeleton = false }) {
+  const cnt = skeleton ? '<span class="sk" style="width:120px;height:14px"></span>' : `<span class="cnt">${count}</span>`;
+  return `<div class="tools"><h1>Родители</h1>${cnt}<label class="srch${q ? ' on' : ''}">${SEARCH}<input type="search" placeholder="Ребёнок, родитель или Telegram ID"${q ? ` value="${q}"` : ''}${disabled ? ' disabled' : ''}>${q ? '<button type="button" class="clr" aria-label="Очистить">✕</button>' : ''}</label></div>`;
+}
+const page = (theme, inner, opts = {}) =>
+  `<div class="win${opts.narrow ? ' nw' : ''}" data-theme="${theme}"><div class="url">/parents</div><div class="adm${opts.narrow ? ' narrow' : ''}">${header(opts)}${inner}</div></div>`;
+
+/* ---------- states ---------- */
+const normalBody = NORMAL.map((p, i) => row(p, i === 1)).join('');
+const normal = theme => page(theme, `<div class="abody">${tools({ count: `${parentsW(8)} · ${kidsW(9)}` })}${table(normalBody)}</div>`);
+
+const skRow = () => `<tr>
+  <td class="c-p"><span class="sk" style="width:70%"></span><span class="sk" style="width:40%;height:10px"></span></td>
+  <td class="c-l"><span class="sk" style="width:70%"></span></td>
+  <td class="c-k"><span class="sk" style="width:85%"></span></td>
+  <td class="c-w"><span class="sk" style="width:70%;margin-left:auto"></span></td>
+  <td class="c-v"><span class="sk" style="width:75%"></span></td>
+  <td class="c-d"><span class="sk" style="width:80%"></span></td>
+  <td class="c-go"></td></tr>`;
+
+const S = {
+  light: normal('light'),
+  dark: normal('dark'),
+  empty: page('light', `<div class="abody">${tools({ count: parentsW(0), disabled: true })}<div class="tw"><div class="msgc"><b>Родителей пока нет</b><p>Первые родители создаются из <code>ADMIN_TELEGRAM_IDS</code> при запуске API. Как только они появятся, здесь будет таблица.</p></div></div></div>`),
+  load: page('light', `<div class="abody">${tools({ skeleton: true })}${table(Array.from({ length: 6 }, skRow).join(''))}</div>`),
+  err: page('light', `<div class="abody">${tools({ count: '', disabled: true })}<div class="tw"><div class="msgc"><b class="err">Не удалось загрузить список</b><p>Сервер не ответил. Данные в базе от этого не меняются — можно просто попробовать ещё раз.</p><button type="button" class="retry">Повторить</button></div></div></div>`),
+  over: page('light', `<div class="abody">${tools({ count: `${parentsW(137)} · ${kidsW(164)}` })}${table(
+      OVER.map(p => row(p, false)).join('') + '<tr class="more-row"><td colspan="7">… строки 13–50 …</td></tr>'
+    )}<div class="foot">Показаны 50 из 137<button type="button" class="retry">Показать ещё 50</button></div></div>`),
+  nf: page('light', `<div class="abody">${tools({ count: `0 из ${parentsW(8)}`, q: 'Тамрико' })}${table(msgRow(
+      '<b>Никого не нашлось по «Тамрико»</b><p>Ищем по имени родителя, имени ребёнка и Telegram ID.</p><button type="button" class="retry">Сбросить поиск</button>'
+    ))}</div>`),
+  deny: page('light', `<div class="deny">${LOCK}<b>Доступ не выдан</b><p>Вы вошли как <span>ivan.gelovani.1987@gmail.com</span>. В бэк-офис пускают только почту владельца.</p><button type="button" class="retry">Выйти и войти другой почтой</button></div>`, { noNav: true, email: 'ivan.gelovani.1987@gmail.com' }),
+  narrow: page('light', `<div class="abody">${tools({ count: `${parentsW(8)} · ${kidsW(9)}` })}${table(NORMAL.map(p => row(p, false)).join(''))}</div>`, { narrow: true }),
+};
+for (const [k, v] of Object.entries({ 'f-light': S.light, 'f-dark': S.dark, 'f-empty': S.empty, 'f-load': S.load, 'f-err': S.err, 'f-over': S.over, 'f-nf': S.nf, 'f-deny': S.deny, 'f-narrow': S.narrow })) {
+  document.getElementById(k).innerHTML = v;
+}
+document.querySelector('#f-narrow .tw').scrollLeft = 110;
+</script>
+</body>
+</html>

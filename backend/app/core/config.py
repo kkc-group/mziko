@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     bot_api_token: str = ""
     # Where the bot finds the API (inside docker-compose: http://api:8000).
     api_url: str = "http://localhost:8000"
+    # Shared secret the back office presents to /api/admin/*. Empty disables those routes.
+    admin_api_token: str = ""
 
     timezone: str = "Asia/Tbilisi"
 

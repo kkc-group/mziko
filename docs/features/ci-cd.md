@@ -20,11 +20,11 @@ git. Образы собираются на GitHub из исходников п�
   звука применялись без пересборки.
 - **Workflow** `.github/workflows/deploy.yml`, три шага по пушу в `main` (или
   вручную кнопкой «Run workflow»):
-  1. `test` — `ruff`, `mypy`, `pytest` бэкенда (Postgres в testcontainers),
-     линт, типы и сборка фронта. Красное — дальше не идёт.
-  2. `build` — два образа через buildx с кэшем GitHub, теги `<sha>` и `latest`,
-     в `ghcr.io/kkc-group/mziko-api` и `mziko-web`. Логин встроенным
-     `GITHUB_TOKEN`.
+  1. `test` — `ruff`, `mypy`, `pytest` бэкенда (Postgres в testcontainers) и
+     бэк-офиса, линт, типы и сборка фронта. Красное — дальше не идёт.
+  2. `build` — три образа через buildx с кэшем GitHub, теги `<sha>` и `latest`,
+     в `ghcr.io/kkc-group/mziko-api`, `mziko-admin` и `mziko-web`. Логин
+     встроенным `GITHUB_TOKEN`.
   3. `deploy` — по SSH на Droplet: копирует `deploy/docker-compose.prod.yml` в
      `/srv/mziko/docker-compose.yml`, логинится в ghcr тем же токеном, `docker
      compose pull` и `up -d` с `IMAGE_TAG=<sha>`, чистит старые образы.

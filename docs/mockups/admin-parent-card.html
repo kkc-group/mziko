@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — бэк-офис: карточка родителя</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css, verbatim from admin-parents.html ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--grape); outline-offset: 3px; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+.retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+
+/* ---------- back-office shell: verbatim from admin-parents.html ---------- */
+.adm { background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.4; min-height: 100%; }
+.ahd { display: flex; align-items: center; gap: 28px; height: 56px; padding: 0 24px; background: var(--surface); border-bottom: 2px solid var(--line); }
+.brand { flex: none; font-size: 18px; font-weight: 900; white-space: nowrap; }
+.brand span { color: var(--muted); font-weight: 800; }
+.nav { display: flex; align-self: stretch; gap: 20px; }
+.nav a { display: flex; align-items: center; color: var(--muted); font-weight: 800; text-decoration: none; }
+.nav a.on { color: var(--ink); box-shadow: inset 0 -3px 0 var(--word-color); }
+.acct { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ava { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--grape); color: #fff; font-weight: 900; font-size: 14px; line-height: 1; }
+.mail { color: var(--muted); font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.retry.sm { min-height: 34px; padding: 4px 12px; border-radius: 10px; font-size: 14px; }
+.abody { padding: 20px 24px 28px; }
+.tw { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; overflow-x: auto; }
+.chip { display: inline-block; padding: 0 8px; border-radius: 8px; font-size: 13px; font-weight: 800; line-height: 20px; font-variant-numeric: tabular-nums; }
+.chip.paid { background: var(--mint-soft); }
+.chip.paid::before { content: '✓ '; color: var(--mint); font-weight: 900; }
+.chip.due { background: var(--pom-soft); }
+.chip.open { background: var(--line); }
+.dash { color: var(--muted); font-weight: 700; }
+.sk { display: block; height: 12px; border-radius: 6px; background: var(--line); animation: skp 1.2s ease-in-out infinite; }
+.sk + .sk { margin-top: 8px; }
+@keyframes skp { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+.msgc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 48px 20px; text-align: center; }
+.msgc b { font-size: 18px; font-weight: 900; }
+.msgc b.err { color: var(--pom); }
+.msgc p { margin: 0 0 8px; max-width: 460px; color: var(--muted); font-weight: 700; }
+
+/* ---------- new: parent card page (built from the tokens and patterns above only) ---------- */
+.crumbs { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; font-weight: 800; font-size: 14px; }
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--ink); }
+.crumbs span.sep { color: var(--muted); opacity: .7; }
+.crumbs b { color: var(--ink); font-weight: 900; }
+.crumbs .sk { display: inline-block; width: 130px; }
+
+.pcard { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 18px 22px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; margin-bottom: 22px; }
+.pcard .nm { font-size: 22px; font-weight: 900; }
+.pcard .nm.none { color: var(--muted); font-weight: 700; }
+.pcard dl { display: flex; gap: 30px; flex-wrap: wrap; margin: 0; }
+.pcard .st { min-width: 0; }
+.pcard dt { margin: 0 0 2px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.pcard dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.kidsec { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; margin-bottom: 22px; overflow: hidden; }
+.kidhd { padding: 16px 22px; border-bottom: 2px solid var(--line); }
+.kidhd .nm { font-size: 20px; font-weight: 900; overflow-wrap: anywhere; }
+.kidhd .row2 { margin-top: 6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; letter-spacing: .03em; padding: 2px 9px; border-radius: 8px; background: var(--bg); border: 2px solid var(--line); font-size: 13px; }
+.meta { color: var(--muted); font-weight: 700; font-size: 13px; }
+
+.sub { padding: 16px 22px; border-bottom: 2px solid var(--line); }
+.sub:last-child { border-bottom: 0; }
+.subhd { margin: 0 0 12px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.subempty { color: var(--muted); font-weight: 700; font-size: 14px; padding: 2px 0; }
+
+/* topics */
+.tlist { display: flex; flex-direction: column; gap: 8px; }
+.trow { display: grid; grid-template-columns: 200px 1fr 96px 82px; align-items: center; gap: 12px; }
+.tname { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbar { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 5px; background: var(--mint); }
+.tcnt { text-align: right; font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tst { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.tst.done { color: var(--mint-dark); }
+.tst.now { color: var(--ink); }
+.tst.no { color: var(--muted); font-weight: 700; }
+
+/* calendar */
+.cal { display: inline-grid; grid-template-columns: 96px repeat(7, 24px); gap: 5px; align-items: center; }
+.cal .wd { font-size: 11px; font-weight: 800; color: var(--muted); text-align: center; }
+.cal .wl { font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.cal .cell { width: 24px; height: 24px; border-radius: 7px; background: var(--line); }
+.cal .cell.done { background: var(--mint); }
+.cal .cell.part { background: var(--mint-soft); border: 2px solid var(--mint-dark); }
+.cal .cell.future { background: transparent; border: 2px dashed var(--line); }
+.cal .cell.today { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--word-color); }
+.calwrap { overflow-x: auto; padding-bottom: 2px; }
+.calsum { margin-top: 12px; color: var(--muted); font-weight: 700; font-size: 13px; }
+.calsum b { color: var(--ink); font-weight: 800; }
+.calkey { margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: var(--muted); }
+.calkey i { display: inline-block; width: 13px; height: 13px; border-radius: 4px; vertical-align: -2px; margin-right: 5px; background: var(--line); }
+.calkey i.done { background: var(--mint); }
+.calkey i.part { background: var(--mint-soft); border: 2px solid var(--mint-dark); }
+.calkey i.future { background: transparent; border: 2px dashed var(--line); }
+
+/* compact sub-tables: same visual language as .pt (padding, border colours, header weight),
+   without the sticky column / 1060px floor that only the big parent list needs */
+table.subt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.subt th { text-align: left; padding: 6px 10px 6px 0; border-bottom: 2px solid var(--line); color: var(--muted); font-weight: 800; font-size: 13px; white-space: nowrap; }
+.subt td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.subt tbody tr:last-child td { border-bottom: 0; }
+.subt th.r, .subt td.r { text-align: right; padding-right: 0; }
+.subt .paidon { margin-left: 6px; color: var(--muted); font-weight: 700; font-size: 12px; }
+.subt .rv { text-decoration: line-through; color: var(--muted); }
+.subt .rvon { color: var(--muted); font-weight: 700; font-size: 13px; }
+
+.errgrid { display: flex; gap: 20px; flex-wrap: wrap; padding: 20px 0; }
+.errcard { flex: 1 1 320px; max-width: 420px; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; }
+.errcard .msgc { padding: 32px 24px; }
+
+/* ---------- mockup chrome (not product) — same family as admin-parents.html ---------- */
+.mk { max-width: 1260px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+figure { margin: 18px 0 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.stage { overflow-x: auto; padding-bottom: 4px; }
+.win { width: 1180px; border: 8px solid #0d0d12; border-radius: 14px; overflow: hidden; background: var(--bg); color: var(--ink); }
+.url { height: 28px; display: flex; align-items: center; padding: 0 12px; background: #0d0d12; color: #aba5d3; font-size: 12px; font-weight: 700; }
+.pair { display: grid; grid-template-columns: 1fr; gap: 0; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Бэк-офис · карточка родителя</h1>
+  <p class="lead">Вторая волна: шапка, токены, сетка окна 1180 px, рамка, классы <code>.retry</code>/<code>.chip</code>/<code>.dash</code>/<code>.sk</code>/<code>.msgc</code> и способ показа тёмной темы — дословно из согласованного <code>admin-parents.html</code>. Страница только читает: кнопок редактирования нет. «Сегодня» — тот же четверг, 1 октября 2026, что и в списке, поэтому «эта неделя» здесь и там — одна и та же неделя (28 сен – 4 окт). Календарь занятий — новый элемент, его на эталоне не было; он собран из тех же токенов (mint / mint-soft / mint-dark / line) и того же приёма с точкой «сегодня», что и в приложении.</p>
+
+  <h2>1 · Обычное состояние — родитель с двумя детьми</h2>
+  <p class="lead">Нино Церетели: Сандро занимается почти каждый день, Мариам — редко и без подсказок. У каждого ребёнка — код входа, прогресс по всем 18 темам курса (буквы 1–4 → слоги → слова по темам, порядок из <code>topics.order</code>), календарь за 4 недели, 6 последних недель по деньгам и устройства.</p>
+  <figure><figcaption>Светлая тема</figcaption><div class="stage" id="f-light"></div></figure>
+  <figure><figcaption>Тёмная тема<span>data-theme="dark"; акцент «сегодня» в календаре и графа выученного — те же токены, что в списке</span></figcaption><div class="stage" id="f-dark"></div></figure>
+
+  <h2>2 · Родитель без детей</h2>
+  <p class="lead">Родитель зарегистрирован (стартовал бота), ребёнка ещё не добавил. Вместо блоков детей — одно честное сообщение с реальной командой бота.</p>
+  <figure><div class="stage" id="f-nokids"></div></figure>
+
+  <h2>3 · Ребёнок только что добавлен</h2>
+  <p class="lead">Код выдан, ставка и потолок стоят по умолчанию — это записывается в <code>children</code> при создании. Уроков, прогресса, недель и устройств нет: ни одной сессии, <code>weeks</code> ещё не создана (она заводится лениво при первом <code>/me</code>), в <code>devices</code> пусто, пока код не ввели на планшете. Каждый блок говорит об этом отдельно, а не показывает нулевые графики.</p>
+  <figure><div class="stage" id="f-new"></div></figure>
+
+  <h2>4 · Загрузка</h2>
+  <p class="lead">Шапка и крошки уже настоящие (id есть в адресе), имя родителя и содержимое карточки — скелетон той же формы, что в обычном состоянии.</p>
+  <figure><div class="stage" id="f-load"></div></figure>
+
+  <h2>5 · Ошибка</h2>
+  <p class="lead">Два самостоятельных случая рядом: неверный id в ссылке (404) и обрыв связи с API (кнопка «Повторить», как в списке). Карточка ни при одном из них не показывает старые данные вперемешку с сообщением об ошибке.</p>
+  <figure><div class="stage" id="f-err"></div></figure>
+
+  <h2>6 · Переполнение</h2>
+  <p class="lead">Александра-Николетта Дадиани-Церетели, трое детей с длинными двойными именами. У Александра-Гурама — 4 устройства, 2 из них отозваны (приглушены и зачёркнуты). «Природа и погода» — самое длинное название темы в курсе — сжимается в одну строку с многоточием и полным текстом во всплывающей подсказке.</p>
+  <figure><div class="stage" id="f-over"></div></figure>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Один раздел на ребёнка, друг под другом</b> — как и просили: у каждого ребёнка своя ставка, свой потолок, свои недели (в <code>weeks</code> нет ничего общего между детьми одного родителя), смешивать их в одну таблицу было бы неверно по сути данных, а не только неудобно.</li>
+    <li><b>Что уступает при нехватке места.</b> Имя ребёнка в заголовке раздела переносится (оно одно и большое, ужимать нечего), а вот название темы в списке прогресса — одна строка с многоточием и <code>title</code>: список тем длинный и построчный, второй строке там взяться неоткуда без разъезжания шкал. Telegram ID и код входа не переносятся и не сокращаются — это идентификаторы, а не текст.</li>
+    <li><b>Тема «пройдена / в работе / не начата»</b> считается по <code>word_progress.stage</code>: пройдена — <code>stage = 3</code> у всех слов темы; в работе — хотя бы у одного слова <code>stage = 3</code>, но не у всех; не начата — ни одного. Это загрублённый срез: тема, где слова уже показывали, но пока без единого правильного ответа с первого раза, на этом экране неотличима от нетронутой — отдельного признака «introduced» в отображении нет, потому что владельцу нужен прогресс, а не пошаговая механика урока.</li>
+    <li><b>Календарь считает уроки, а не темы.</b> Закрашенная клетка — день, когда была хотя бы одна сессия (<code>sessions.study_date</code>); мягкая клетка с рамкой — сессия без <code>finished_at</code> (ребёнок вышел на середине); пунктирная рамка без заливки — день ещё не наступил, а не «пропущен». Будущее и «не занимался» разными способами показаны намеренно: иначе будние пятница-суббота-воскресенье текущей недели выглядели бы как прогул.</li>
+    <li><b>Неделя считается по ребёнку.</b> Текущая неделя (статус «открыта») показывает и монеты, и лари — так же, как колонка «Эта неделя» в списке родителей, включая то же округление вниз до 0,1 ₾ и тот же потолок. Прошлые недели — «✓ выдано N ₾» с датой выплаты, «к выдаче N ₾» (неделя закрылась, а /pay ещё не нажали) или «—» (монет не было).</li>
+  </ul>
+</main>
+<script>
+/* ---------- helpers: same formulas as admin-parents.html ---------- */
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const kidsW = n => `${n} ${plural(n, 'ребёнок', 'ребёнка', 'детей')}`;
+const wordsW = n => `${n} ${plural(n, 'слово', 'слова', 'слов')}`;
+const gel = x => x.toFixed(1).replace('.', ',') + ' ₾';
+const lari = (coins, rate, cap) => Math.min(Math.floor(coins * 10 / rate) / 10, cap);
+const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+function ago(d) {
+  if (d === 0) return 'сегодня';
+  if (d === 1) return 'вчера';
+  if (d <= 13) return `${d} дн. назад`;
+  const t = new Date(2026, 9, 1 - d);
+  return `${t.getDate()} ${MONTHS[t.getMonth()]}`;
+}
+function shortDate(d) {
+  const t = new Date(2026, 9, 1 - d);
+  return `${t.getDate()} ${MONTHS[t.getMonth()]}`;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+
+/* ---------- content: topics in learning order, from content/topics/*.yaml (order, title_ru, word count) ---------- */
+const TOPICS = [
+  ['Буквы 1', 8], ['Буквы 2', 8], ['Буквы 3', 8], ['Буквы 4', 9], ['Слоги', 25],
+  ['Первые слова', 12], ['Цвета', 10], ['Приветствия', 10], ['Числа', 10], ['Семья', 12],
+  ['Школа', 15], ['Тело', 12], ['Животные', 14], ['Еда', 18], ['Одежда', 12],
+  ['Дом', 13], ['Природа и погода', 15], ['Действия', 14],
+];
+
+/* ---------- pieces ---------- */
+function header(opts = {}) {
+  const email = opts.email || 'mziko.owner@gmail.com';
+  return `<header class="ahd"><div class="brand">Мзико <span>· бэк-офис</span></div><nav class="nav"><a href="#" class="on">Родители</a></nav><div class="acct"><span class="ava">${email[0].toUpperCase()}</span><span class="mail">${email}</span><button type="button" class="retry sm">Выйти</button></div></header>`;
+}
+function crumbs(name, skeleton) {
+  if (skeleton) return `<div class="crumbs"><a href="#">Родители</a><span class="sep">›</span><span class="sk" style="height:14px"></span></div>`;
+  const label = name === null ? '<span class="pn none" style="font-size:inherit">— без имени</span>' : esc(name);
+  return `<div class="crumbs"><a href="#">Родители</a><span class="sep">›</span><b>${label}</b></div>`;
+}
+function pcard(p, skeleton) {
+  if (skeleton) return `<div class="pcard"><span class="sk" style="width:220px;height:22px"></span><dl><div class="st"><dt>Telegram ID</dt><dd><span class="sk" style="width:110px"></span></dd></div><div class="st"><dt>Регистрация</dt><dd><span class="sk" style="width:90px"></span></dd></div><div class="st"><dt>Дети</dt><dd><span class="sk" style="width:70px"></span></dd></div></dl></div>`;
+  return `<div class="pcard">
+    <div class="${p.name ? 'nm' : 'nm none'}">${p.name ? esc(p.name) : '— без имени'}</div>
+    <dl>
+      <div class="st"><dt>Telegram ID</dt><dd>${p.tg}</dd></div>
+      <div class="st"><dt>Регистрация</dt><dd>${p.reg}</dd></div>
+      <div class="st"><dt>Дети</dt><dd>${kidsW(p.kids.length)}</dd></div>
+    </dl>
+  </div>`;
+}
+
+function topicsBlock(learned) {
+  const rows = TOPICS.map(([title, total], i) => {
+    const n = learned[i] || 0;
+    const pct = Math.round((n / total) * 100);
+    const st = n >= total ? ['done', 'пройдена'] : n > 0 ? ['now', 'в работе'] : ['no', 'не начата'];
+    return `<div class="trow">
+      <div class="tname" title="${esc(title)}">${esc(title)}</div>
+      <div class="tbar"><i style="width:${pct}%"></i></div>
+      <div class="tcnt">${n} из ${total}</div>
+      <div class="tst ${st[0]}">${st[1]}</div>
+    </div>`;
+  }).join('');
+  return `<div class="tlist">${rows}</div>`;
+}
+
+const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+/* weeks: array of 4, newest first, each 7 cells: 0 none · 1 done · 2 unfinished · '-' future.
+   labels: date-range caption per row, newest first. todayCol: 0-based weekday index of "today" (Thu = 3), only in row 0. */
+function calendarBlock(weeksData, labels) {
+  const head = `<div class="wl"></div>` + WD.map(d => `<div class="wd">${d}</div>`).join('');
+  let sessions = 0;
+  const rows = weeksData.map((week, ri) => {
+    const cells = week.map((v, ci) => {
+      let cls = 'cell';
+      if (v === '-') cls += ' future';
+      else if (v === 1) { cls += ' done'; sessions++; }
+      else if (v === 2) { cls += ' part'; sessions++; }
+      if (ri === 0 && ci === 3) cls += ' today';
+      return `<div class="${cls}"></div>`;
+    }).join('');
+    return `<div class="wl">${labels[ri]}</div>${cells}`;
+  }).join('');
+  return { html: `<div class="calwrap"><div class="cal">${head}${rows}</div></div>`, sessions };
+}
+
+function weeksTable(rows, rate, cap) {
+  const trs = rows.map((r, i) => {
+    let status;
+    if (i === 0) {
+      status = `<span class="chip open">открыта</span>`;
+    } else if (r.status === 'paid') {
+      status = `<span class="chip paid">выдано ${gel(r.lariPaid)}</span><span class="paidon">${r.paidOn}</span>`;
+    } else if (r.coins > 0) {
+      status = `<span class="chip due">к выдаче ${gel(lari(r.coins, rate, cap))}</span>`;
+    } else {
+      status = `<span class="dash">—</span>`;
+    }
+    return `<tr><td>${r.label}</td><td class="r">${r.coins ? r.coins + ' мон.' : '<span class="dash">0</span>'}</td><td class="r">${status}</td></tr>`;
+  }).join('');
+  return `<table class="subt"><thead><tr><th>Неделя</th><th class="r">Монеты</th><th class="r">Статус</th></tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+function devicesTable(devices) {
+  if (!devices.length) return `<div class="subempty">Устройств пока нет — код ещё не использовали для входа.</div>`;
+  const trs = devices.map(d => {
+    const revoked = !!d.revoked;
+    return `<tr>
+      <td class="${revoked ? 'rv' : ''}">${esc(d.name)}</td>
+      <td>${d.added}</td>
+      <td>${ago(d.lastSeenDays)}</td>
+      <td>${revoked ? `<span class="rvon">отозвано ${d.revoked}</span>` : '<span class="dash">—</span>'}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="subt"><thead><tr><th>Устройство</th><th>Добавлено</th><th>Последний заход</th><th>Статус</th></tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+const CAL_LABELS = ['28 сен – 4 окт', '21–27 сен', '14–20 сен', '7–13 сен'];
+
+function kidSection(k) {
+  const meta = `добавлен ${k.added} · ${k.rate} монет = 1 ₾ · потолок ${k.cap} ₾/нед · подсказки ${k.hint ? 'включены' : 'выключены'}`;
+  let topics, cal, weeks, devices;
+  if (k.empty) {
+    topics = `<div class="subempty">Прогресса пока нет — ребёнок ещё не открывал ни одного урока.</div>`;
+    cal = `<div class="subempty">Календарь появится после первого урока.</div>`;
+    weeks = `<div class="subempty">Недель пока нет — первая появится, когда ребёнок откроет урок.</div>`;
+    devices = devicesTable([]);
+  } else {
+    topics = topicsBlock(k.learned);
+    const c = calendarBlock(k.cal, CAL_LABELS);
+    cal = `${c.html}<div class="calkey"><span><i class="done"></i>урок пройден</span><span><i class="part"></i>начат, не доигран</span><span><i class="future"></i>день ещё не наступил</span></div><div class="calsum">уроков за 4 недели: <b>${c.sessions}</b> · ответов верно с первой попытки: <b>${k.acc}%</b></div>`;
+    weeks = weeksTable(k.weeks, k.rate, k.cap);
+    devices = devicesTable(k.devices);
+  }
+  return `<div class="kidsec">
+    <div class="kidhd">
+      <div class="nm">${esc(k.name)}</div>
+      <div class="row2"><span class="code">${k.code}</span><span class="meta">${meta}</span></div>
+    </div>
+    <div class="sub"><div class="subhd">Прогресс по темам</div>${topics}</div>
+    <div class="sub"><div class="subhd">Занятия за последние 4 недели</div>${cal}</div>
+    <div class="sub"><div class="subhd">Недели и деньги</div>${weeks}</div>
+    <div class="sub"><div class="subhd">Устройства</div>${devices}</div>
+  </div>`;
+}
+
+const page = (theme, url, inner) => `<div class="win" data-theme="${theme}"><div class="url">${url}</div><div class="adm">${header()}${inner}</div></div>`;
+
+/* ---------- data ---------- */
+const sandro = {
+  name: 'Сандро', code: 'PUMA-7205', added: '14.08.2026', rate: 10, cap: 15, hint: true,
+  learned: [8, 8, 8, 9, 25, 12, 10, 10, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  cal: [[1, 1, 0, 1, '-', '-', '-'], [1, 1, 1, 2, 1, 0, 1], [1, 1, 1, 1, 1, 1, 0], [1, 0, 1, 1, 1, 1, 1]],
+  acc: 88,
+  weeks: [
+    { label: '28 сен', coins: 64 },
+    { label: '21 сен', coins: 150, status: 'paid', lariPaid: 15.0, paidOn: '28 сен' },
+    { label: '14 сен', coins: 112, status: 'paid', lariPaid: 11.2, paidOn: '21 сен' },
+    { label: '7 сен', coins: 98, status: 'paid', lariPaid: 9.8, paidOn: '14 сен' },
+    { label: '31 авг', coins: 130, status: 'paid', lariPaid: 13.0, paidOn: '7 сен' },
+    { label: '24 авг', coins: 45, status: 'paid', lariPaid: 4.5, paidOn: '31 авг' },
+  ],
+  devices: [
+    { name: 'iPad Сандро', added: '14.08.2026', lastSeenDays: 0, revoked: null },
+    { name: 'iPad на кухне', added: '20.08.2026', lastSeenDays: 3, revoked: null },
+  ],
+};
+const mariam = {
+  name: 'Мариам', code: 'ZEBU-1190', added: '02.09.2026', rate: 10, cap: 15, hint: false,
+  learned: [8, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  cal: [[0, 0, 0, 0, '-', '-', '-'], [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0]],
+  acc: 58,
+  weeks: [
+    { label: '28 сен', coins: 0 },
+    { label: '21 сен', coins: 12 },
+    { label: '14 сен', coins: 0 },
+    { label: '7 сен', coins: 8, status: 'paid', lariPaid: 0.8, paidOn: '14 сен' },
+    { label: '31 авг', coins: 0 },
+    { label: '24 авг', coins: 15, status: 'paid', lariPaid: 1.5, paidOn: '31 авг' },
+  ],
+  devices: [{ name: 'iPad Мариам', added: '02.09.2026', lastSeenDays: 9, revoked: null }],
+};
+const guram = {
+  name: 'Гурам', code: 'FOXY-3348', added: '01.10.2026', rate: 10, cap: 15, hint: true, empty: true,
+};
+const k1 = {
+  name: 'Анастасия-Мариами Дадиани-Церетели', code: 'VELI-2087', added: '15.07.2026', rate: 5, cap: 30, hint: true,
+  learned: [8, 8, 8, 9, 25, 12, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  cal: [[1, 1, 1, 1, '-', '-', '-'], [1, 1, 1, 1, 1, 0, 1], [1, 1, 0, 1, 1, 1, 1], [1, 1, 1, 1, 0, 1, 1]],
+  acc: 91,
+  weeks: [
+    { label: '28 сен', coins: 88 },
+    { label: '21 сен', coins: 150, status: 'paid', lariPaid: 30.0, paidOn: '28 сен' },
+    { label: '14 сен', coins: 140, status: 'paid', lariPaid: 28.0, paidOn: '21 сен' },
+    { label: '7 сен', coins: 145, status: 'paid', lariPaid: 29.0, paidOn: '14 сен' },
+    { label: '31 авг', coins: 110, status: 'paid', lariPaid: 22.0, paidOn: '7 сен' },
+    { label: '24 авг', coins: 95, status: 'paid', lariPaid: 19.0, paidOn: '31 авг' },
+  ],
+  devices: [{ name: 'iPad Анастасии', added: '15.07.2026', lastSeenDays: 0, revoked: null }],
+};
+const k2 = {
+  name: 'Александр-Гурам Дадиани-Церетели', code: 'MEGA-5561', added: '05.08.2026', rate: 10, cap: 15, hint: false,
+  learned: [8, 8, 8, 9, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  cal: [[1, 0, 1, 0, '-', '-', '-'], [0, 1, 0, 1, 0, 0, 1], [1, 0, 0, 1, 1, 0, 0], [0, 1, 1, 0, 0, 1, 0]],
+  acc: 76,
+  weeks: [
+    { label: '28 сен', coins: 30 },
+    { label: '21 сен', coins: 45 },
+    { label: '14 сен', coins: 60, status: 'paid', lariPaid: 6.0, paidOn: '21 сен' },
+    { label: '7 сен', coins: 38, status: 'paid', lariPaid: 3.8, paidOn: '14 сен' },
+    { label: '31 авг', coins: 0 },
+    { label: '24 авг', coins: 52, status: 'paid', lariPaid: 5.2, paidOn: '31 авг' },
+  ],
+  devices: [
+    { name: 'iPad Александра', added: '05.08.2026', lastSeenDays: 0, revoked: null },
+    { name: 'iPad няни', added: '12.08.2026', lastSeenDays: 5, revoked: null },
+    { name: 'Старый iPad', added: '01.06.2026', lastSeenDays: 50, revoked: '20.08.2026' },
+    { name: 'iPad бабушки', added: '10.06.2026', lastSeenDays: 70, revoked: '12.09.2026' },
+  ],
+};
+const k3 = {
+  name: 'Елизавета-Тамта Дадиани-Церетели', code: 'NUNU-8834', added: '10.06.2026', rate: 10, cap: 15, hint: true,
+  learned: [8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  cal: [[0, 0, 0, 0, '-', '-', '-'], [0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1]],
+  acc: 63,
+  weeks: [
+    { label: '28 сен', coins: 0 },
+    { label: '21 сен', coins: 0 },
+    { label: '14 сен', coins: 10, status: 'paid', lariPaid: 1.0, paidOn: '21 сен' },
+    { label: '7 сен', coins: 0 },
+    { label: '31 авг', coins: 0 },
+    { label: '24 авг', coins: 22, status: 'paid', lariPaid: 2.2, paidOn: '31 авг' },
+  ],
+  devices: [{ name: 'iPad Елизаветы', added: '10.06.2026', lastSeenDays: 16, revoked: null }],
+};
+
+const NINO = { name: 'Нино Церетели', tg: 550118732, reg: '12.08.2026', kids: [sandro, mariam] };
+const ZAUR = { name: 'Заур Немсадзе', tg: 719045213, reg: '25.09.2026', kids: [] };
+const DIMA = { name: 'Дмитрий Козлов', tg: 687120455, reg: '27.09.2026', kids: [guram] };
+const DADIANI = { name: 'Александра-Николетта Дадиани-Церетели', tg: 6021554873, reg: '30.09.2026', kids: [k1, k2, k3] };
+
+/* ---------- assembled states ---------- */
+function normalInner(p) {
+  return `<div class="abody">${crumbs(p.name)}${pcard(p)}${p.kids.map(kidSection).join('')}</div>`;
+}
+const light = page('light', '/parents/318552904', normalInner(NINO));
+const dark = page('dark', '/parents/318552904', normalInner(NINO));
+const nokids = page('light', '/parents/719045213', `<div class="abody">${crumbs(ZAUR.name)}${pcard(ZAUR)}<div class="tw"><div class="msgc"><b>Детей пока нет</b><p>Появятся, когда родитель добавит ребёнка в боте командой <code>/addchild Имя</code>.</p></div></div></div>`);
+const neu = page('light', '/parents/687120455', normalInner(DIMA));
+const load = page('light', '/parents/402118377', `<div class="abody">${crumbs(null, true)}${pcard(null, true)}<div class="kidsec"><div class="kidhd"><span class="sk" style="width:160px;height:20px"></span><div class="row2"><span class="sk" style="width:300px"></span></div></div><div class="sub"><div class="subhd">Прогресс по темам</div><span class="sk" style="width:96%"></span><span class="sk" style="width:88%"></span><span class="sk" style="width:92%"></span></div><div class="sub"><div class="subhd">Занятия за последние 4 недели</div><span class="sk" style="width:60%;height:80px;border-radius:10px"></span></div><div class="sub"><div class="subhd">Недели и деньги</div><span class="sk" style="width:70%"></span><span class="sk" style="width:65%"></span></div><div class="sub"><div class="subhd">Устройства</div><span class="sk" style="width:50%"></span></div></div></div>`);
+const err = page('light', '/parents/999999999', `<div class="abody">${crumbs('?')}<div class="errgrid">
+    <div class="errcard"><div class="msgc"><b class="err">Родитель не найден</b><p>Такого id нет в базе — возможно, ссылка устарела.</p><button type="button" class="retry">‹ К списку родителей</button></div></div>
+    <div class="errcard"><div class="msgc"><b class="err">Не удалось загрузить карточку</b><p>Сервер не ответил. Данные в базе от этого не меняются — можно просто попробовать ещё раз.</p><button type="button" class="retry">Повторить</button></div></div>
+  </div></div>`);
+const over = page('light', '/parents/6021554873', normalInner(DADIANI));
+
+for (const [id, html] of Object.entries({ 'f-light': light, 'f-dark': dark, 'f-nokids': nokids, 'f-new': neu, 'f-load': load, 'f-err': err, 'f-over': over })) {
+  document.getElementById(id).innerHTML = html;
+}
+</script>
+</body>
+</html>

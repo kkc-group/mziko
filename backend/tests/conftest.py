@@ -25,7 +25,9 @@ from app.models import Child, Parent
 from tests.helpers import at
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+CONTENT_DIR = BACKEND_DIR.parent / "content"  # tests count topics and words from the YAML
 BOT_API_TOKEN = "test-bot-token"
+ADMIN_API_TOKEN = "test-admin-token"
 DAY1 = date(2026, 9, 22)
 
 
@@ -36,6 +38,7 @@ def database_url() -> Iterator[str]:
         # Settings (and therefore Alembic env.py) read DATABASE_URL from the environment.
         os.environ["DATABASE_URL"] = url
         os.environ["BOT_API_TOKEN"] = BOT_API_TOKEN
+        os.environ["ADMIN_API_TOKEN"] = ADMIN_API_TOKEN
         from app.core.config import get_settings
 
         get_settings.cache_clear()
@@ -58,7 +61,7 @@ async def seeded(engine: AsyncEngine) -> None:
     from app.seed import load_topics, seed_topics
 
     async with async_sessionmaker(engine, expire_on_commit=False)() as session:
-        await seed_topics(session, load_topics(BACKEND_DIR.parent / "content"))
+        await seed_topics(session, load_topics(CONTENT_DIR))
 
 
 @pytest.fixture

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.admin_routes import router as admin_router
 from app.api.parent_routes import router as parent_router
 from app.api.routes import router
 from app.core.config import get_settings
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(router, prefix="/api")
     app.include_router(parent_router, prefix="/api/parent")
+    app.include_router(admin_router, prefix="/api/admin")
 
     @app.exception_handler(ServiceError)
     async def service_error(_: Request, exc: ServiceError) -> JSONResponse:

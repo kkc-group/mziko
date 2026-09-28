@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Родители · Мзико бэк-офис{% endblock %}
+{% block body %}
+<main class="amain">
+  {% if error %}
+  <div class="deny">
+    <b class="err">Не удалось загрузить список</b>
+    <p>{{ error }}</p>
+    <a class="retry" href="/admin/">Повторить</a>
+  </div>
+  {% else %}
+  {% set all_child_ids = [] %}
+  {% for row in rows %}{% for kid in row.children %}{% set _ = all_child_ids.append(kid.id) %}{% endfor %}{% endfor %}
+  <div class="tools">
+    <h1>Родители</h1>
+    <span class="cnt" id="cnt" data-total="{{ rows|length }}" data-kids="{{ all_child_ids|unique|list|length }}">{{ rows|length|parents_count }}{% if rows %} · {{ all_child_ids|unique|list|length|children_count }}{% endif %}</span>
+    {% if rows %}
+    <label class="srch" id="srch">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.6" fill="none"/><path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      <input type="search" id="q" placeholder="Ребёнок, родитель или Telegram ID" autocomplete="off">
+      <button type="button" class="clr" id="clr" aria-label="Очистить" hidden>✕</button>
+    </label>
+    {% endif %}
+  </div>
+
+  {% if not rows %}
+  <div class="tw">
+    <div class="msgc">
+      <b>Родителей пока нет</b>
+      <p>Первые родители создаются из <code>ADMIN_TELEGRAM_IDS</code> при запуске API. Как только они появятся, здесь будет таблица.</p>
+    </div>
+  </div>
+  {% else %}
+  <div class="tw">
+    <table class="pt" id="pt">
+      <thead><tr>
+        <th class="c-p srt" data-sort="name" data-type="text">Родитель</th>
+        <th class="c-l srt on" data-sort="last" data-type="text" data-dir="desc">Последнее<br>занятие<span class="ar">↓</span></th>
+        <th class="c-k">Дети<small>выучено слов · последний урок</small></th>
+        <th class="c-w r srt" data-sort="week" data-type="num">Эта неделя<small>{{ today|this_week_label }}</small></th>
+        <th class="c-v">Прошлая неделя<small>{{ today|last_week_label }}</small></th>
+        <th class="c-d srt" data-sort="reg" data-type="text">Регистрация</th>
+        <th class="c-go"></th>
+      </tr></thead>
+      <tbody id="rows">
+      {% for row in rows %}
+        {% set no_kids = not row.children %}
+        {% set ns = namespace(week_total=0.0) %}
+        {% for kid in row.children %}{% if kid.this_week %}{% set ns.week_total = ns.week_total + kid.this_week.lari_due %}{% endif %}{% endfor %}
+        <tr class="row"
+            data-href="/admin/parents/{{ row.id }}"
+            data-name="{{ (row.name or '')|lower }}"
+            data-search="{{ ((row.name or '') ~ ' ' ~ row.telegram_id ~ ' ' ~ (row.children|map(attribute='name')|join(' ')))|lower }}"
+            data-last="{{ row.last_study_date or '0000-00-00' }}"
+            data-week="{{ ns.week_total }}"
+            data-reg="{{ row.created_at }}">
+          <td class="c-p">
+            {% if row.name %}<div class="pn">{{ row.name }}</div>{% else %}<div class="pn none">— без имени</div>{% endif %}
+            <div class="tg">{{ row.telegram_id }}</div>
+          </td>
+          <td class="c-l">
+            {% if no_kids %}
+            <span class="last old">—</span>
+            {% else %}
+            <span class="last {{ row.last_study_date|activity_class(today) }}">{{ row.last_study_date|relative_date(today) }}</span>
+            {% endif %}
+          </td>
+          <td class="c-k">
+            {% if no_kids %}
+            <div class="ln none-k">детей нет</div>
+            {% else %}
+            {% for kid in row.children %}
+            <div class="ln kid">
+              <b title="{{ kid.name }}">{{ kid.name }}</b>
+              <span class="wd">{{ kid.learned_words|words_count }}</span>
+              <span class="ls{{ ' now' if kid.last_study_date|activity_class(today) == 'today' else '' }}">{{ kid.last_study_date|relative_date(today) }}</span>
+            </div>
+            {% endfor %}
+            {% endif %}
+          </td>
+          <td class="c-w r">
+            {% if no_kids %}
+            <div class="ln"><span class="dash">—</span></div>
+            {% else %}
+            {% for kid in row.children %}
+            {% set tw = kid.this_week %}
+            {% set coins = tw.coins if tw else 0 %}
+            {% if coins > 0 and kid.cap_reached %}
+            <div class="ln wk" title="{{ coins }} мон.">
+              <b>{{ tw.lari_due|lari }}</b><span class="cap">потолок</span>
+            </div>
+            {% elif coins == 0 %}
+            <div class="ln wk"><span class="dash">0</span></div>
+            {% else %}
+            <div class="ln wk"><b>{{ tw.lari_due|lari }}</b><small>{{ coins }} мон.</small></div>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+          </td>
+          <td class="c-v">
+            {% if no_kids %}
+            <div class="ln"><span class="dash">—</span></div>
+            {% else %}
+            {% for kid in row.children %}
+            {% set lw = kid.last_week %}
+            <div class="ln">
+              {% if not lw or lw.coins == 0 %}
+              <span class="dash">—</span>
+              {% elif lw.status == "paid" %}
+              <span class="chip paid">выдано {{ (lw.lari_paid if lw.lari_paid is not none else lw.lari_due)|lari }}</span>
+              {% else %}
+              <span class="chip due">к выдаче {{ lw.lari_due|lari }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+          </td>
+          <td class="c-d"><div class="ln muted">{{ row.created_at|registered_date }}</div></td>
+          <td class="c-go"><a href="/admin/parents/{{ row.id }}" aria-label="Открыть карточку родителя">›</a></td>
+        </tr>
+      {% endfor %}
+        <tr class="msg-row" id="nf-row" hidden>
+          <td colspan="7">
+            <div class="msgc">
+              <b id="nf-title"></b>
+              <p>Ищем по имени родителя, имени ребёнка и Telegram ID.</p>
+              <button type="button" class="retry" id="nf-clear">Сбросить поиск</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="foot" id="foot" hidden>
+    <span id="foot-txt"></span>
+    <button type="button" class="retry" id="more">Показать ещё 50</button>
+  </div>
+  {% endif %}
+  {% endif %}
+</main>
+{% if rows %}
+<script>
+(function () {
+  var PAGE = 50;
+  var table = document.getElementById('pt');
+  var tbody = document.getElementById('rows');
+  var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr.row'));
+  var nfRow = document.getElementById('nf-row');
+  var nfTitle = document.getElementById('nf-title');
+  var nfClear = document.getElementById('nf-clear');
+  var q = document.getElementById('q');
+  var clr = document.getElementById('clr');
+  var cnt = document.getElementById('cnt');
+  var foot = document.getElementById('foot');
+  var footTxt = document.getElementById('foot-txt');
+  var more = document.getElementById('more');
+  var total = rows.length;
+  var totalKids = parseInt(cnt.dataset.kids, 10);
+  var shown = PAGE;
+
+  function pluralRu(n, one, few, many) {
+    var a = n % 10, b = n % 100;
+    if (a === 1 && b !== 11) return one;
+    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+    return many;
+  }
+  function parentsWord(n) { return n + ' ' + pluralRu(n, 'родитель', 'родителя', 'родителей'); }
+  function kidsWord(n) { return n + ' ' + pluralRu(n, 'ребёнок', 'ребёнка', 'детей'); }
+
+  function cmp(a, b, key, type, dir) {
+    var va = a.dataset[key] || '', vb = b.dataset[key] || '';
+    var r;
+    if (type === 'num') {
+      r = (parseFloat(va) || 0) - (parseFloat(vb) || 0);
+    } else {
+      r = va < vb ? -1 : va > vb ? 1 : 0;
+    }
+    return dir === 'desc' ? -r : r;
+  }
+
+  // Sorts by the given header and direction, and marks it as the active column.
+  // The initial call (freshest activity on top) and every click go through here.
+  function sortBy(th, dir) {
+    table.querySelectorAll('th.srt').forEach(function (h) {
+      h.classList.remove('on');
+      delete h.dataset.dir;
+      var ar = h.querySelector('.ar');
+      if (ar) ar.remove();
+    });
+    th.classList.add('on');
+    th.dataset.dir = dir;
+    var ar = document.createElement('span');
+    ar.className = 'ar';
+    ar.textContent = dir === 'desc' ? '↓' : '↑';
+    th.appendChild(ar);
+    rows.sort(function (a, b) { return cmp(a, b, th.dataset.sort, th.dataset.type, dir); });
+    rows.forEach(function (r) { tbody.insertBefore(r, nfRow); });
+  }
+
+  table.querySelectorAll('th.srt').forEach(function (th) {
+    th.addEventListener('click', function () {
+      // Clicking the active column flips it; a new column starts at its natural direction.
+      var dir = th.classList.contains('on')
+        ? (th.dataset.dir === 'desc' ? 'asc' : 'desc')
+        : (th.dataset.sort === 'name' ? 'asc' : 'desc');
+      sortBy(th, dir);
+      render();
+    });
+  });
+
+  function matches(row, term) {
+    return !term || row.dataset.search.indexOf(term) !== -1;
+  }
+
+  function render() {
+    var term = q.value.trim().toLowerCase();
+    var visible = rows.filter(function (r) { return matches(r, term); });
+    rows.forEach(function (r) { r.hidden = true; });
+    visible.slice(0, shown).forEach(function (r) { r.hidden = false; });
+
+    if (visible.length === 0) {
+      nfRow.hidden = false;
+      nfTitle.textContent = 'Никого не нашлось по «' + q.value.trim() + '»';
+      cnt.textContent = '0 из ' + parentsWord(total);
+    } else {
+      nfRow.hidden = true;
+      cnt.textContent = term
+        ? Math.min(shown, visible.length) + ' из ' + parentsWord(total)
+        : parentsWord(total) + ' · ' + kidsWord(totalKids);
+    }
+
+    if (visible.length > shown) {
+      foot.hidden = false;
+      footTxt.textContent = 'Показаны ' + Math.min(shown, visible.length) + ' из ' + visible.length;
+    } else {
+      foot.hidden = true;
+    }
+    clr.hidden = !q.value;
+    q.closest('.srch').classList.toggle('on', !!q.value);
+  }
+
+  q.addEventListener('input', function () { shown = PAGE; render(); });
+  clr.addEventListener('click', function () { q.value = ''; shown = PAGE; render(); q.focus(); });
+  nfClear.addEventListener('click', function () { q.value = ''; shown = PAGE; render(); });
+  more.addEventListener('click', function () { shown += PAGE; render(); });
+
+  rows.forEach(function (r) {
+    r.addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;
+      var sel = window.getSelection();
+      if (sel && sel.toString()) return;
+      window.location.href = r.dataset.href;
+    });
+  });
+
+  sortBy(table.querySelector('th[data-sort="last"]'), 'desc');
+  render();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -73,5 +73,14 @@ async def current_parent(
     return parent
 
 
+def admin_service(authorization: Annotated[str | None, Header()] = None) -> None:
+    """The back office authenticates with the shared ADMIN_API_TOKEN."""
+    expected = get_settings().admin_api_token
+    scheme, _, token = (authorization or "").partition(" ")
+    if not expected or scheme.lower() != "bearer" or not secrets.compare_digest(token, expected):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "admin token required")
+
+
 BotService = Annotated[None, Depends(bot_service)]
 CurrentParent = Annotated[Parent, Depends(current_parent)]
+AdminService = Annotated[None, Depends(admin_service)]

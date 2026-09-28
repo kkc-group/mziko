@@ -8,6 +8,11 @@ handle /api/* {
 	reverse_proxy api:8000
 }
 
+# The back office keeps the /admin prefix itself, so nothing is stripped here.
+handle /admin/* {
+	reverse_proxy admin:8080
+}
+
 handle_path /media/* {
 	root * /srv/media
 	file_server

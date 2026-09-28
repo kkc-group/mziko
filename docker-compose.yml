@@ -50,6 +50,19 @@ services:
       api:
         condition: service_healthy   # migrations are applied by the api container
 
+  admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile
+    env_file: .env
+    environment:
+      # The back office talks to the API only; it has no database access.
+      API_URL: http://api:8000
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
   web:
     build:
       context: .
@@ -66,6 +79,7 @@ services:
       - caddy_config:/config
     depends_on:
       - api
+      - admin
 
 volumes:
   pgdata:

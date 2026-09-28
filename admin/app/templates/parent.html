@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ parent.name if parent and parent.name else (parent.telegram_id if parent else 'Родитель') }} · Мзико бэк-офис{% endblock %}
+{% block body %}
+<main class="amain">
+  <div class="crumbs">
+    <a href="/admin/">Родители</a><span class="sep">›</span>
+    {% if parent %}
+      {% if parent.name %}<b>{{ parent.name }}</b>{% else %}<b><span class="pn none" style="font-size:inherit">— без имени</span></b>{% endif %}
+    {% else %}
+      <b>?</b>
+    {% endif %}
+  </div>
+
+  {% if not_found %}
+  <div class="tw"><div class="msgc">
+    <b class="err">Родитель не найден</b>
+    <p>Такого id нет в базе — возможно, ссылка устарела.</p>
+    <a class="retry" href="/admin/">‹ К списку родителей</a>
+  </div></div>
+  {% elif error %}
+  <div class="deny">
+    <b class="err">Не удалось загрузить карточку</b>
+    <p>{{ error }}</p>
+    <a class="retry" href="/admin/parents/{{ parent_id }}">Повторить</a>
+  </div>
+  {% else %}
+  <div class="pcard">
+    {% if parent.name %}<div class="nm">{{ parent.name }}</div>{% else %}<div class="nm none">— без имени</div>{% endif %}
+    <dl>
+      <div class="st"><dt>Telegram ID</dt><dd>{{ parent.telegram_id }}</dd></div>
+      <div class="st"><dt>Регистрация</dt><dd>{{ parent.created_at|registered_date }}</dd></div>
+      <div class="st"><dt>Дети</dt><dd>{{ parent.children|length|children_count }}</dd></div>
+    </dl>
+  </div>
+
+  {% if not parent.children %}
+  <div class="tw"><div class="msgc">
+    <b>Детей пока нет</b>
+    <p>Появятся, когда родитель добавит ребёнка в боте командой <code>/addchild Имя</code>.</p>
+  </div></div>
+  {% else %}
+  {% for child in parent.children %}
+  <div class="kidsec">
+    <div class="kidhd">
+      <div class="nm">{{ child.name }}</div>
+      <div class="row2">
+        {% if child.code %}<span class="code">{{ child.code }}</span>{% endif %}
+        <span class="meta">добавлен {{ child.created_at|registered_date }} · {{ child.rate }} монет = 1 ₾ · потолок {{ child.cap_lari }} ₾/нед · подсказки {{ 'включены' if child.show_hint else 'выключены' }}</span>
+      </div>
+    </div>
+
+    <div class="sub">
+      <div class="subhd">Прогресс по темам</div>
+      {% set any_started = child.topics|selectattr('started')|list %}
+      {% if not any_started %}
+      <div class="subempty">Прогресса пока нет — ребёнок ещё не открывал ни одного урока.</div>
+      {% else %}
+      <div class="tlist">
+        {% for topic in child.topics %}
+        {% set pct = ((100 * topic.learned / topic.total)|round|int) if topic.total else 0 %}
+        <div class="trow">
+          <div class="tname" title="{{ topic.title_ru }}">{{ topic.title_ru }}</div>
+          <div class="tbar"><i style="width:{{ pct }}%"></i></div>
+          <div class="tcnt">{{ topic.learned }} из {{ topic.total }}</div>
+          {% if topic.total and topic.learned == topic.total %}
+          <div class="tst done">пройдена</div>
+          {% elif topic.started %}
+          <div class="tst now">в работе</div>
+          {% else %}
+          <div class="tst no">не начата</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="sub">
+      <div class="subhd">Занятия за последние 4 недели</div>
+      {% if not child.study_days %}
+      <div class="subempty">Календарь появится после первого урока.</div>
+      {% else %}
+      {% set cal = child.study_days|calendar_grid(today) %}
+      <div class="calwrap">
+        <div class="cal">
+          <div class="wl"></div>
+          {% for wd in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] %}<div class="wd">{{ wd }}</div>{% endfor %}
+          {% for row in cal.rows %}
+          <div class="wl">{{ row.label }}</div>
+          {% for cell in row.cells %}<div class="cell{{ ' ' + cell.status if cell.status else '' }}{{ ' today' if cell.is_today else '' }}"></div>{% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+      <div class="calkey">
+        <span><i class="done"></i>урок пройден</span>
+        <span><i class="part"></i>начат, не доигран</span>
+        <span><i class="future"></i>день ещё не наступил</span>
+      </div>
+      <div class="calsum">уроков за 4 недели: <b>{{ cal.sessions }}</b> · ответов верно с первой попытки: <b>{{ (child.first_try_pct ~ '%') if child.first_try_pct is not none else '—' }}</b></div>
+      {% endif %}
+    </div>
+
+    <div class="sub">
+      <div class="subhd">Недели и деньги</div>
+      {% if not child.weeks %}
+      <div class="subempty">Недель пока нет — первая появится, когда ребёнок откроет урок.</div>
+      {% else %}
+      <table class="subt">
+        <thead><tr><th>Неделя</th><th class="r">Монеты</th><th class="r">Статус</th></tr></thead>
+        <tbody>
+        {% for week in child.weeks %}
+        <tr>
+          <td>{{ week.week_start|short_date }}</td>
+          <td class="r">{% if week.coins %}{{ week.coins }} мон.{% else %}<span class="dash">0</span>{% endif %}</td>
+          <td class="r">
+            {% if week.week_start|is_current_week(today) %}
+            <span class="chip open">открыта</span>
+            {% elif week.status == 'paid' %}
+            <span class="chip paid">выдано {{ (week.lari_paid if week.lari_paid is not none else week.lari_due)|lari }}</span><span class="paidon">{{ week.paid_at|short_date }}</span>
+            {% elif week.coins > 0 %}
+            <span class="chip due">к выдаче {{ week.lari_due|lari }}</span>
+            {% else %}
+            <span class="dash">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+
+    <div class="sub">
+      <div class="subhd">Устройства</div>
+      {% if not child.devices %}
+      <div class="subempty">Устройств пока нет — код ещё не использовали для входа.</div>
+      {% else %}
+      <table class="subt">
+        <thead><tr><th>Устройство</th><th>Добавлено</th><th>Последний заход</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for device in child.devices %}
+        <tr>
+          <td class="{{ 'rv' if device.revoked_at else '' }}">{{ device.name if device.name else 'без имени' }}</td>
+          <td>{{ device.created_at|registered_date }}</td>
+          <td>{% if device.last_seen_at %}{{ device.last_seen_at|relative_date(today) }}{% else %}<span class="dash">—</span>{% endif %}</td>
+          <td>{% if device.revoked_at %}<span class="rvon">отозвано {{ device.revoked_at|registered_date }}</span>{% else %}<span class="dash">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endif %}
+</main>
+{% endblock %}

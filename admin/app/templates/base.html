@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Мзико · бэк-офис{% endblock %}</title>
+<link rel="stylesheet" href="/admin/static/admin.css">
+</head>
+<body>
+<div class="adm">
+  <header class="ahd">
+    <a class="brand" href="/admin/">Мзико <span>· бэк-офис</span></a>
+    {% if email %}
+    <nav class="anav"><a href="/admin/" class="on">Родители</a></nav>
+    <div class="acct">
+      <span class="ava">{{ email[0]|upper }}</span>
+      <span class="mail">{{ email }}</span>
+      <a class="retry sm" href="/admin/logout">Выйти</a>
+    </div>
+    {% endif %}
+  </header>
+  {% block body %}{% endblock %}
+</div>
+</body>
+</html>

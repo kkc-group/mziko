@@ -13,3 +13,4 @@ scripts
 **/.mypy_cache
 **/.ruff_cache
 backend/tests
+admin/tests
