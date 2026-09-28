@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Главная: отклик кнопки «Играть» и пелена на время запроса</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+/* the same two sets, scoped, so light and dark frames sit side by side */
+.th-light {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+.th-dark {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45; -webkit-tap-highlight-color: transparent;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
+.wrap {
+  position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) 170px calc(var(--safe-left) + 16px);
+}
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.hello { display: flex; align-items: flex-end; gap: 10px; margin: 6px 0 14px; }
+.mascot { flex: none; }
+.bubble { background: var(--surface); border: 2px solid var(--line); border-radius: 22px 22px 22px 6px; padding: 12px 16px; margin-bottom: 26px; }
+.bubble .ka { font-size: 22px; display: block; color: var(--word-color); }
+.bubble small { color: var(--muted); font-size: 14px; }
+.jar { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 26px; padding: 14px 18px; }
+.jar svg { width: 64px; height: 64px; flex: none; }
+.jar b { font-size: 34px; font-weight: 900; line-height: 1; }
+.jar-unit { font-weight: 800; }
+.jar .sub { color: var(--muted); font-size: 15px; }
+.week { display: flex; justify-content: space-between; margin: 14px 2px; }
+.day { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface); border: 2px dashed var(--line); color: var(--muted); }
+.day.done { background: var(--sun); border: 2px solid var(--sun-dark); color: #4a3200; }
+.day.today { border-style: solid; border-color: var(--grape); color: var(--ink); }
+.path { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.step { position: relative; }
+.step + .step::before { content: ''; position: absolute; left: 34px; top: -16px; height: 18px; border-left: 4px dotted var(--line); }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.part { color: var(--muted); white-space: nowrap; }
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn.review .num { background: var(--mint); color: #fff; font-size: 20px; }
+.lsn.review { border-color: var(--pom); }
+.mini-play {
+  flex: none; background: var(--pom); color: #fff; font-weight: 900; font-size: 14px; line-height: 1;
+  padding: 10px 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--pom-dark);
+}
+.mini-play:disabled { background: var(--muted); box-shadow: 0 3px 0 #4a4466; }
+.cur { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.num.now { background: var(--pom); color: #fff; }
+.cur .ic { flex: none; display: flex; --s: 56px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.cur .prog { flex: none; }
+.play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
+}
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; }
+.learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }
+.stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }
+.stk.lock { filter: grayscale(1); opacity: 0.35; }
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.stk .glyph.l { line-height: 1; }
+.notice {
+  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 24px); transform: translateX(-50%); z-index: 30;
+  background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; max-width: 90vw; text-align: center;
+}
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.burger { position: absolute; z-index: 2; top: calc(var(--safe-top) + 10px); right: calc(var(--safe-right) + 16px); display: grid; place-items: center; }
+.burger svg, .x svg { width: 24px; height: 24px; }
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
+.mi { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font-size: 24px; font-weight: 900; line-height: 1.1; --s: 34px; }
+.mi .t { flex: 1; min-width: 0; }
+.mi.on { border: 3px solid var(--pom); box-shadow: 0 5px 0 var(--pom-dark); }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.cur .lsn { min-height: 56px; padding: 8px 12px; border-radius: 18px; }
+.lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
+.play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+.play.busy { pointer-events: none; }
+@keyframes rot { to { transform: rotate(360deg); } }
+/* lesson-screen buttons, for the reference strip */
+.speak { width: 84px; height: 84px; margin: 0 auto; border-radius: 50%; background: var(--sun); box-shadow: 0 5px 0 var(--sun-dark); display: grid; place-items: center; flex: none; }
+.speak svg { width: 40px; height: 40px; }
+.speak.sm { width: 56px; height: 56px; margin: 0; box-shadow: 0 3px 0 var(--sun-dark); }
+.speak.sm svg { width: 24px; height: 24px; }
+.tile { aspect-ratio: 1 / 1; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; box-shadow: 0 5px 0 var(--line); --s: 64px; }
+.opt { display: flex; align-items: center; gap: 12px; }
+.opt .ans { flex: 1; min-height: 56px; text-align: left; padding: 14px 18px; border-radius: 22px; background: var(--surface); border: 3px solid var(--line); box-shadow: 0 5px 0 var(--line); }
+.opt .ans .ka { font-size: 28px; display: block; line-height: 1.2; }
+.opt .ans small { color: var(--muted); font-weight: 700; }
+.next { display: block; width: 100%; min-height: 56px; padding: 18px; border-radius: 22px; background: var(--mint); color: #fff; font-size: 22px; font-weight: 900; box-shadow: 0 5px 0 var(--mint-dark); }
+.next:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--mint-dark); }
+.key {
+  height: 52px; border-radius: 14px; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+  display: grid; place-items: center; font-size: 22px; font-weight: 900; color: var(--ink); line-height: 1;
+}
+.keys.digits .key { height: 60px; border-radius: 18px; font-size: 30px; }
+
+/* ================================================================================
+   PROPOSED — one press law for every button in the app.
+   A shadowed button sinks by 2/3 of its shadow; the shadow keeps the remaining 1/3,
+   so the bottom edge (button + shadow) stays where it was — the button goes INTO the
+   page, it does not slide. .next already does exactly this (5 → 2, 3px) — the law is
+   that rule, generalised. Flat buttons (no shadow) shrink 4% and take the --line fill.
+   Press 80ms, release 120ms (the destination state's transition wins, so :active
+   carries the 80ms and the base rule carries the 120ms).
+   In the mockup `.pressed` mirrors `:active` so frozen frames can show it.
+   ================================================================================ */
+.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, .lsn.nav {
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out, background-color 120ms ease-out;
+}
+:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, .lsn.nav):is(:active, .pressed):not(:disabled) {
+  transition-duration: 80ms;
+}
+.play:is(:active, .pressed):not(:disabled)      { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
+.mini-play:is(:active, .pressed):not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
+.next:is(:active, .pressed):not(:disabled)      { transform: translateY(3px); box-shadow: 0 2px 0 var(--mint-dark); }
+.tile:is(:active, .pressed):not(:disabled)      { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.opt .ans:is(:active, .pressed):not(:disabled)  { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.speak:is(:active, .pressed):not(:disabled)     { transform: translateY(3px); box-shadow: 0 2px 0 var(--sun-dark); }
+.speak.sm:is(:active, .pressed):not(:disabled)  { transform: translateY(2px); box-shadow: 0 1px 0 var(--sun-dark); }
+.key:is(:active, .pressed):not(:disabled)       { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.mi.on:is(:active, .pressed)                    { transform: translateY(3px); box-shadow: 0 2px 0 var(--pom-dark); }
+:is(.x, .lsn.nav):is(:active, .pressed):not(:disabled) { transform: scale(0.96); background: var(--line); }
+
+/* PROPOSED — busy: the tapped button stays pressed, spins, and sits ABOVE the scrim.
+   The scrim lives inside .wrap (not in App): .wrap is `position: relative; z-index: 1`,
+   i.e. its own stacking context, so a scrim outside it could never be under a button
+   inside it. Inside .wrap: scrim z 20, busy button z 21, burger z 2 → under. */
+.play.busy { position: relative; z-index: 21; transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
+.mini-play.busy { position: relative; z-index: 21; pointer-events: none; display: flex; align-items: center; gap: 6px; transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
+.mini-play .spin { width: 14px; height: 14px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1900px; margin: 0 auto; padding: 32px 28px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 48px 0 4px; padding-top: 20px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1000px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.mk code { background: var(--surface); padding: 1px 6px; border-radius: 6px; font-weight: 800; font-size: 0.92em; }
+.row { display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 10px; max-width: 410px; min-height: 66px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 14px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .hills, .dev .notice, .dev .scrim { position: absolute; }
+.scr { position: absolute; inset: 0; overflow: hidden; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.th-dark .sbar { color: #f3efff; }
+.finger {
+  position: absolute; z-index: 40; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%;
+  background: rgba(42, 26, 72, 0.28); border: 3px solid rgba(255, 255, 255, 0.85); pointer-events: none;
+  box-shadow: 0 0 0 8px rgba(42, 26, 72, 0.10);
+}
+.note { max-width: 1000px; padding: 14px 18px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); font-weight: 700; font-size: 15px; line-height: 1.4; }
+.note b { font-weight: 900; }
+.note code { background: var(--bg); }
+
+/* reference strip */
+.law { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 18px; max-width: 1400px; }
+.lawhead, .lawrow { display: grid; grid-template-columns: 250px repeat(4, 230px); gap: 12px; align-items: stretch; }
+.lawhead div { font-weight: 900; font-size: 14px; color: var(--muted); padding: 0 6px; }
+.lawname { padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); font-size: 14px; font-weight: 700; line-height: 1.3; }
+.lawname b { display: block; font-size: 17px; font-weight: 900; }
+.lawname .v { display: block; margin-top: 4px; color: var(--muted); font-weight: 800; }
+.lc { color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 16px 14px 20px; border-radius: 18px; background: var(--bg); border: 2px solid var(--line); min-height: 110px; }
+.lc.th-dark { border-color: #0d0d12; }
+.lc > * { flex: none; }
+.lc .play, .lc .next, .lc .lsn, .lc .mi, .lc .opt { width: 100%; }
+.lc .tile { width: 110px; }
+.lc .key { width: 84px; }
+.law-rule { max-width: 1000px; margin-top: 14px; padding: 16px 20px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); font-weight: 700; font-size: 16px; line-height: 1.5; }
+.law-rule ol { margin: 6px 0 0; padding-left: 22px; }
+.law-rule li { margin-bottom: 4px; }
+.law-rule b { font-weight: 900; }
+
+/* live demo */
+.demo { display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; margin-top: 18px; }
+.ctl { max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+.ctl fieldset { border: 2px solid var(--line); border-radius: 18px; padding: 10px 16px 14px; margin: 0; background: var(--surface); }
+.ctl legend { font-weight: 900; padding: 0 6px; }
+.ctl label { display: block; font-weight: 700; margin-top: 6px; cursor: pointer; }
+.ctl .reset { align-self: flex-start; padding: 10px 16px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; }
+.log { font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 10px 14px; min-height: 150px; white-space: pre-wrap; }
+.opened { position: absolute; inset: 0; z-index: 35; display: grid; place-items: center; text-align: center; padding: 40px; background: var(--bg); font-weight: 800; color: var(--muted); }
+.opened b { display: block; color: var(--ink); font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Главная · кнопка «Играть» отвечает на касание и держит экран, пока открывается урок</h1>
+  <p class="lead">Экран — <code>Home.tsx</code> (<code>Home</code> + <code>TodayLessonCard</code>), бургер из <code>Menu.tsx</code>, талисман и копилка из <code>Mascot.tsx</code>.
+  Токены и классы дословно из <code>frontend/src/styles.css</code>; новое помечено в CSS этого файла как <code>PROPOSED</code>.
+  Кадр — телефон 410×864 (рамка 10 px, safe-area сверху 47 и снизу 34, то есть контент шириной 390 CSS px). Слева в каждой паре светлая тема, справа тёмная.</p>
+
+  <div class="note"><b>Как сейчас.</b> <code>App.tsx:79-105</code>: <code>startLesson</code> ставит <code>busy</code>, и главная передаёт его
+  в <code>disabled</code> обеих кнопок (<code>Home.tsx:74</code> «Повторить», <code>Home.tsx:79</code> «Играть») — они становятся серыми
+  (<code>.play:disabled</code>, <code>.mini-play:disabled</code> → <code>--muted</code>), а бургер и «Другие уроки» остаются живыми. У самой «Играть» нет
+  никакого <code>:active</code>. При этом готовый образец занятой кнопки в проекте уже есть — вход по коду
+  (<code>Login.tsx:448-462</code>): <code>.play.busy</code> + <code>&lt;span class="spin"&gt;</code> + «Проверяем…». Макет переносит его на главную,
+  а не изобретает новый.<br><br>
+  <b>Данные.</b> Нино, копилка 37 монет = 3,7 ₾, сегодня среда, пн и вт закрыты звёздочкой. Тема дня — «Еда · 2» (урок 22, показано 3 из 9)
+  с пройденной частью «Еда · 1» и кнопкой «Повторить». Не «Буквы 2» + «Буквы 1», как было в задании: это две <i>разные</i> темы
+  (<code>content/topics/letters-1.yaml</code>, <code>letters-2.yaml</code>), а строка «Повторить» в карточке появляется только для прошлых частей
+  <i>той же</i> темы (<code>Home.tsx:38</code>, фильтр по <code>topic_slug</code>). Двухчастная «Еда» (18 слов, 9 + 9) — реальный случай, когда она есть.</div>
+
+  <h2>1 · Покой — главная как сейчас</h2>
+  <p class="lead">Ничего не нажато. Всё, что можно нажать: бургер ☰, «Повторить» у «Еда · 1», «Играть», строка «Другие уроки».</p>
+  <div class="row" id="s1"></div>
+
+  <h2>2 · Палец на кнопке — «Играть» проседает</h2>
+  <p class="lead">Момент касания, ответа сервера ещё нет и запроса ещё нет (он уходит на <code>click</code>, то есть при отпускании). Кнопка опускается на
+  4 px, тень сжимается с 6 до 2 px — нижний край остаётся на месте, кажется, что кнопку вдавили в карточку. 80 мс, до того как палец успевает
+  подняться. Кружок — палец, в продукте его нет.</p>
+  <div class="row" id="s2"></div>
+
+  <h2>3 · Занято, первая секунда — «Открываю…» над пеленой</h2>
+  <p class="lead">Сразу после отпускания. Кнопка так и остаётся утопленной (4 px, тень 2 px), в ней спиннер из <code>.play .spin</code> и «Открываю…».
+  Цвет — прежний <code>--pom</code>, не серый: серый в проекте значит «нельзя вообще», а здесь «уже делаю». Весь остальной экран — под
+  <code>.scrim</code> (<code>rgba(42, 26, 72, 0.45)</code>): бургер, «Повторить», «Другие уроки», копилка, наклейки. Пелена глотает касания,
+  поэтому «Повторить» больше не надо отключать и красить в серый — он просто под пеленой.</p>
+  <div class="row" id="s3"></div>
+
+  <h2>3б · Занято, если нажали «Повторить» у пройденной части</h2>
+  <p class="lead">Тот же <code>startLesson</code>, другая кнопка. Над пеленой поднимается <i>нажатая</i> — маленькая «Повторить» со спиннером 14 px
+  и тем же словом «Открываю…»; «Играть» уходит под пелену, не сереет. Строка «Еда · 1» шире не становится: подпись «9 слов» остаётся
+  на месте, кнопка растёт за счёт свободного места справа от названия.</p>
+  <div class="row" id="s3b"></div>
+
+  <h2>4 · Занято долго (больше 3 с) — «Ещё чуть-чуть…»</h2>
+  <p class="lead">Плохая сеть: прошло больше 3 секунд. Экран тот же, меняется только подпись в кнопке — чтобы ребёнок видел, что
+  приложение живое и не сломалось. Спиннер крутится как и раньше. Второго порога (например «Совсем чуть-чуть…» на 6 с) нет:
+  в 8 секундах худшего случая одна смена слова — достаточно, дальше приходит либо урок, либо ошибка.</p>
+  <div class="row" id="s4"></div>
+
+  <h2>5 · Ошибка — пелена убрана, кнопка поднялась, плашка внизу</h2>
+  <p class="lead">Запрос упал: пелена исчезает, «Играть» возвращается в покой (отпускание 120 мс), снова нажимаются все кнопки. Внизу <code>.notice</code>
+  с текстом из <code>App.tsx:100</code>: «Нет связи. Проверь интернет и попробуй ещё». Плашка нарисована так, как её сейчас раскладывает <code>styles.css:129-132</code>: <code>left: 50%</code> без <code>right</code> оставляет ей только правую половину экрана как ширину, поэтому текст ложится в три узкие строки, а <code>max-width: 90vw</code> не срабатывает никогда. Это не часть этой задачи — показано, чтобы не было сюрпризом.
+  Тот же вид получают и две другие плашки этой ветки: «Этот урок откроется завтра» (409, <code>App.tsx:98</code>) и
+  «На сегодня всё! Завтра новые слова» (<code>App.tsx:85</code>).</p>
+  <div class="row" id="s5"></div>
+
+  <h2>6 · Один закон нажатия для всех кнопок</h2>
+  <div class="law-rule">
+    <b>Закон.</b>
+    <ol>
+      <li><b>Кнопка с тенью опускается на 2/3 своей тени, тень остаётся на 1/3.</b> Нижний край кнопки вместе с тенью не двигается —
+      кнопку вдавливают, а не сдвигают. Для тени 6 px: сдвиг 4 px, тень 2 px; для 5 px: 3 и 2; для 4 px: 3 и 1; для 3 px: 2 и 1.
+      Это ровно то, что уже делает <code>.next</code> (<code>styles.css:204</code>), только для всех.</li>
+      <li><b>Плоская кнопка (без тени: <code>.x</code>, бургер, <code>.lsn.nav</code>) сжимается до 96 % и заливается <code>--line</code>.</b>
+      Ей некуда опускаться, поэтому она «уходит вглубь» уменьшением; <code>--line</code> — уже существующий токен, на обеих темах он заметно
+      отличается от <code>--surface</code>.</li>
+      <li><b>Нажатие — 80 мс, отпускание — 120 мс</b>, обе <code>ease-out</code>. Нажатие быстрее, чем успевает подняться палец ребёнка;
+      отпускание чуть медленнее, чтобы его было видно при быстром тапе.</li>
+      <li><b>Выключенная кнопка (<code>:disabled</code>) не проседает</b> — она и так серая и ничего не обещает.</li>
+      <li><b>Занятая кнопка — это нажатие, которое не отпустили</b>: то же положение и та же тень, плюс спиннер и слово, плюс место над пеленой.</li>
+      <li><b><code>prefers-reduced-motion</code></b>: общее правило <code>styles.css:230-232</code> уже отключает все переходы — кнопка
+      встаёт в нажатое положение мгновенно, но встаёт. Проседание остаётся, пропадает только движение.</li>
+    </ol>
+  </div>
+  <div class="law" id="law"></div>
+
+  <h2>7 · Живая демонстрация</h2>
+  <p class="lead">Нажмите «Играть» в телефоне (мышью или пальцем). Удерживайте — увидите проседание; отпустите — пойдёт «запрос».
+  Все остальные кнопки на этом экране тоже нажимаются по закону из раздела 6 — ничего не делают, но проседают.</p>
+  <div class="demo">
+    <div id="demoPhone"></div>
+    <div class="ctl">
+      <fieldset>
+        <legend>Чем кончится запрос</legend>
+        <label><input type="radio" name="out" value="fast"> быстро: 0,4 с → урок открылся</label>
+        <label><input type="radio" name="out" value="slow-ok"> медленно: 6 с → урок открылся</label>
+        <label><input type="radio" name="out" value="slow-err" checked> медленно: 6 с → «Нет связи»</label>
+      </fieldset>
+      <fieldset>
+        <legend>Тема</legend>
+        <label><input type="radio" name="th" value="light" checked> светлая</label>
+        <label><input type="radio" name="th" value="dark"> тёмная</label>
+      </fieldset>
+      <button type="button" class="reset" id="reset">Сбросить на главную</button>
+      <div class="log" id="log">Ожидаю нажатия…</div>
+    </div>
+  </div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Пелена живёт внутри <code>.wrap</code>, а не в <code>App</code>.</b> <code>.wrap</code> — отдельный слой (<code>position: relative; z-index: 1</code>),
+    и всё, что внутри него, не может подняться над пеленой, положенной снаружи. Внутри <code>.wrap</code> пелена берёт <code>z-index: 20</code>,
+    занятая кнопка — 21, бургер со своим 2 остаётся под ней. Плашка <code>.notice</code> (30, в <code>App</code>) — по-прежнему поверх всего.</li>
+    <li><b>Занятая кнопка не серая и не отключена через <code>disabled</code>.</b> Повторные касания глотает <code>.play.busy { pointer-events: none }</code>
+    (уже есть в <code>styles.css:284</code>), а у остальных — пелена. <code>disabled</code> остаётся только за настоящим «нельзя»:
+    «Всё закреплено!» у пройденного курса.</li>
+    <li><b>Пелена появляется сразу, без задержки.</b> Можно было бы прятать её первые 150–200 мс, чтобы не мигала на быстрой сети, но при успехе поверх
+    всё равно встаёт экран урока — мигания не видно. Лишний таймер — лишняя движущаяся часть.</li>
+    <li><b>Что уступает при нехватке места.</b> В «Играть» ширины хватает с запасом («Ещё чуть-чуть…» ≈ 190 px из 326). В строке «Еда · 1»
+    уступает название темы: при длинной теме (самая длинная — «Природа и погода · 2») оно переносится на вторую строку, а «Открываю…» в кнопке не сокращается —
+    именно это слово отвечает ребёнку «я услышал».</li>
+  </ul>
+</main>
+
+<script>
+/* ---- SVG: verbatim from Mascot.tsx / Icons.tsx (same strings as docs/mockups/home-menu.html) ---- */
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+const JAR = '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 14 H46 L44 20 Q56 30 52 48 Q48 60 32 60 Q16 60 12 48 Q8 30 20 20Z" fill="#C8683E"/><path d="M18 14 H46 L44 20 H20Z" fill="#A4532F"/><path d="M14 38 Q32 44 50 38" stroke="#E7A07A" stroke-width="3" fill="none"/><circle cx="32" cy="10" r="6" fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="2"/></svg>';
+const HILLS = '<svg class="hills" viewBox="0 0 540 140" preserveAspectRatio="none" aria-hidden="true"><path d="M0 90 Q120 20 260 80 T540 60 V140 H0Z" fill="var(--hill1)"/><path d="M0 120 Q160 70 320 110 T540 100 V140 H0Z" fill="var(--hill2)"/></svg>';
+const BURGER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const SPK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#4a3200"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="#4a3200" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+const em = e => `<span class="emoji" role="img" aria-hidden="true">${e}</span>`;
+const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+/* stickers: letters from content/topics/letters-*.yaml first, then food; 16 learned */
+const STK = 'ა ი თ ო ს მ ლ ე ბ დ რ ნ გ ვ კ უ პ ტ ფ ქ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ ზ ღ ჟ'.split(' ');
+const LEARNED = 16, TOTAL = 225;
+const stickers = STK.map((l, i) => `<div class="stk${i < LEARNED ? '' : ' lock'}"><span class="glyph l ka" role="img" aria-label="буква">${l}</span></div>`).join('');
+
+/* ---- the home screen, structure verbatim from Home.tsx ----
+   o.press: 'play' — finger on Играть; o.busy: null | 'play' | 'mini'; o.label: busy word; o.notice */
+function home(o = {}) {
+  const spin = '<span class="spin"></span>';
+  const mini = o.busy === 'mini'
+    ? `<button type="button" class="mini-play busy" aria-busy="true">${spin}${o.label}</button>`
+    : `<button type="button" class="mini-play">Повторить</button>`;
+  const play = o.busy === 'play'
+    ? `<button type="button" class="play busy" aria-busy="true" data-play>${spin}${o.label}</button>`
+    : `<button type="button" class="play${o.press === 'play' ? ' pressed' : ''}" data-play${o.press === 'play' ? ' style="position:relative"' : ''}>Играть${o.press === 'play' ? '<span class="finger" style="left:78%;top:62%"></span>' : ''}</button>`;
+  const days = DAYS.map((d, i) => `<div class="day${i < 2 ? ' done' : ''}${i === 2 ? ' today' : ''}">${i < 2 ? '★' : d}</div>`).join('');
+  return `
+  ${HILLS}
+  <div class="scr"><main class="wrap">
+    <button type="button" class="x burger" aria-label="Меню">${BURGER}</button>
+    <div class="hello">${MASCOT(120)}<div class="bubble"><span class="ka">გამარჯობა!</span><small>гамарджоба! Я Мзико. Поиграем, Нино?</small></div></div>
+    <div class="jar">${JAR}<div><b>37</b> <span class="jar-unit">монет</span><div class="sub">это 3,7 ₾ на сладости</div></div></div>
+    <div class="week" aria-label="Дни недели">${days}</div>
+    <div class="path">
+      <div class="step"><div class="cur">
+        <div class="cur-h"><span class="num now">22</span><span class="ic">${em('🍽️')}</span>
+          <div class="cur-t"><b>Еда<span class="part"> · 2</span></b><small>показано 3 из 9</small></div></div>
+        <div class="prog"><i style="width:33%"></i></div>
+        <div class="lsn review"><span class="num">✓</span><span class="t">Еда<span class="part"> · 1</span><small>9 слов</small></span>${mini}</div>
+        ${play}
+      </div></div>
+      <div class="step"><button type="button" class="lsn nav"><span class="ic">${em('📚')}</span><span class="t">Другие уроки</span><span class="chev">▸</span></button></div>
+    </div>
+    <div class="learned">Наклейки: ${LEARNED} из ${TOTAL}</div>
+    <div class="stickers">${stickers}</div>
+    ${o.busy ? '<div class="scrim" aria-hidden="true"></div>' : ''}
+  </main></div>
+  ${o.notice ? `<div class="notice" role="status">${o.notice}</div>` : ''}`;
+}
+function phone(theme, body, id) {
+  return `<div class="dev phone th-${theme}"${id ? ` id="${id}"` : ''}><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div>`;
+}
+function fig(title, sub, frame) {
+  return `<figure><figcaption>${title}<span>${sub}</span></figcaption>${frame}</figure>`;
+}
+const pair = (id, t, subL, subD, o) => {
+  document.getElementById(id).innerHTML =
+    fig(`${t} · светлая`, subL, phone('light', home(o))) +
+    fig(`${t} · тёмная`, subD, phone('dark', home(o)));
+};
+
+pair('s1', 'Покой', 'тень «Играть» 6 px, «Повторить» 3 px', '', {});
+pair('s2', 'Палец на «Играть»', 'сдвиг 4 px, тень 6 → 2 px, 80 мс', 'на тёмной тени те же: --pom-dark не меняется между темами', { press: 'play' });
+pair('s3', 'Занято · 0–3 с', '«Открываю…», кнопка утоплена, всё прочее под пеленой', 'пелена одна на обе темы — токен .scrim без тёмного варианта', { busy: 'play', label: 'Открываю…' });
+pair('s3b', 'Занято через «Повторить»', 'над пеленой — маленькая кнопка, «Играть» под ней и не серая', '', { busy: 'mini', label: 'Открываю…' });
+pair('s4', 'Занято · больше 3 с', 'подпись сменилась на «Ещё чуть-чуть…»', '', { busy: 'play', label: 'Ещё чуть-чуть…' });
+pair('s5', 'Ошибка сети', 'пелены нет, «Играть» в покое, плашка в три строки (см. выше)', 'плашка: фон --ink, текст --bg — на тёмной теме она светлая', { notice: 'Нет связи. Проверь интернет и попробуй ещё' });
+
+/* ---- 6 · reference strip ---- */
+const LAW = [
+  ['.play', 'Играть / Повторить / Войти', 'тень 6 → 2 · сдвиг 4 px', '<button type="button" class="play">Играть</button>'],
+  ['.mini-play', '«Повторить» в строке части', 'тень 3 → 1 · сдвиг 2 px', '<button type="button" class="mini-play">Повторить</button>'],
+  ['.tile', 'плитка ответа в уроке', 'тень 5 → 2 · сдвиг 3 px', `<button type="button" class="tile">${em('🧀')}</button>`],
+  ['.opt .ans', 'строка ответа в уроке', 'тень 5 → 2 · сдвиг 3 px', `<div class="opt"><button type="button" class="ans" data-law><span class="ka">ყველი</span><small>квели</small></button></div>`],
+  ['.speak', 'жёлтая кнопка звука (84 px)', 'тень 5 → 2 · сдвиг 3 px; .speak.sm 56 px: 3 → 1 · 2 px', `<button type="button" class="speak" aria-label="Послушать">${SPK}</button>`],
+  ['.next', '«Дальше» / «Домой»', 'тень 5 → 2 · сдвиг 3 px (как сейчас)', '<button type="button" class="next">Дальше</button>'],
+  ['.key', 'клавиша кода на входе', 'тень 4 → 1 · сдвиг 3 px', '<div class="keys digits"><button type="button" class="key" data-law>7</button></div>'],
+  ['.x', 'крестик, бургер', 'плоская: 96 % + фон --line', `<button type="button" class="x" aria-label="Закрыть" style="display:grid;place-items:center">${CROSS}</button>`],
+  ['.lsn', '«Другие уроки», строки уроков', 'плоская: 96 % + фон --line', `<button type="button" class="lsn nav"><span class="ic">${em('📚')}</span><span class="t">Другие уроки</span><span class="chev">▸</span></button>`],
+  ['.mi', 'пункт меню «Уроки» (.mi.on)', 'тень 5 → 2 · сдвиг 3 px', `<button type="button" class="mi on">${em('📚')}<span class="t">Уроки</span></button>`],
+];
+function pressedCopy(html) {
+  const d = document.createElement('div'); d.innerHTML = html;
+  const b = d.querySelector('[data-law]') || d.firstElementChild;
+  b.classList.add('pressed');
+  return d.innerHTML;
+}
+document.getElementById('law').innerHTML =
+  '<div class="lawhead"><div>кнопка</div><div>светлая · покой</div><div>светлая · нажата</div><div>тёмная · покой</div><div>тёмная · нажата</div></div>' +
+  LAW.map(([cls, where, v, html]) => `<div class="lawrow">
+    <div class="lawname"><b>${cls}</b>${where}<span class="v">${v}</span></div>
+    <div class="lc th-light">${html}</div><div class="lc th-light">${pressedCopy(html)}</div>
+    <div class="lc th-dark">${html}</div><div class="lc th-dark">${pressedCopy(html)}</div></div>`).join('');
+
+/* ---- 7 · live demo ---- */
+const demoBox = document.getElementById('demoPhone');
+const logEl = document.getElementById('log');
+let theme = 'light', timers = [], t0 = 0;
+function log(s, reset) {
+  const t = reset ? 0 : ((performance.now() - t0) / 1000).toFixed(1);
+  logEl.textContent = (reset ? '' : logEl.textContent + '\n') + `${t} с  ${s}`;
+}
+function renderDemo(o = {}) {
+  demoBox.innerHTML = phone(theme, home(o), 'demo');
+  const b = demoBox.querySelector('[data-play]');
+  if (b && !o.busy) b.addEventListener('click', start);
+  const n = demoBox.querySelector('.notice');
+  if (n) n.addEventListener('click', () => { n.remove(); log('плашка закрыта касанием'); });
+}
+function clear() { timers.forEach(clearTimeout); timers = []; }
+function start() {
+  clear();
+  t0 = performance.now();
+  log('отпустил «Играть» → запрос ушёл, кнопка утоплена, пелена', true);
+  renderDemo({ busy: 'play', label: 'Открываю…' });
+  const out = document.querySelector('input[name=out]:checked').value;
+  if (out === 'fast') {
+    timers.push(setTimeout(opened, 400));
+    return;
+  }
+  timers.push(setTimeout(() => {
+    demoBox.querySelector('[data-play]').lastChild.textContent = 'Ещё чуть-чуть…';
+    log('прошло 3 с → «Ещё чуть-чуть…»');
+  }, 3000));
+  timers.push(setTimeout(out === 'slow-ok' ? opened : failed, 6000));
+}
+function opened() {
+  log('ответ пришёл → открылось занятие');
+  renderDemo({ busy: 'play', label: 'Открываю…' });
+  demoBox.querySelector('.dev').insertAdjacentHTML('beforeend',
+    '<div class="opened"><div><b>Здесь открывается занятие</b>экран урока — вне этого макета</div></div>');
+}
+function failed() {
+  log('ошибка сети → пелена убрана, кнопка поднялась, плашка');
+  renderDemo({ notice: 'Нет связи. Проверь интернет и попробуй ещё' });
+}
+document.getElementById('reset').addEventListener('click', () => { clear(); renderDemo(); logEl.textContent = 'Ожидаю нажатия…'; });
+document.querySelectorAll('input[name=th]').forEach(r => r.addEventListener('change', () => {
+  theme = r.value; clear(); renderDemo(); logEl.textContent = 'Ожидаю нажатия…';
+}));
+renderDemo();
+
+/* iOS Safari applies :active on touch only when some touchstart listener exists */
+document.addEventListener('touchstart', () => {}, { passive: true });
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, ApiError, getToken, setToken } from './api'
 import { Speaker } from './audio'
+import type { Busy } from './busy'
 import { Hills } from './components/Mascot'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
@@ -46,7 +47,7 @@ export default function App() {
   const [view, setView] = useState<View>('home')
   const [menuOpen, setMenuOpen] = useState(false)
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<Busy>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const speaker = useMemo(() => new Speaker(), [])
 
@@ -77,7 +78,7 @@ export default function App() {
   }, [loadMe])
 
   const startLesson = async (lesson: LessonOut | null) => {
-    setBusy(true)
+    setBusy({ lesson })
     setNotice(null)
     try {
       const s = await api.startSession(lesson ? lesson.number : null)
@@ -100,7 +101,7 @@ export default function App() {
         setNotice('Нет связи. Проверь интернет и попробуй ещё')
       }
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
