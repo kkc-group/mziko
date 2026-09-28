@@ -58,16 +58,19 @@ function OpenRow({
   lessons,
   busy,
   onPlay,
+  onReplay,
 }: {
   topic: TopicOut
   lessons: LessonOut[]
   busy: Busy
   onPlay: (lesson: LessonOut) => void
+  onReplay: (lesson: LessonOut) => void
 }) {
   const target = topicLesson(lessons)
   const mine = isBusyFor(busy, target)
+  const open = topic.done ? onReplay : onPlay
   return (
-    <button type="button" className="lsn" aria-busy={mine || undefined} onClick={() => onPlay(target)}>
+    <button type="button" className="lsn" aria-busy={mine || undefined} onClick={() => open(target)}>
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
@@ -97,17 +100,19 @@ function LockedRow({ topic, lessons }: { topic: TopicOut; lessons: LessonOut[] }
 }
 
 /** The topic-of-the-day card: one card for a single-lesson topic, or a header plus one row
- *  per lesson (done/current/locked) for a multi-lesson one. */
+ *  per lesson (done/current/locked) for a multi-lesson one. «Повторить» opens the replay sheet. */
 function TodayCard({
   topic,
   lessons,
   busy,
   onPlay,
+  onReplay,
 }: {
   topic: TopicOut
   lessons: LessonOut[]
   busy: Busy
   onPlay: (lesson: LessonOut) => void
+  onReplay: (lesson: LessonOut) => void
 }) {
   if (lessons.length === 1) {
     const l = lessons[0]
@@ -133,7 +138,12 @@ function TodayCard({
             <i style={{ width: `${pct}%` }} />
           </div>
         )}
-        <PlayButton lesson={l} busy={busy} label={finished ? 'Повторить' : 'Играть'} onClick={() => onPlay(l)} />
+        <PlayButton
+          lesson={l}
+          busy={busy}
+          label={finished ? 'Повторить' : 'Играть'}
+          onClick={() => (finished ? onReplay(l) : onPlay(l))}
+        />
       </div>
     )
   }
@@ -172,7 +182,7 @@ function TodayCard({
               type="button"
               className="lsn review"
               aria-busy={mine || undefined}
-              onClick={() => onPlay(l)}
+              onClick={() => onReplay(l)}
             >
               <span className="num">✓</span>
               <span className="t">
@@ -203,11 +213,13 @@ export function Lessons({
   me,
   busy,
   onPlay,
+  onReplay,
   onBack,
 }: {
   me: Me
   busy: Busy
   onPlay: (lesson: LessonOut) => void
+  onReplay: (lesson: LessonOut) => void
   onBack: () => void
 }) {
   return (
@@ -248,9 +260,27 @@ export function Lessons({
                   return <LockedRow key={topic.slug} topic={topic} lessons={lessons} />
                 }
                 if (topic.status === 'today') {
-                  return <TodayCard key={topic.slug} topic={topic} lessons={lessons} busy={busy} onPlay={onPlay} />
+                  return (
+                    <TodayCard
+                      key={topic.slug}
+                      topic={topic}
+                      lessons={lessons}
+                      busy={busy}
+                      onPlay={onPlay}
+                      onReplay={onReplay}
+                    />
+                  )
                 }
-                return <OpenRow key={topic.slug} topic={topic} lessons={lessons} busy={busy} onPlay={onPlay} />
+                return (
+                  <OpenRow
+                    key={topic.slug}
+                    topic={topic}
+                    lessons={lessons}
+                    busy={busy}
+                    onPlay={onPlay}
+                    onReplay={onReplay}
+                  />
+                )
               })}
             </div>
           </section>

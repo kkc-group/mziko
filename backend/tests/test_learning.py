@@ -161,6 +161,36 @@ async def test_replay_of_an_old_topic_is_the_choice_of_the_day(
         await learning.build_session(db, child, colors + 1, at(DAY2, 13))
 
 
+async def test_restart_of_a_topic_shows_its_words_again_and_keeps_stages_and_coins(
+    db: AsyncSession, child: Child
+) -> None:
+    colors = await skip_to(db, child, "colors")
+    for _ in range(4):
+        await play_day(db, child, "colors", at(DAY1))
+    assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10
+    stage_before = (await progress_of(db, child, "red")).stage
+    assert stage_before > 0
+
+    with pytest.raises(NotFound):
+        await learning.restart_topic(db, child, "no-such-topic", at(DAY2))
+
+    session = await learning.restart_topic(db, child, "colors", at(DAY2), random.Random(25))
+    assert session is not None
+    intros = [s.word.slug for s in steps_of(session) if s.type == "intro"]
+    assert intros == ["red", "blue", "green"]  # the first lesson, from its first word
+    assert (await progress_of(db, child, "red")).stage == stage_before  # nothing forgotten
+    assert (await progress_of(db, child, "yellow")).introduced is False
+
+    path = await lessons.load_lessons(db)
+    position = lessons.position(path, await lessons.load_progress(db, child.id), [])
+    state = position.get(colors)
+    assert state is not None and (state.status, state.introduced) == ("current", 3)
+    assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10  # week 1 untouched
+
+    with pytest.raises(LessonLocked):  # colors took the word section for today
+        await learning.restart_topic(db, child, "food", at(DAY2, 13))
+
+
 async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
     db: AsyncSession, child: Child
 ) -> None:

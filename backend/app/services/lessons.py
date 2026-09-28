@@ -83,6 +83,23 @@ async def load_lessons(db: AsyncSession) -> list[Lesson]:
     return build_lessons(topics, words)
 
 
+async def reset_topic_progress(db: AsyncSession, child_id: int, topic_id: int) -> None:
+    """Forget that the topic's words were shown, so its lessons start over from the first.
+
+    Stages, coins and stickers stay: the child walks the words again, nothing is lost.
+    Shared by the child's "start the topic over" and the parent's cabinet.
+    """
+    stmt = (
+        select(WordProgress)
+        .join(Word, Word.id == WordProgress.word_id)
+        .where(WordProgress.child_id == child_id, Word.topic_id == topic_id)
+    )
+    for progress in (await db.execute(stmt)).scalars():
+        progress.introduced = False
+        progress.introduced_on = None
+    await db.flush()
+
+
 async def load_progress(db: AsyncSession, child_id: int) -> dict[int, WordProgress]:
     stmt = select(WordProgress).where(WordProgress.child_id == child_id)
     return {p.word_id: p for p in (await db.execute(stmt)).scalars()}
