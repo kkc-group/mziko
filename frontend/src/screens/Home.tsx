@@ -23,17 +23,20 @@ function LessonTitle({ lesson }: { lesson: LessonOut }) {
   )
 }
 
-/** Today's topic card: review rows for its already-played parts, progress, then the play button. */
+/** Today's topic card: review rows for its already-played parts, progress, then the play button.
+ *  «Повторить» (a done lesson) opens the replay sheet; «Играть» starts the session at once. */
 function TodayLessonCard({
   lesson,
   lessons,
   busy,
   onPlay,
+  onReplay,
 }: {
   lesson: LessonOut
   lessons: LessonOut[]
   busy: boolean
   onPlay: (lesson: LessonOut) => void
+  onReplay: (lesson: LessonOut) => void
 }) {
   const doneSiblings = lessons.filter((l) => l.topic_slug === lesson.topic_slug && l.part < lesson.part)
   const finished = lesson.status === 'done'
@@ -71,12 +74,17 @@ function TodayLessonCard({
             <LessonTitle lesson={l} />
             <small>{wordsW(l.total)}</small>
           </span>
-          <button type="button" className="mini-play" disabled={busy} onClick={() => onPlay(l)}>
+          <button type="button" className="mini-play" disabled={busy} onClick={() => onReplay(l)}>
             Повторить
           </button>
         </div>
       ))}
-      <button type="button" className="play" disabled={busy} onClick={() => onPlay(lesson)}>
+      <button
+        type="button"
+        className="play"
+        disabled={busy}
+        onClick={() => (finished ? onReplay(lesson) : onPlay(lesson))}
+      >
         {finished ? 'Повторить' : 'Играть'}
       </button>
       {finished && <p className="soon">Новый урок — завтра</p>}
@@ -88,6 +96,7 @@ export function Home({
   me,
   busy,
   onPlay,
+  onReplay,
   menuOpen,
   onOpenMenu,
   onCloseMenu,
@@ -96,6 +105,7 @@ export function Home({
   me: Me
   busy: boolean
   onPlay: (lesson: LessonOut | null) => void
+  onReplay: (lesson: LessonOut) => void
   menuOpen: boolean
   onOpenMenu: () => void
   onCloseMenu: () => void
@@ -142,7 +152,13 @@ export function Home({
         {lesson ? (
           <>
             <div className="step">
-              <TodayLessonCard lesson={lesson} lessons={me.lessons} busy={busy} onPlay={onPlay} />
+              <TodayLessonCard
+                lesson={lesson}
+                lessons={me.lessons}
+                busy={busy}
+                onPlay={onPlay}
+                onReplay={onReplay}
+              />
             </div>
             <div className="step">
               <button type="button" className="lsn nav" onClick={onOpenLessons}>

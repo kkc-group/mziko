@@ -356,3 +356,18 @@ button:disabled { cursor: default; }
 .allnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 16px; border-radius: 22px; background: var(--mint-soft); font-weight: 800; font-size: 17px; line-height: 1.25; }
 .allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
 .lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
+
+/* --- replay sheet: docs/mockups/lesson-restart.html ---
+   The same .sheet as the menu, docked to the bottom edge instead of the right one; rows are the
+   menu's .mi.on, the header reuses .cur-h / .cur-t. .mi:disabled mirrors .play:disabled. */
+.sheet.bottom {
+  top: auto; left: 0; width: auto; gap: 12px;
+  padding: 16px calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+  border-left: 0; border-top: 2px solid var(--line); border-radius: 26px 26px 0 0;
+}
+.sheet.bottom .cur-h { align-items: flex-start; margin-bottom: 4px; }
+.sheet.bottom .ic { flex: none; display: flex; --s: 44px; }
+.sheet.bottom .cur-h .x { flex: none; align-self: flex-start; }
+.sheet.bottom .mi.on { margin-bottom: 5px; }
+.mi:disabled { border-color: var(--muted); box-shadow: 0 5px 0 #4a4466; color: var(--muted); }
+.mi:disabled .emoji, .mi:disabled .pic-img { filter: grayscale(1); opacity: 0.35; }

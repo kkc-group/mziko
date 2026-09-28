@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Главная: «Повторить» открывает выбор (пройти урок с начала)</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+.muted { color: var(--muted); }
+
+/* ---------- product classes: verbatim from frontend/src/styles.css ---------- */
+.hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
+.wrap {
+  position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) 170px calc(var(--safe-left) + 16px);
+}
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.blob {
+  display: inline-block; width: var(--s, 64px); height: var(--s, 64px); background: var(--c);
+  border: 3px solid var(--blob-edge); border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
+  box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.08);
+}
+.hello { display: flex; align-items: flex-end; gap: 10px; margin: 6px 0 14px; }
+.mascot { flex: none; }
+.bubble { background: var(--surface); border: 2px solid var(--line); border-radius: 22px 22px 22px 6px; padding: 12px 16px; margin-bottom: 26px; }
+.bubble .ka { font-size: 22px; display: block; color: var(--word-color); }
+.bubble small { color: var(--muted); font-size: 14px; }
+.jar { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 26px; padding: 14px 18px; }
+.jar svg { width: 64px; height: 64px; flex: none; }
+.jar b { font-size: 34px; font-weight: 900; line-height: 1; }
+.jar-unit { font-weight: 800; }
+.jar .sub { color: var(--muted); font-size: 15px; }
+.week { display: flex; justify-content: space-between; margin: 14px 2px; }
+.day { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; background: var(--surface); border: 2px dashed var(--line); color: var(--muted); }
+.day.done { background: var(--sun); border: 2px solid var(--sun-dark); color: #4a3200; }
+.day.today { border-style: solid; border-color: var(--grape); color: var(--ink); }
+.path { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+.step { position: relative; }
+.step + .step::before { content: ''; position: absolute; left: 34px; top: -16px; height: 18px; border-left: 4px dotted var(--line); }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.part { color: var(--muted); white-space: nowrap; }
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn.done .num, .lsn.fold .num, .lsn.review .num { background: var(--mint); color: #fff; font-size: 20px; }
+.lsn.review { border-color: var(--pom); }
+.mini-play {
+  flex: none; background: var(--pom); color: #fff; font-weight: 900; font-size: 14px; line-height: 1;
+  padding: 10px 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--pom-dark);
+}
+.mini-play:disabled { background: var(--muted); box-shadow: 0 3px 0 #4a4466; }
+.cur { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.num.now { background: var(--pom); color: #fff; }
+.cur .ic { flex: none; display: flex; --s: 56px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.cur .prog { flex: none; }
+.soon { text-align: center; color: var(--muted); font-weight: 800; font-size: 15px; }
+.play {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
+}
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }
+.stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }
+.stk .blob { border-width: 2px; }
+.stk.lock { filter: grayscale(1); opacity: 0.35; }
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.stk .glyph.l { line-height: 1; }
+.stk.txt { width: auto; min-width: 48px; padding: 0 12px; }
+.stk .glyph.w { font-size: 18px; line-height: 1; white-space: nowrap; }
+.notice {
+  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 24px); transform: translateX(-50%); z-index: 30;
+  background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; max-width: 90vw; text-align: center;
+}
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; }
+.burger { position: absolute; z-index: 2; top: calc(var(--safe-top) + 10px); right: calc(var(--safe-right) + 16px); display: grid; place-items: center; }
+.burger svg, .x svg { width: 24px; height: 24px; }
+/* .scrim / .sheet: styles.css has position: fixed; here absolute, the frame is the viewport (same as home-menu.html) */
+.scrim { position: absolute; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
+.sheet {
+  position: absolute; z-index: 21; top: 0; right: 0; bottom: 0; width: 300px; display: flex; flex-direction: column; gap: 14px;
+  padding: calc(var(--safe-top) + 10px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) 16px;
+  background: var(--bg); border-left: 2px solid var(--line); border-radius: 26px 0 0 26px;
+}
+.mi { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font-size: 24px; font-weight: 900; line-height: 1.1; --s: 34px; }
+.mi .t { flex: 1; min-width: 0; }
+.mi.on { border: 3px solid var(--pom); box-shadow: 0 5px 0 var(--pom-dark); }
+.mi .t small { display: block; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.cur .lsn { min-height: 56px; padding: 8px 12px; border-radius: 18px; }
+.lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
+
+/* ---------- NEW: the replay choice sheet (bottom), built only from existing tokens and classes ----------
+   .sheet.bottom — the same .sheet (bg, line border, 26px radius, safe-area padding), docked to the bottom
+   instead of the right edge. Rows are .mi.on from the menu; the header reuses .cur-h / .cur-t / .num.now
+   so the child sees the same number, icon and title as on the card that was tapped.
+   .mi:disabled mirrors .play:disabled / .mini-play:disabled (var(--muted) + #4a4466 shadow). */
+.sheet.bottom {
+  top: auto; left: 0; width: auto; gap: 12px;
+  padding: 16px calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+  border-left: 0; border-top: 2px solid var(--line); border-radius: 26px 26px 0 0;
+}
+.sheet.bottom .cur-h { align-items: flex-start; margin-bottom: 4px; }
+.sheet.bottom .cur-h .num { margin-top: 4px; }
+.sheet.bottom .ic { flex: none; display: flex; --s: 44px; }
+.sheet.bottom .cur-h .x { flex: none; display: grid; place-items: center; }
+.sheet.bottom .mi.on { margin-bottom: 5px; }
+.mi:disabled { border-color: var(--muted); box-shadow: 0 5px 0 #4a4466; color: var(--muted); }
+.mi:disabled .emoji { filter: grayscale(1); opacity: 0.35; }
+
+/* ---------- mockup chrome (not product) — verbatim from docs/mockups/home-menu.html ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(4, 328px); gap: 20px; justify-content: center; margin-top: 18px; }
+.col { display: flex; flex-direction: column; gap: 22px; }
+.colh { height: 64px; padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 2px solid var(--line); }
+.colh b { display: block; font-size: 19px; font-weight: 900; line-height: 1.2; }
+.colh span { display: block; font-size: 14px; font-weight: 700; color: var(--muted); }
+.darkrow { display: grid; grid-template-columns: repeat(4, 246px); gap: 20px; justify-content: center; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 80px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .hills, .dev .notice { position: absolute; }
+.scr { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; transform-origin: 0 0; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); }
+.fw.sm { width: 246px; height: 519px; }
+.fw.sm .phone { transform: scale(0.6); }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; background: var(--bg); }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.tap { outline: 4px dashed var(--sun); outline-offset: 3px; }
+@media (max-width: 1420px) {
+  .cols { grid-template-columns: repeat(2, 328px); }
+  .darkrow { grid-template-columns: repeat(2, 246px); }
+}
+@media (max-width: 720px) {
+  .cols { grid-template-columns: 328px; }
+  .darkrow { grid-template-columns: 246px; }
+}
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Главная: «Повторить» открывает выбор — повторить слова или пройти тему с начала</h1>
+  <p class="lead">Кнопка «Повторить» у пройденного урока остаётся на своём месте, но больше не стартует занятие сразу: снизу выезжает лист с двумя вариантами. Первый — прежняя викторина по этому уроку. Второй обнуляет <b>всю тему</b> (все её уроки), монеты и наклейки не трогает, и сразу стартует первый урок темы: слова показываются заново, по три за заход. Ту же ручку обнуления темы потом дёрнет кабинет родителя — на этом макете его нет. Каркас главной (Мзико, копилка, неделя, карточка, «Другие уроки», наклейки) — из <code>docs/mockups/home-menu.html</code> и <code>Home.tsx</code>; классы и цвета — из <code>frontend/src/styles.css</code>. Номера уроков и число слов посчитаны по <code>content/topics/*.yaml</code> тем же делением, что в <code>backend/app/services/lessons.py</code> (не больше 10 слов на урок): «Приветствия» — урок 12, 10 слов; «Еда · 1/2» — уроки 22/23 по 9; «Природа и погода · 2» — урок 29, 7 слов; всего 31 урок, 228 слов. Жёлтая пунктирная обводка — куда нажали (только на макете).</p>
+
+  <h2>Светлая тема · состояния</h2>
+  <div class="cols" id="cols"></div>
+
+  <h2>Тёмная тема · лист открыт, лист занят, двухурочная тема, нет связи</h2>
+  <p class="lead"><code>data-theme="dark"</code> на рамке. Масштаб 0,6.</p>
+  <div class="darkrow" id="dark"></div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Лист снизу, а не справа.</b> Меню — шторка справа, потому что открывается из бургера в правом верхнем углу. «Повторить» же — внизу карточки, под пальцем; лист выезжает оттуда же, куда нажали. Внешность та же, что у шторки меню: фон <code>--bg</code>, рамка <code>--line</code>, скругление 26px, подложка <code>.scrim</code> и крестик <code>.x</code>; строки выбора — те же <code>.mi.on</code>, что пункт «Уроки» в меню.</li>
+    <li><b>Заголовок листа — тема, а не урок</b> (иконка и название без номера и «· часть»): обнуляется вся тема, из какой бы её части лист ни открыли. Первая строка при этом остаётся про нажатый урок — викторина по нему, как раньше.</li>
+    <li><b>Оба варианта равноправны</b> — одинаковые строки <code>.mi.on</code>, без выделенного «главного». Порядок: сначала то, что «Повторить» делало раньше, — привычное остаётся на привычном месте, новое идёт вторым.</li>
+    <li><b>Что уступает при нехватке места.</b> Название темы в заголовке листа переносится на вторую строку (как на карточке); крестик не сжимается и остаётся справа сверху. Подписи вариантов переносятся на 2–3 строки, названия вариантов («Повторить слова», «Пройти тему с начала») короткие и в одну строку влезают всегда.</li>
+    <li><b>Занятость без спиннера.</b> На главной сейчас «идёт запрос» показывается только серыми кнопками (<code>disabled={busy}</code>), спиннер <code>.spin</code> есть лишь на входе по коду. Лист ведёт себя как карточка: обе строки серые, как <code>.play:disabled</code>; крестик и подложка работают — закрыть лист можно, запрос это не отменяет.</li>
+    <li><b>Отдельного «Точно?» нет</b>: вторая строка сама говорит, что монеты и наклейки останутся, — терять нечего.</li>
+  </ul>
+</main>
+<script>
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const wordsW = n => `${n} ${plural(n, 'слово', 'слова', 'слов')}`;
+const em = e => `<span class="emoji" role="img" aria-hidden="true">${e}</span>`;
+
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+const JAR = '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 14 H46 L44 20 Q56 30 52 48 Q48 60 32 60 Q16 60 12 48 Q8 30 20 20Z" fill="#C8683E"/><path d="M18 14 H46 L44 20 H20Z" fill="#A4532F"/><path d="M14 38 Q32 44 50 38" stroke="#E7A07A" stroke-width="3" fill="none"/><circle cx="32" cy="10" r="6" fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="2"/></svg>';
+const HILLS = '<svg class="hills" viewBox="0 0 540 140" preserveAspectRatio="none" aria-hidden="true"><path d="M0 90 Q120 20 260 80 T540 60 V140 H0Z" fill="var(--hill1)"/><path d="M0 120 Q160 70 320 110 T540 100 V140 H0Z" fill="var(--hill2)"/></svg>';
+const BURGER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const CROSS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const lari = c => (c / 10).toFixed(1).replace('.', ',');
+
+/* ---- real lessons: content/topics/*.yaml, split like backend/app/services/lessons.py (≤10 words per lesson) ---- */
+const GREET = { number: 12, title: 'Приветствия', part: 1, parts: 1, icon: '👋', total: 10 };
+const FOOD_1 = { number: 22, title: 'Еда', part: 1, parts: 2, icon: '🍽️', total: 9 };
+const FOOD_2 = { number: 23, title: 'Еда', part: 2, parts: 2, icon: '🍽️', total: 9 };
+const NATURE_1 = { number: 28, title: 'Природа и погода', part: 1, parts: 2, icon: '🌦️', total: 8 };
+const NATURE_2 = { number: 29, title: 'Природа и погода', part: 2, parts: 2, icon: '🌦️', total: 7 };
+
+/* ---- all 228 words in course order, from content/topics/*.yaml (6 picture files drawn as their Georgian word) ---- */
+const WORDS = [{"k":"text","v":"ა","ru":"буква а"},{"k":"text","v":"ი","ru":"буква и"},{"k":"text","v":"თ","ru":"буква т"},{"k":"text","v":"ო","ru":"буква о"},{"k":"text","v":"ს","ru":"буква с"},{"k":"text","v":"ე","ru":"буква э"},{"k":"text","v":"ლ","ru":"буква л"},{"k":"text","v":"უ","ru":"буква у"},{"k":"text","v":"ვ","ru":"буква в"},{"k":"text","v":"დ","ru":"буква д"},{"k":"text","v":"მ","ru":"буква м"},{"k":"text","v":"კ","ru":"буква к"},{"k":"text","v":"რ","ru":"буква р"},{"k":"text","v":"ნ","ru":"буква н"},{"k":"text","v":"ბ","ru":"буква б"},{"k":"text","v":"ტ","ru":"буква т (твёрдая)"},{"k":"text","v":"გ","ru":"буква г"},{"k":"text","v":"შ","ru":"буква ш"},{"k":"text","v":"ხ","ru":"буква х"},{"k":"text","v":"ზ","ru":"буква з"},{"k":"text","v":"პ","ru":"буква п"},{"k":"text","v":"წ","ru":"буква ц (твёрдая)"},{"k":"text","v":"ღ","ru":"буква г (гортанная)"},{"k":"text","v":"ჩ","ru":"буква ч"},{"k":"text","v":"ჟ","ru":"буква ж"},{"k":"text","v":"ც","ru":"буква ц"},{"k":"text","v":"ძ","ru":"буква дз"},{"k":"text","v":"ფ","ru":"буква п (с придыханием)"},{"k":"text","v":"ყ","ru":"буква къ"},{"k":"text","v":"ქ","ru":"буква к (с придыханием)"},{"k":"text","v":"ჯ","ru":"буква дж"},{"k":"text","v":"ჭ","ru":"буква ч (твёрдая)"},{"k":"text","v":"ჰ","ru":"буква х (лёгкая)"},{"k":"text","v":"ბა","ru":"слог ба"},{"k":"text","v":"ბე","ru":"слог бэ"},{"k":"text","v":"ბი","ru":"слог би"},{"k":"text","v":"ბო","ru":"слог бо"},{"k":"text","v":"ბუ","ru":"слог бу"},{"k":"text","v":"მა","ru":"слог ма"},{"k":"text","v":"მე","ru":"слог мэ"},{"k":"text","v":"მი","ru":"слог ми"},{"k":"text","v":"მო","ru":"слог мо"},{"k":"text","v":"მუ","ru":"слог му"},{"k":"text","v":"და","ru":"слог да"},{"k":"text","v":"დე","ru":"слог дэ"},{"k":"text","v":"დი","ru":"слог ди"},{"k":"text","v":"დო","ru":"слог до"},{"k":"text","v":"დუ","ru":"слог ду"},{"k":"text","v":"ლა","ru":"слог ла"},{"k":"text","v":"ლე","ru":"слог лэ"},{"k":"text","v":"ლი","ru":"слог ли"},{"k":"text","v":"ლო","ru":"слог ло"},{"k":"text","v":"ლუ","ru":"слог лу"},{"k":"text","v":"სა","ru":"слог са"},{"k":"text","v":"სე","ru":"слог сэ"},{"k":"text","v":"სი","ru":"слог си"},{"k":"text","v":"სო","ru":"слог со"},{"k":"text","v":"სუ","ru":"слог су"},{"k":"emoji","v":"🐶","ru":"собака"},{"k":"emoji","v":"🐱","ru":"кошка"},{"k":"emoji","v":"🍎","ru":"яблоко"},{"k":"emoji","v":"☀️","ru":"солнце"},{"k":"emoji","v":"🏠","ru":"дом"},{"k":"emoji","v":"🍞","ru":"хлеб"},{"k":"emoji","v":"⚽","ru":"мяч"},{"k":"emoji","v":"🐴","ru":"лошадь"},{"k":"emoji","v":"🐟","ru":"рыба"},{"k":"emoji","v":"🌸","ru":"цветок"},{"k":"emoji","v":"🚗","ru":"машина"},{"k":"emoji","v":"💧","ru":"вода"},{"k":"color","v":"#E53935","ru":"красный"},{"k":"color","v":"#1E6FE0","ru":"синий"},{"k":"color","v":"#2EAA4A","ru":"зелёный"},{"k":"color","v":"#FFD21F","ru":"жёлтый"},{"k":"color","v":"#FFFFFF","ru":"белый"},{"k":"color","v":"#1A1A1A","ru":"чёрный"},{"k":"color","v":"#FF8A1F","ru":"оранжевый"},{"k":"color","v":"#FF7EB6","ru":"розовый"},{"k":"color","v":"#8E44C9","ru":"фиолетовый"},{"k":"color","v":"#8B5A2B","ru":"коричневый"},{"k":"text","v":"მერხი","ru":"парта"},{"k":"emoji","v":"🪑","ru":"стул"},{"k":"text","v":"დაფა","ru":"доска"},{"k":"text","v":"ცარცი","ru":"мел"},{"k":"text","v":"კარადა","ru":"шкаф"},{"k":"emoji","v":"📕","ru":"книга"},{"k":"text","v":"თარო","ru":"полка"},{"k":"text","v":"მაგიდა","ru":"стол"},{"k":"text","v":"გამარჯობა","ru":"привет"},{"k":"text","v":"ნახვამდის","ru":"до свидания"},{"k":"text","v":"მადლობა","ru":"спасибо"},{"k":"text","v":"თუ შეიძლება","ru":"пожалуйста"},{"k":"text","v":"კი","ru":"да"},{"k":"text","v":"არა","ru":"нет"},{"k":"text","v":"დილა მშვიდობისა","ru":"доброе утро"},{"k":"text","v":"ღამე მშვიდობისა","ru":"спокойной ночи"},{"k":"text","v":"ბოდიში","ru":"извини"},{"k":"text","v":"როგორ ხარ","ru":"как дела"},{"k":"emoji","v":"1️⃣","ru":"один"},{"k":"emoji","v":"2️⃣","ru":"два"},{"k":"emoji","v":"3️⃣","ru":"три"},{"k":"emoji","v":"4️⃣","ru":"четыре"},{"k":"emoji","v":"5️⃣","ru":"пять"},{"k":"emoji","v":"6️⃣","ru":"шесть"},{"k":"emoji","v":"7️⃣","ru":"семь"},{"k":"emoji","v":"8️⃣","ru":"восемь"},{"k":"emoji","v":"9️⃣","ru":"девять"},{"k":"emoji","v":"🔟","ru":"десять"},{"k":"emoji","v":"👩","ru":"мама"},{"k":"emoji","v":"👨","ru":"папа"},{"k":"emoji","v":"👵","ru":"бабушка"},{"k":"emoji","v":"👴","ru":"дедушка"},{"k":"text","v":"ძმა","ru":"брат"},{"k":"text","v":"და","ru":"сестра"},{"k":"emoji","v":"👶","ru":"ребёнок"},{"k":"emoji","v":"👨‍👩‍👧","ru":"семья"},{"k":"emoji","v":"🤝","ru":"друг"},{"k":"emoji","v":"🙋","ru":"я"},{"k":"emoji","v":"👦","ru":"мальчик"},{"k":"emoji","v":"👧","ru":"девочка"},{"k":"emoji","v":"🏫","ru":"школа"},{"k":"emoji","v":"🧑‍🏫","ru":"учитель"},{"k":"emoji","v":"📝","ru":"урок"},{"k":"emoji","v":"🔔","ru":"звонок"},{"k":"emoji","v":"🎒","ru":"рюкзак"},{"k":"emoji","v":"📓","ru":"тетрадь"},{"k":"emoji","v":"🖊️","ru":"ручка"},{"k":"emoji","v":"✏️","ru":"карандаш"},{"k":"emoji","v":"📏","ru":"линейка"},{"k":"emoji","v":"✂️","ru":"ножницы"},{"k":"text","v":"წებო","ru":"клей"},{"k":"emoji","v":"🙂","ru":"голова"},{"k":"emoji","v":"👁️","ru":"глаз"},{"k":"emoji","v":"👂","ru":"ухо"},{"k":"emoji","v":"👃","ru":"нос"},{"k":"emoji","v":"👄","ru":"рот"},{"k":"emoji","v":"🦷","ru":"зуб"},{"k":"emoji","v":"✋","ru":"рука"},{"k":"emoji","v":"🦵","ru":"нога"},{"k":"emoji","v":"👆","ru":"палец"},{"k":"emoji","v":"❤️","ru":"сердце"},{"k":"emoji","v":"👅","ru":"язык"},{"k":"text","v":"მუცელი","ru":"живот"},{"k":"emoji","v":"🐻","ru":"медведь"},{"k":"emoji","v":"🐺","ru":"волк"},{"k":"emoji","v":"🦊","ru":"лиса"},{"k":"emoji","v":"🐰","ru":"заяц"},{"k":"emoji","v":"🐄","ru":"корова"},{"k":"emoji","v":"🐷","ru":"свинья"},{"k":"emoji","v":"🐔","ru":"курица"},{"k":"emoji","v":"🐑","ru":"овца"},{"k":"emoji","v":"🐦","ru":"птица"},{"k":"emoji","v":"🦋","ru":"бабочка"},{"k":"emoji","v":"🐸","ru":"лягушка"},{"k":"emoji","v":"🐭","ru":"мышь"},{"k":"emoji","v":"🦁","ru":"лев"},{"k":"emoji","v":"🐘","ru":"слон"},{"k":"emoji","v":"🥛","ru":"молоко"},{"k":"emoji","v":"🧀","ru":"сыр"},{"k":"emoji","v":"🥚","ru":"яйцо"},{"k":"emoji","v":"🍖","ru":"мясо"},{"k":"emoji","v":"🍲","ru":"суп"},{"k":"emoji","v":"🥣","ru":"каша"},{"k":"emoji","v":"🍌","ru":"банан"},{"k":"emoji","v":"🍐","ru":"груша"},{"k":"emoji","v":"🍇","ru":"виноград"},{"k":"emoji","v":"🍉","ru":"арбуз"},{"k":"emoji","v":"🍅","ru":"помидор"},{"k":"emoji","v":"🥒","ru":"огурец"},{"k":"emoji","v":"🥔","ru":"картошка"},{"k":"emoji","v":"🥕","ru":"морковь"},{"k":"emoji","v":"🍬","ru":"конфета"},{"k":"emoji","v":"🎂","ru":"торт"},{"k":"emoji","v":"🍵","ru":"чай"},{"k":"emoji","v":"🧃","ru":"сок"},{"k":"emoji","v":"👕","ru":"рубашка"},{"k":"emoji","v":"👖","ru":"штаны"},{"k":"emoji","v":"👗","ru":"платье"},{"k":"emoji","v":"🧥","ru":"куртка"},{"k":"emoji","v":"🧢","ru":"шапка"},{"k":"emoji","v":"🧣","ru":"шарф"},{"k":"emoji","v":"🧦","ru":"носки"},{"k":"emoji","v":"👢","ru":"сапоги"},{"k":"emoji","v":"🧤","ru":"перчатки"},{"k":"emoji","v":"👓","ru":"очки"},{"k":"text","v":"ქვედაბოლო","ru":"юбка"},{"k":"text","v":"სვიტერი","ru":"свитер"},{"k":"emoji","v":"🚪","ru":"дверь"},{"k":"emoji","v":"🪟","ru":"окно"},{"k":"emoji","v":"🛏️","ru":"кровать"},{"k":"emoji","v":"🔑","ru":"ключ"},{"k":"emoji","v":"🍳","ru":"кухня"},{"k":"emoji","v":"☕","ru":"чашка"},{"k":"emoji","v":"🍽️","ru":"тарелка"},{"k":"emoji","v":"🥄","ru":"ложка"},{"k":"emoji","v":"📱","ru":"телефон"},{"k":"emoji","v":"📺","ru":"телевизор"},{"k":"emoji","v":"💡","ru":"лампа"},{"k":"emoji","v":"🛁","ru":"ванна"},{"k":"emoji","v":"🌳","ru":"дерево"},{"k":"emoji","v":"🌙","ru":"луна"},{"k":"emoji","v":"⭐","ru":"звезда"},{"k":"emoji","v":"☁️","ru":"облако"},{"k":"emoji","v":"🌧️","ru":"дождь"},{"k":"emoji","v":"❄️","ru":"снег"},{"k":"emoji","v":"💨","ru":"ветер"},{"k":"emoji","v":"⛰️","ru":"гора"},{"k":"emoji","v":"🌊","ru":"море"},{"k":"emoji","v":"🏞️","ru":"река"},{"k":"emoji","v":"🍃","ru":"лист"},{"k":"emoji","v":"🌿","ru":"трава"},{"k":"emoji","v":"🔥","ru":"огонь"},{"k":"emoji","v":"🌈","ru":"радуга"},{"k":"emoji","v":"🪨","ru":"камень"},{"k":"emoji","v":"🏃","ru":"бегать"},{"k":"emoji","v":"😴","ru":"спать"},{"k":"emoji","v":"🍽️","ru":"есть"},{"k":"emoji","v":"📖","ru":"читать"},{"k":"emoji","v":"✍️","ru":"писать"},{"k":"emoji","v":"🎨","ru":"рисовать"},{"k":"emoji","v":"🎤","ru":"петь"},{"k":"emoji","v":"💃","ru":"танцевать"},{"k":"emoji","v":"🤸","ru":"прыгать"},{"k":"emoji","v":"🚿","ru":"умываться"},{"k":"emoji","v":"🏊","ru":"плавать"},{"k":"emoji","v":"😂","ru":"смеяться"},{"k":"emoji","v":"🥤","ru":"пить"},{"k":"emoji","v":"🧸","ru":"играть"}];
+
+function stk(w, on) {
+  const lock = on ? '' : ' lock';
+  if (w.k === 'color') return `<div class="stk${lock}" title="${w.ru}"><span class="blob" style="--c:${w.v}" role="img" aria-label="${w.ru}"></span></div>`;
+  if (w.k === 'text') {
+    const letter = [...w.v].length === 1;
+    return `<div class="stk${letter ? '' : ' txt'}${lock}" title="${w.ru}"><span class="glyph ${letter ? 'l' : 'w'} ka" role="img" aria-label="${w.ru}">${w.v}</span></div>`;
+  }
+  return `<div class="stk${lock}" title="${w.ru}">${em(w.v)}</div>`;
+}
+
+/* <LessonTitle> from Home.tsx */
+const title = l => l.parts > 1 ? `${l.title}&nbsp;<span class="part">·&nbsp;${l.part}</span>` : l.title;
+const progBar = pct => `<div class="prog"><i style="width:${pct}%"></i></div>`;
+const dis = b => b ? ' disabled' : '';
+const tapc = b => b ? ' tap' : '';
+
+/* ---- TodayLessonCard from Home.tsx: introduced === total and done → «Повторить» + «Новый урок — завтра» ----
+   tap: 'big' | 'mini' — which «Повторить» was pressed (mockup outline only) */
+function card(l, { introduced = 0, done = false, busy = false, siblings = [], tap = '' } = {}) {
+  const shown = introduced > 0;
+  const sub = done ? `показано ${l.total} из ${l.total}` : shown ? `показано ${introduced} из ${l.total}` : wordsW(l.total);
+  const pct = done ? 100 : Math.round(introduced / l.total * 100);
+  const rows = siblings.map(s => `<div class="lsn review"><span class="num">✓</span><span class="t">${title(s)}<small>${wordsW(s.total)}</small></span><button type="button" class="mini-play${tapc(tap === 'mini')}"${dis(busy)}>Повторить</button></div>`).join('');
+  return `<div class="cur"><div class="cur-h"><span class="num now">${l.number}</span><span class="ic">${em(l.icon)}</span><div class="cur-t"><b>${title(l)}</b><small>${sub}</small></div></div>${(shown || done) ? progBar(pct) : ''}${rows}<button type="button" class="play${tapc(tap === 'big')}"${dis(busy)}>${done ? 'Повторить' : 'Играть'}</button>${done ? '<p class="soon">Новый урок — завтра</p>' : ''}</div>`;
+}
+const moreRow = `<button type="button" class="lsn nav"><span class="ic">${em('📚')}</span><span class="t">Другие уроки</span><span class="chev">▸</span></button>`;
+
+/* ---- NEW: the replay choice sheet ---- */
+/* The sheet is about the whole topic (its icon and name, no number and no «· part»): the reset
+   clears every lesson of the topic and starts its first one. The first row stays per lesson. */
+function replaySheet(l, busy = false) {
+  return `<div class="scrim"></div><div class="sheet bottom" role="dialog" aria-label="Как повторим?">
+    <div class="cur-h"><span class="ic">${em(l.icon)}</span><div class="cur-t"><b>${l.title}</b><small>Как повторим?</small></div><button type="button" class="x" aria-label="Закрыть">${CROSS}</button></div>
+    <button type="button" class="mi on"${dis(busy)}>${em('🎯')}<span class="t">Повторить слова<small>Викторина по словам этого урока и парочке старых</small></span></button>
+    <button type="button" class="mi on${tapc(busy)}"${dis(busy)}>${em('🔄')}<span class="t">Пройти тему с начала<small>Все уроки темы заново, по три слова за раз. Монеты и наклейки останутся</small></span></button>
+  </div>`;
+}
+
+function home({ name = 'Сандро', coins, done = [], today, learned, cardHtml, notice = '', sheet = '' }) {
+  return `${HILLS}<div class="scr"><main class="wrap">
+    <button type="button" class="x burger" aria-label="Меню">${BURGER}</button>
+    <div class="hello">${MASCOT(120)}<div class="bubble" style="margin-right:62px"><span class="ka">გამარჯობა!</span><small>гамарджоба! Я Мзико. Поиграем, ${name}?</small></div></div>
+    <div class="jar">${JAR}<div><b>${coins}</b> <span class="jar-unit">монет</span><div class="sub">это ${lari(coins)} ₾ на сладости</div></div></div>
+    <div class="week" aria-label="Дни недели">${DAYS.map((d, i) => `<div class="day${done.includes(i) ? ' done' : ''}${i === today ? ' today' : ''}">${done.includes(i) ? '★' : d}</div>`).join('')}</div>
+    <div class="path"><div class="step">${cardHtml}</div><div class="step">${moreRow}</div></div>
+    <div class="learned">Наклейки: ${learned} из ${WORDS.length}</div>
+    <div class="stickers">${WORDS.map((w, i) => stk(w, i < learned)).join('')}</div>
+  </main></div>${notice ? `<div class="notice" role="status">${notice}</div>` : ''}${sheet}`;
+}
+
+function phone(theme, body, sm) {
+  return `<div class="fw${sm ? ' sm' : ''}"><div class="dev phone" data-theme="${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div></div>`;
+}
+const fig = (t, sub, frame) => `<figure><figcaption>${t}${sub ? `<span>${sub}</span>` : ''}</figcaption>${frame}</figure>`;
+
+/* ---- states ---- */
+const G = { coins: 41, done: [0, 1, 2], today: 2, learned: 95 };
+const F = { coins: 63, done: [0, 1, 2, 3, 4], today: 4, learned: 172 };
+const N = { name: 'Александра-Мария', coins: 78, done: [0, 1, 2, 3, 4, 5], today: 5, learned: 210 };
+const S = {
+  done: () => home({ ...G, cardHtml: card(GREET, { done: true }) }),
+  open: () => home({ ...G, cardHtml: card(GREET, { done: true, tap: 'big' }), sheet: replaySheet(GREET) }),
+  food: () => home({ ...F, cardHtml: card(FOOD_2, { done: true, siblings: [FOOD_1], tap: 'mini' }), sheet: replaySheet(FOOD_1) }),
+  long: () => home({ ...N, cardHtml: card(NATURE_2, { done: true, siblings: [NATURE_1], tap: 'big' }), sheet: replaySheet(NATURE_2) }),
+  busy: () => home({ ...G, cardHtml: card(GREET, { done: true, busy: true }), sheet: replaySheet(GREET, true) }),
+  back: () => home({ ...G, cardHtml: card(GREET, { introduced: 3 }) }),
+  err: () => home({ ...G, cardHtml: card(GREET, { done: true }), notice: 'Нет связи. Проверь интернет и попробуй ещё' }),
+};
+
+const C = [
+  { h: 'Опорная точка', s: 'как сейчас · и после перезапуска', f: [
+    ['1 · Урок дня пройден', '«Приветствия» (урок 12, одна часть): показано 10 из 10, полная полоска, «Повторить», «Новый урок — завтра». Без изменений против Home.tsx', phone('light', S.done())],
+    ['6 · Вернулся с занятия после «Пройти тему с начала»', 'существующее состояние «в работе»: показано 3 из 10, полоска на 30%, «Играть», подписи «завтра» нет. Звезда дня, монеты и наклейки — те же, что в 1. У двухурочной темы это будет «Еда · 1» с «после 1» у второго урока, как на экране «Уроки» сейчас', phone('light', S.back())],
+  ] },
+  { h: 'Лист выбора', s: 'открыт · идёт запрос', f: [
+    ['2 · Нажали «Повторить» — лист открыт', 'заголовок = тема (иконка и название), два варианта с подписями, крестик; тап по подложке тоже закрывает', phone('light', S.open())],
+    ['5 · Выбрали «Пройти тему с начала», ждём сервер', 'обе строки серые и не нажимаются (как .play:disabled), «Повторить» на карточке под подложкой тоже серая; крестик работает; спиннера нет, как и на остальной главной', phone('light', S.busy())],
+  ] },
+  { h: 'Двухурочная тема · длинное', s: 'маленькая кнопка · перенос', f: [
+    ['3 · «Еда · 2» пройдена, лист по маленькой кнопке', 'нажата «Повторить» у строки «Еда · 1» — в заголовке листа тема «Еда»; «Повторить слова» даст викторину по «Еда · 1», «Пройти тему с начала» обнулит оба урока и запустит «Еда · 1»', phone('light', S.food())],
+    ['4 · Самое длинное название из контента', '«Природа и погода» + длинное имя «Александра-Мария»: заголовок листа в две строки, крестик на месте', phone('light', S.long())],
+  ] },
+  { h: 'Сбой', s: 'нет связи', f: [
+    ['7 · Нет связи', 'запрос не прошёл: лист закрыт, кнопки снова красные, внизу существующий .notice из App.tsx', phone('light', S.err())],
+  ] },
+];
+document.getElementById('cols').innerHTML = C.map(c => `
+  <div class="col"><div class="colh"><b>${c.h}</b><span>${c.s}</span></div>
+    ${c.f.map(f => fig(f[0], f[1], f[2])).join('')}
+  </div>`).join('');
+document.getElementById('dark').innerHTML = [
+  ['2 · Лист открыт', S.open()], ['5 · Ждём сервер', S.busy()], ['3 · «Еда · 1» из маленькой кнопки', S.food()], ['7 · Нет связи', S.err()],
+].map(([t, b]) => fig(t, 'тёмная', phone('dark', b, true))).join('');
+/* sheet frames: scroll the home screen so the tapped card sits right under the status bar, above the sheet */
+document.querySelectorAll('.dev').forEach(d => {
+  if (!d.querySelector('.sheet')) return;
+  const scr = d.querySelector('.scr'), cur = d.querySelector('.cur');
+  const k = d.getBoundingClientRect().height / d.offsetHeight;
+  scr.scrollTop = (cur.getBoundingClientRect().top - scr.getBoundingClientRect().top) / k - 60;
+});
+</script>
+</body>
+</html>

@@ -70,6 +70,9 @@ export const api = {
   me: () => request<Me>('/api/me'),
   startSession: (lesson: number | null) =>
     request<SessionOut>('/api/sessions', { method: 'POST', body: JSON.stringify({ lesson }) }),
+  /** Start the topic over from its first lesson; 409 when the topic is locked today. */
+  restartTopic: (slug: string) =>
+    request<SessionOut>(`/api/topics/${encodeURIComponent(slug)}/restart`, { method: 'POST' }),
   answer: (sessionId: string, body: AnswerBody) =>
     request<AnswerResult>(`/api/sessions/${sessionId}/answers`, {
       method: 'POST',

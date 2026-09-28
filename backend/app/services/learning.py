@@ -214,6 +214,33 @@ async def build_session(
     return session
 
 
+async def restart_topic(
+    db: AsyncSession,
+    child: Child,
+    topic_slug: str,
+    now: datetime,
+    rng: random.Random | None = None,
+) -> Session | None:
+    """Start the topic over: forget its words were shown, then play its first lesson.
+
+    The topic must be open today (its section not taken by another topic), else
+    LessonLocked. Stages and coins stay, so the child earns nothing twice.
+    """
+    today = local_date(now)
+    path = await lessons.load_lessons(db)
+    first = next((lsn for lsn in path if lsn.topic.slug == topic_slug), None)
+    if first is None:
+        raise NotFound(f"topic {topic_slug}")
+    progress_by_word = await lessons.load_progress(db, child.id)
+    today_topics = await lessons.load_today_topics(db, child.id, today)
+    position = lessons.position(path, progress_by_word, today_topics)
+    state = position.get(first.number)
+    if state is None or not state.playable:
+        raise LessonLocked(f"topic {topic_slug} cannot be played today")
+    await lessons.reset_topic_progress(db, child.id, first.topic.id)
+    return await build_session(db, child, first.number, now, rng)
+
+
 async def _load_session(db: AsyncSession, child: Child, session_id: uuid.UUID) -> Session:
     stmt = select(Session).where(Session.id == session_id, Session.child_id == child.id)
     session = (await db.execute(stmt)).scalar_one_or_none()

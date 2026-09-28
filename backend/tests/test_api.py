@@ -162,3 +162,14 @@ async def test_full_lesson_flow_over_http(
 
     foreign = await client.post(f"/api/sessions/{uuid.uuid4()}/finish", headers=headers)
     assert foreign.status_code == 404
+
+    # Starting a topic over: the words come back as intro cards, a locked topic is 409.
+    restarted = await client.post("/api/topics/colors/restart", headers=headers)
+    assert restarted.status_code == 200, restarted.text
+    assert [s["word"]["slug"] for s in restarted.json()["steps"] if s["type"] == "intro"] == [
+        "red",
+        "blue",
+        "green",
+    ]
+    assert (await client.post("/api/topics/greetings/restart", headers=headers)).status_code == 409
+    assert (await client.post("/api/topics/nope/restart", headers=headers)).status_code == 404
