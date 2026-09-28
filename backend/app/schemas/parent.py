@@ -14,12 +14,35 @@ CAP_OPTIONS = (5, 10, 15, 20, 30)
 WeekStatusOut = Literal["open", "paid"]
 
 
+NAME_MAX = 100  # parents.name and children.name are String(100)
+
+
 class ChildInfo(BaseModel):
     id: int
     name: str
     rate: int
     cap_lari: int
     show_hint: bool
+
+
+class ParentOut(BaseModel):
+    """The parent behind a Telegram id, as the registration wizard sees them."""
+
+    telegram_id: int
+    name: str | None
+    children: list[ChildInfo]
+
+
+class ParentRegister(BaseModel):
+    name: str = Field(max_length=NAME_MAX)
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("name must not be blank")
+        return stripped
 
 
 class WordBrief(BaseModel):
@@ -55,7 +78,7 @@ class PayOut(BaseModel):
 
 
 class ChildCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=NAME_MAX)
 
     @field_validator("name")
     @classmethod

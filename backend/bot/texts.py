@@ -74,6 +74,62 @@ NO_SUCH_CODE = "Ребёнка с таким кодом нет. Проверьт
 CANCELLED = "Отменено"
 
 
+# --- registration wizard (docs/mockups/bot-registration.html) -----------------
+
+HELLO = (
+    "Привет! Я Мзико, бот для родителей. Здесь вы добавляете ребёнка, выдаёте ему код для "
+    "входа в приложение и видите, сколько слов он выучил и сколько лари заработал.\n\n"
+    "Два вопроса, и готово. Как вас зовут?"
+)
+ASK_CHILD = (
+    "Как зовут ребёнка? С этим именем приложение будет с ним здороваться.\n"
+    "Если ребёнок уже занимается у другого родителя, пришлите вместо имени его код, "
+    "например LOMI-7241."
+)
+WELCOME_BACK = "С возвращением! Остался один вопрос.\n\n" + ASK_CHILD
+NEXT_STEPS = (
+    "Дальше:\n/settings — курс, лимит, подсказка\n/report — итоги недели\nВсе команды: /help"
+)
+# Keyed by bot.registration.Step values, so texts.py stays free of bot imports.
+NEED_TEXT = {"parent": "Нужен текст. Как вас зовут?", "child": "Нужен текст. Как зовут ребёнка?"}
+COMMAND_FIRST = {
+    "parent": "Сначала ответьте на вопрос: как вас зовут?\nВыйти из регистрации: /cancel",
+    "child": "Сначала ответьте на вопрос: как зовут ребёнка?\nВыйти из регистрации: /cancel",
+}
+CANCEL_UNREGISTERED = "Отменено. Начать заново: /start"
+CANCEL_NO_CHILDREN = "Отменено. Вы зарегистрированы, ребёнка можно добавить позже: /addchild Имя"
+NAME_ALREADY_SAVED = "Имя уже записано"
+
+
+def name_saved_text(parent_name: str) -> str:
+    return f"Записал: <b>{esc(parent_name)}</b>.\n\n{ASK_CHILD}"
+
+
+def too_long_text(length: int) -> str:
+    return f"Длинновато: {length} знаков, а помещается 100. Напишите покороче."
+
+
+def registered_text(parent_name: str, child: ChildInfo) -> str:
+    return (
+        f"Готово! Вы в Мзико как <b>{esc(parent_name)}</b>, добавил: <b>{esc(child.name)}</b>."
+        f"\n\n{NEXT_STEPS}"
+    )
+
+
+def registered_attached_text(parent_name: str, child: ChildInfo) -> str:
+    return (
+        f"Готово! Вы в Мзико как <b>{esc(parent_name)}</b>, подключил: <b>{esc(child.name)}</b>. "
+        f"Код для входа тот же: /code\n\n{NEXT_STEPS}"
+    )
+
+
+def bad_code_text(code: str) -> str:
+    return (
+        f"Ребёнка с кодом {esc(code)} нет. Код есть у второго родителя в /code. "
+        "Или напишите имя, чтобы добавить нового ребёнка."
+    )
+
+
 def report_text(r: WeekReportOut) -> str:
     learned = f"Выучено слов: {len(r.learned)}"
     if r.learned:

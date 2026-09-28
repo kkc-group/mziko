@@ -1,7 +1,6 @@
 """Commands and inline-button callbacks. Every call goes to the API as the sending parent."""
 
 import logging
-import re
 from collections.abc import Awaitable, Callable
 from html import escape
 
@@ -10,11 +9,10 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
-from app.schemas.parent import ChildInfo
+from app.schemas.parent import ChildInfo, ParentOut
 from bot import keyboards, texts
 from bot.api import ApiError, ParentApi
-
-LOGIN_CODE = re.compile(r"^[A-Za-z]{4}-?\d{4}$")
+from bot.registration import Step, check_name, normalize_code, suggested_name
 
 log = logging.getLogger(__name__)
 router = Router()
@@ -80,9 +78,71 @@ async def run_for_child(action: str, message: Message, api: ParentApi) -> None:
 # --- commands -----------------------------------------------------------------
 
 
-@router.message(Command("start", "help"))
+def wizard_step(me: ParentOut | None) -> Step | None:
+    """Where the registration wizard stands, read from the API: None means it is over."""
+    if me is None:
+        return Step.PARENT
+    if not me.children:
+        return Step.CHILD
+    return None
+
+
+async def ask_parent_name(message: Message) -> None:
+    user = message.from_user
+    suggested = suggested_name(user.first_name, user.last_name) if user else None
+    kb = keyboards.name_kb(suggested) if suggested else None
+    await message.answer(texts.HELLO, reply_markup=kb)
+
+
+@router.message(Command("start"))
 async def cmd_start(message: Message, api: ParentApi) -> None:
-    await message.answer(texts.start_text(await api.children()))
+    me = await api.me()
+    step = wizard_step(me)
+    if step is Step.PARENT:
+        await ask_parent_name(message)
+    elif step is Step.CHILD:
+        await message.answer(texts.WELCOME_BACK)
+    elif me is not None:
+        await message.answer(texts.start_text(me.children))
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message, api: ParentApi) -> None:
+    me = await api.me()
+    if me is None:
+        await ask_parent_name(message)
+    else:
+        await message.answer(texts.start_text(me.children))
+
+
+@router.message(Command("cancel"))
+async def cmd_cancel(message: Message, api: ParentApi) -> None:
+    step = wizard_step(await api.me())
+    if step is Step.PARENT:
+        await message.answer(texts.CANCEL_UNREGISTERED)
+    elif step is Step.CHILD:
+        await message.answer(texts.CANCEL_NO_CHILDREN)
+    else:
+        await message.answer(texts.CANCELLED)
+
+
+async def finish_with_child(message: Message, api: ParentApi, parent_name: str, text: str) -> None:
+    """Step two: a login code joins an existing child, anything else names a new one."""
+    code = normalize_code(text)
+    if code is not None:
+        try:
+            child = await api.attach_child(code)
+        except ApiError as exc:
+            if exc.status != 404:
+                raise
+            await message.answer(texts.bad_code_text(code))
+            return
+        await message.answer(texts.registered_attached_text(parent_name, child))
+        return
+    child = await api.add_child(text)
+    await message.answer(texts.registered_text(parent_name, child))
+    login = await api.child_code(child.id)
+    await message.answer(texts.code_text(child, login), reply_markup=keyboards.code_kb(child))
 
 
 @router.message(Command("addchild"))
@@ -91,9 +151,10 @@ async def cmd_addchild(message: Message, command: CommandObject, api: ParentApi)
     if not name:
         await message.answer("Напишите имя: /addchild Сандро")
         return
-    if LOGIN_CODE.match(name):  # an existing child's login code: attach, don't create
+    code = normalize_code(name)
+    if code is not None:  # an existing child's login code: attach, don't create
         try:
-            child = await api.attach_child(name)
+            child = await api.attach_child(code)
         except ApiError as exc:
             if exc.status != 404:
                 raise
@@ -112,7 +173,43 @@ async def cmd_action(message: Message, api: ParentApi, command: CommandObject) -
 router.message.register(cmd_action, Command(*ACTIONS))
 
 
+@router.message()
+async def wizard_answer(message: Message, api: ParentApi) -> None:
+    """Anything that is not a known command: an answer to the wizard, or ignored."""
+    me = await api.me()
+    step = wizard_step(me)
+    if step is None:
+        return
+    name, reply = check_name(message.text, step)
+    if name is None:
+        await message.answer(reply or texts.NEED_TEXT[step.value])
+    elif step is Step.PARENT:
+        registered = await api.register(name)
+        await message.answer(texts.name_saved_text(registered.name or name))
+    elif me is not None and me.name:
+        await finish_with_child(message, api, me.name, name)
+
+
 # --- callbacks ----------------------------------------------------------------
+
+
+@router.callback_query(F.data == "reg:name")
+async def cb_register_name(callback: CallbackQuery, api: ParentApi) -> None:
+    """The «Я — Имя» button under the greeting: register with the Telegram profile name."""
+    message = _message_of(callback)
+    if await api.me() is not None:
+        await callback.answer(texts.NAME_ALREADY_SAVED)
+        if message is not None:
+            await _edit(message, texts.HELLO, None)
+        return
+    name = suggested_name(callback.from_user.first_name, callback.from_user.last_name)
+    if message is None or name is None:
+        await callback.answer("Недоступно")
+        return
+    registered = await api.register(name)
+    await callback.answer()
+    await _edit(message, texts.HELLO, None)
+    await message.answer(texts.name_saved_text(registered.name or name))
 
 
 def _message_of(callback: CallbackQuery) -> Message | None:

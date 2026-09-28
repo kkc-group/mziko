@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — бот: регистрация родителя</title>
+<style>
+/* ---------- page chrome: tokens verbatim from frontend/src/styles.css (light set) ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --word-color: var(--grape);
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 17px; line-height: 1.45; }
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk h3 { font-size: 18px; font-weight: 900; margin: 26px 0 2px; }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b, .mk .lead code { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(4, 328px); gap: 20px; justify-content: center; margin-top: 18px; }
+.darkrow { display: grid; grid-template-columns: repeat(4, 246px); gap: 20px; justify-content: center; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 80px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); transform-origin: 0 0; }
+.fw.sm { width: 246px; height: 519px; }
+.fw.sm .phone { transform: scale(0.6); }
+table.st { border-collapse: collapse; background: var(--surface); border: 2px solid var(--line); font-size: 14px; line-height: 1.35; max-width: 1400px; margin-top: 12px; }
+.st th, .st td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.st th { color: var(--muted); font-weight: 800; }
+.st td:first-child { font-weight: 800; white-space: nowrap; }
+.st td pre { margin: 0; white-space: pre-wrap; font: inherit; }
+@media (max-width: 1420px) { .cols { grid-template-columns: repeat(2, 328px); } .darkrow { grid-template-columns: repeat(2, 246px); } }
+@media (max-width: 720px) { .cols { grid-template-columns: 328px; } .darkrow { grid-template-columns: 246px; } }
+
+/* ---------- Telegram iOS imitation (foreign UI, its own palette) ---------- */
+[data-theme='light'] {
+  --t-hdr: #f7f7f7; --t-hdr-line: #d0d0d4; --t-title: #000; --t-sub: #8e8e93; --t-acc: #3390ec;
+  --t-wall: linear-gradient(160deg, #dbe6b8 0%, #b4d3a0 55%, #9cc59e 100%);
+  --t-in: #ffffff; --t-out: #effedd; --t-text: #000; --t-link: #168acd;
+  --t-meta-in: #a1aab3; --t-meta-out: #5fa85a; --t-kb: rgba(52, 84, 40, 0.34); --t-kb-text: #fff;
+  --t-pill: rgba(46, 72, 38, 0.36);
+  --t-ib: #f7f7f7; --t-field: #fff; --t-field-line: #d6d6da; --t-ph: #a0a0a6;
+  --t-kbd: #d1d4da; --t-key: #fff; --t-key2: #abb1bb; --t-keyt: #000; --t-home: #000;
+  --t-card: rgba(255, 255, 255, 0.92);
+}
+[data-theme='dark'] {
+  --t-hdr: #1c1c1d; --t-hdr-line: #000; --t-title: #fff; --t-sub: #8e8e93; --t-acc: #3e88f7;
+  --t-wall: linear-gradient(160deg, #1b2a38 0%, #121c26 60%, #0e1621 100%);
+  --t-in: #222e3a; --t-out: #2b5278; --t-text: #f5f5f5; --t-link: #6ab3f3;
+  --t-meta-in: #7d8b99; --t-meta-out: #8cbbe6; --t-kb: rgba(255, 255, 255, 0.13); --t-kb-text: #fff;
+  --t-pill: rgba(0, 0, 0, 0.38);
+  --t-ib: #1c1c1d; --t-field: #2c2c2e; --t-field-line: #3a3a3c; --t-ph: #7c7c80;
+  --t-kbd: #2b2b2d; --t-key: #6b6b6e; --t-key2: #474749; --t-keyt: #fff; --t-home: #fff;
+  --t-card: rgba(28, 38, 50, 0.94);
+}
+.phone { position: relative; overflow: hidden; width: 410px; height: 864px; border: 10px solid #0d0d12; border-radius: 54px; background: var(--t-wall); color: var(--t-text); font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.32; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 700; font-size: 16px; color: var(--t-title); }
+.sbar b { font-weight: 700; letter-spacing: 1px; font-size: 13px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--t-home); z-index: 31; }
+.hd { position: absolute; top: 0; left: 0; right: 0; height: 92px; padding-top: 47px; z-index: 20; background: var(--t-hdr); border-bottom: 0.5px solid var(--t-hdr-line); display: flex; align-items: center; }
+.hd .back { width: 90px; padding-left: 8px; color: var(--t-acc); font-size: 17px; display: flex; align-items: center; gap: 2px; }
+.hd .back i { font-style: normal; font-size: 30px; line-height: 1; margin-top: -3px; }
+.hd .back u { text-decoration: none; background: var(--t-acc); color: #fff; font-size: 13px; font-weight: 600; border-radius: 10px; padding: 0 6px; margin-left: 2px; }
+.hd .ttl { flex: 1; text-align: center; line-height: 1.2; }
+.hd .ttl strong { display: block; font-size: 17px; color: var(--t-title); }
+.hd .ttl small { font-size: 13px; color: var(--t-sub); }
+.hd .av { width: 90px; display: flex; justify-content: flex-end; padding-right: 12px; }
+.hd .av span { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(#ffd45e, #f1a500); display: grid; place-items: center; color: #5b2e8c; font-weight: 800; font-size: 17px; }
+.chat { position: absolute; left: 0; right: 0; top: 92px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 8px 8px 10px; overflow: hidden; }
+.row { display: flex; }
+.row.me { justify-content: flex-end; }
+.bm { display: inline-flex; flex-direction: column; gap: 4px; max-width: 84%; min-width: 0; }
+.me .bm { max-width: 78%; }
+.bb { position: relative; padding: 7px 11px 7px; border-radius: 17px 17px 17px 6px; background: var(--t-in); white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px 1px rgba(0,0,0,.12); }
+.me .bb { border-radius: 17px 17px 6px 17px; background: var(--t-out); }
+.bb b { font-weight: 650; }
+.lnk { color: var(--t-link); }
+.tm { float: right; margin: 7px -3px -4px 10px; font-size: 11.5px; color: var(--t-meta-in); line-height: 1; white-space: nowrap; }
+.me .tm { color: var(--t-meta-out); }
+.ik { display: flex; flex-direction: column; gap: 4px; }
+.ik div { display: flex; gap: 4px; }
+.ik span { position: relative; flex: 1; min-width: 0; height: 40px; line-height: 40px; padding: 0 12px; border-radius: 10px; background: var(--t-kb); color: var(--t-kb-text); font-weight: 600; font-size: 15px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; backdrop-filter: blur(6px); }
+.ik span.busy::after { content: ''; position: absolute; right: 6px; top: 6px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); border-right-color: transparent; }
+.date { align-self: center; padding: 2px 9px; border-radius: 11px; background: var(--t-pill); color: #fff; font-size: 13px; font-weight: 600; margin: 4px 0; }
+.stk { font-size: 92px; line-height: 1; padding: 2px 4px; }
+.stk small { display: block; text-align: right; font-size: 11.5px; color: #fff; }
+.voice { display: flex; align-items: center; gap: 8px; white-space: normal; }
+.voice .pl { width: 40px; height: 40px; border-radius: 50%; background: var(--t-meta-out); display: grid; place-items: center; color: #fff; font-size: 15px; flex: none; }
+.voice .wv { display: flex; align-items: center; gap: 2px; height: 22px; }
+.voice .wv i { width: 3px; border-radius: 2px; background: var(--t-meta-out); }
+.voice small { font-size: 12px; color: var(--t-meta-out); }
+.toast { position: absolute; left: 50%; top: 118px; transform: translateX(-50%); z-index: 25; padding: 8px 14px; border-radius: 12px; background: rgba(40,40,40,.88); color: #fff; font-size: 14px; white-space: nowrap; }
+.ib { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--t-ib); border-top: 0.5px solid var(--t-hdr-line); display: flex; align-items: center; gap: 8px; padding: 7px 10px; }
+.ib .ic { width: 30px; height: 30px; flex: none; display: grid; place-items: center; color: var(--t-sub); }
+.ib .ic svg { width: 26px; height: 26px; }
+.ib .fld { flex: 1; min-height: 36px; border-radius: 18px; border: 0.5px solid var(--t-field-line); background: var(--t-field); padding: 7px 14px; font-size: 16px; color: var(--t-text); line-height: 1.3; }
+.ib .fld.ph { color: var(--t-ph); }
+.ib .fld .car { display: inline-block; width: 2px; height: 19px; vertical-align: -4px; background: var(--t-acc); margin-left: 1px; }
+.ib .send { width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--t-acc); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.startbtn { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--t-ib); border-top: 0.5px solid var(--t-hdr-line); padding: 12px 12px 42px; }
+.startbtn span { display: block; height: 44px; line-height: 44px; border-radius: 12px; text-align: center; color: var(--t-acc); font-weight: 700; font-size: 17px; letter-spacing: .5px; }
+.about { align-self: center; margin: auto 18px 20px; padding: 14px 16px; border-radius: 18px; background: var(--t-card); max-width: 300px; text-align: center; }
+.about strong { display: block; font-size: 15px; margin-bottom: 6px; }
+.about p { margin: 0; font-size: 15px; }
+.kbd { position: absolute; left: 0; right: 0; bottom: 0; height: 292px; z-index: 21; background: var(--t-kbd); padding: 8px 3px 0; }
+.kbd .kr { display: flex; justify-content: center; gap: 5px; margin-bottom: 11px; }
+.kbd .k { flex: none; width: 30px; height: 42px; border-radius: 5px; background: var(--t-key); color: var(--t-keyt); display: grid; place-items: center; font-size: 21px; box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.kbd .k.f { background: var(--t-key2); font-size: 15px; }
+.kbd .k.w { width: 44px; }
+.kbd .k.sp { width: 180px; font-size: 16px; }
+.kbd .k.rt { width: 88px; font-size: 16px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Бот: регистрация родителя</h1>
+  <p class="lead">Любой, кто написал боту, проходит два шага и становится родителем: имя родителя → имя ребёнка (или код уже существующего ребёнка). Кадр — Telegram на iPhone, 390×844, в масштабе 0,8; палитра — имитация Telegram, страница вокруг — токены <code>styles.css</code>. Тексты бота — ровно то, что он скажет; разметка как в aiogram HTML: <code>&lt;b&gt;</code> жирным, команды и ссылки Telegram подсвечивает сам. Все имена, коды и ссылки выдуманы.</p>
+
+  <h2>1 · Счастливый путь</h2>
+  <p class="lead">Итог — два сообщения: подтверждение с двумя командами на потом и сообщение, дословно равное ответу <code>/code</code> (<code>texts.code_text</code> + кнопка «Новые цифры»). Код стоит последним: его сейчас и надо передать ребёнку, и он ближе всего к пальцу.</p>
+  <div class="cols" id="s1"></div>
+  <h3>Тёмная тема · имя напечатано, а не выбрано кнопкой</h3>
+  <p class="lead">Если родитель пишет имя сам, кнопка под приветствием исчезает (сообщение правится), чтобы не висела неактуальной.</p>
+  <div class="cols" id="s1d"></div>
+
+  <h2>2 · Ошибки ввода, выход и возврат</h2>
+  <h3>Шаг 1 — имя родителя</h3>
+  <p class="lead">Бот переспрашивает одной строкой и остаётся на том же шаге. Пустого текста Telegram не отправляет (строку из пробелов клиент не пошлёт), поэтому «пусто» на деле — стикер, фото или голосовое.</p>
+  <div class="cols" id="s2a"></div>
+  <h3>Шаг 2 — имя ребёнка</h3>
+  <div class="cols" id="s2b"></div>
+  <h3>Выход и возврат через день</h3>
+  <p class="lead">Шаг вычисляется из базы, а не из памяти бота: родителя нет → шаг 1; родитель есть, детей нет → шаг 2; дети есть → обычный <code>start_text</code>. Поэтому возврат через день и перезапуск бота ведут себя одинаково.</p>
+  <div class="cols" id="s2c"></div>
+
+  <h2>3 · Вместо имени ребёнка прислали код</h2>
+  <p class="lead">Второй родитель подключается к существующему ребёнку тем же способом, что <code>/addchild LOMI-7241</code>. Сообщения с кодом нет: код у этого родителя уже есть, он его только что прислал; напоминание — ссылка на <code>/code</code>, как в <code>attached_text</code>.</p>
+  <div class="cols" id="s3"></div>
+
+  <h2>4 · Уже зарегистрирован</h2>
+  <div class="cols" id="s4"></div>
+
+  <h2>5 · Имя в профиле Telegram</h2>
+  <p class="lead">Кнопка собирается из first_name + last_name. В Telegram first_name обязателен, но бывает эмодзи, точкой или невидимым символом — тогда предлагать нечего, и кнопки нет. Никнейм (@username) не предлагается: это адрес, а не имя, и в отчётах второго родителя «mick_k» выглядит как ошибка.</p>
+  <div class="cols" id="s5"></div>
+
+  <h2>Тёмная тема · ошибки и крайние случаи</h2>
+  <p class="lead">Масштаб 0,6.</p>
+  <div class="darkrow" id="dark"></div>
+
+  <h2>Шаги визарда</h2>
+  <table class="st">
+    <thead><tr><th>Состояние</th><th>Как попадают</th><th>Что пишет бот</th><th>Что ждёт</th><th>Что делает с ответом</th></tr></thead>
+    <tbody id="steps"></tbody>
+  </table>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Родитель создаётся после шага 1, а не в конце.</b> Имя не теряется, если человек ушёл на шаге 2, и возврат через день опирается на базу, а не на память бота, которая пропадает при перезапуске. Цена — в бэк-офисе появятся родители без детей; их и так видно (0 детей).</li>
+    <li><b>Шаг определяется по базе.</b> Нет родителя → шаг 1, родитель без детей → шаг 2, иначе — <code>start_text</code>. Отдельного «сохранённого шага» нет, значит нет и расхождений между ним и базой.</li>
+    <li><b><code>/start</code> у родителя без детей — вопрос про ребёнка, <code>/help</code> — всегда список команд.</b> Сейчас <code>/start</code> и <code>/help</code> — одно и то же; разделение нужно, чтобы у родителя, который отключил всех детей, оставался путь к списку команд.</li>
+    <li><b>Свободный текст считается ответом только внутри визарда.</b> Родитель без детей, написавший «спасибо» вне визарда, не получит ребёнка по имени «Спасибо»: сначала <code>/start</code> ставит вопрос, потом ответ.</li>
+    <li><b>Любое первое сообщение незнакомца запускает шаг 1</b>, не только <code>/start</code>: кнопка «Старт» бывает скрыта, если чат открыли по ссылке и сразу написали.</li>
+    <li><b>Команда внутри визарда</b> (кроме <code>/cancel</code>, <code>/start</code>, <code>/help</code>) — переспрос текущего вопроса и подсказка про <code>/cancel</code>; сама команда не выполняется: у незарегистрированного её не на чем выполнить. <code>/start</code> повторяет текущий вопрос, <code>/help</code> на шаге 2 показывает <code>start_text</code> и из визарда не выводит.</li>
+    <li><b><code>/cancel</code></b> на шаге 1 ничего не сохраняет и убирает кнопку с приветствия; на шаге 2 родитель уже зарегистрирован, бот говорит это прямо и показывает <code>/addchild Имя</code>.</li>
+    <li><b>Слишком длинно</b> — переспрос с числом знаков, а не обрезка: обрезанное имя ребёнка увидит сам ребёнок на экране «Привет, …!». Если имя из профиля длиннее 100 знаков (first + last до 129), кнопки нет.</li>
+    <li><b>Имя в «Записал: …» повторяется дословно</b>, и при нажатии кнопки, и при вводе: так видно, что именно ушло в базу, без отдельного подтверждения «Да/Нет».</li>
+    <li><b>Неверный код в визарде — свой текст</b>, а не <code>NO_SUCH_CODE</code>: тот отсылает к «тому, кто его отключил», а здесь никто ничего не отключал.</li>
+    <li><b>Что уступает при нехватке места:</b> текст кнопки режет сам Telegram многоточием в одну строку; сообщения бота не сокращаются, старые уезжают вверх. Поэтому вопрос каждого шага стоит последней строкой сообщения — он виден над клавиатурой, даже когда начало сообщения ушло под шапку.</li>
+  </ul>
+</main>
+
+<script>
+/* ---------------- texts the bot sends ---------------- */
+const P = 'Микаел Казарян';
+const HELLO =
+  'Привет! Я Мзико, бот для родителей. Здесь вы добавляете ребёнка, выдаёте ему код для входа в приложение и видите, сколько слов он выучил и сколько лари заработал.\n\n' +
+  'Два вопроса, и готово. Как вас зовут?';
+const ASKQ =
+  'Как зовут ребёнка? С этим именем приложение будет с ним здороваться.\n' +
+  'Если ребёнок уже занимается у другого родителя, пришлите вместо имени его код, например LOMI-7241.';
+const ASK = n => `Записал: <b>${n}</b>.\n\n${ASKQ}`;
+const BACK = 'С возвращением! Остался один вопрос.\n\n' + ASKQ;
+const NEXT = 'Дальше:\n/settings — курс, лимит, подсказка\n/report — итоги недели\nВсе команды: /help';
+const DONE = (p, c) => `Готово! Вы в Мзико как <b>${p}</b>, добавил: <b>${c}</b>.\n\n${NEXT}`;
+const ATT = (p, c) => `Готово! Вы в Мзико как <b>${p}</b>, подключил: <b>${c}</b>. Код для входа тот же: /code\n\n${NEXT}`;
+const HOST = 'https://mziko.example.com';
+const CODE = (c, code) =>
+  `Код для входа ${c}: <b>${code}</b>\nСсылка для входа: ${HOST}/c/${code}\n\n` +
+  'Ребёнок вводит код на экране входа на любом устройстве, или откройте ссылку там. ' +
+  'Три ошибки подряд закрывают вход на час; «Новые цифры» открывают его сразу и меняют цифры (слово остаётся).';
+const NT1 = 'Нужен текст. Как вас зовут?';
+const NT2 = 'Нужен текст. Как зовут ребёнка?';
+const LONG = n => `Длинновато: ${n} знаков, а помещается 100. Напишите покороче.`;
+const CMD1 = 'Сначала ответьте на вопрос: как вас зовут?\nВыйти из регистрации: /cancel';
+const CMD2 = 'Сначала ответьте на вопрос: как зовут ребёнка?\nВыйти из регистрации: /cancel';
+const CANCEL1 = 'Отменено. Начать заново: /start';
+const CANCEL2 = 'Отменено. Вы зарегистрированы, ребёнка можно добавить позже: /addchild Имя';
+const BADCODE = c => `Ребёнка с кодом ${c} нет. Код есть у второго родителя в /code. Или напишите имя, чтобы добавить нового ребёнка.`;
+const FAIL = 'Не получилось, попробуйте позже';
+const START = names =>
+  'Привет! Я Мзико, бот для родителей.\n' + `Дети: ${names}\n\n` +
+  '/report — итоги недели\n/progress — прогресс по словам\n/settings — курс, лимит, подсказка\n' +
+  '/code — код для входа ребёнка\n/devices — привязанные устройства\n/reset — сбросить прогресс или отключить ребёнка\n' +
+  '/addchild Имя — добавить ребёнка\n/addchild LOMI-7241 — подключить ребёнка по его коду';
+const ABOUT = 'Мзико учит детей грузинским словам. Здесь родитель добавляет ребёнка, выдаёт ему код для входа и видит, как идут занятия.';
+
+/* ---------------- pieces ---------------- */
+const lk = s => s
+  .replace(/(https?:\/\/[^\s<]+)/g, '<span class="lnk">$1</span>')
+  .replace(/(^|[\s(>])(\/[a-z]+)/g, '$1<span class="lnk">$2</span>');
+const ik = rows => `<div class="ik">${rows.map(r => `<div>${r.map(b => typeof b === 'string'
+  ? `<span>${b}</span>` : `<span class="busy">${b.t}</span>`).join('')}</div>`).join('')}</div>`;
+const WAVE = [6, 12, 18, 9, 20, 14, 7, 16, 22, 11, 8, 15, 19, 10, 6, 13, 17, 9, 5, 11];
+
+function msg(m) {
+  if (m.date) return `<div class="date">${m.date}</div>`;
+  const t = m.t || '21:14';
+  if (m.sticker) return `<div class="row me"><div class="stk">${m.sticker}<small>${t} ✓✓</small></div></div>`;
+  if (m.voice) return `<div class="row me"><div class="bm"><div class="bb voice"><span class="pl">&#9654;</span><span class="wv">${WAVE.map(h => `<i style="height:${h}px"></i>`).join('')}</span><small>0:04</small><span class="tm">${t} ✓✓</span></div></div></div>`;
+  if (m.me !== undefined) return `<div class="row me"><div class="bm"><div class="bb">${lk(m.me)}<span class="tm">${t} ✓✓</span></div></div></div>`;
+  return `<div class="row"><div class="bm"><div class="bb">${lk(m.b)}<span class="tm">${t}</span></div>${m.kb ? ik(m.kb) : ''}</div></div>`;
+}
+
+const KEYS = ['йцукенгшщзх', 'фывапролджэ', 'ячсмитьбю'];
+const KBD = `<div class="kbd">
+  <div class="kr">${[...KEYS[0]].map(k => `<span class="k">${k}</span>`).join('')}</div>
+  <div class="kr">${[...KEYS[1]].map(k => `<span class="k">${k}</span>`).join('')}</div>
+  <div class="kr"><span class="k f w">&#8679;</span>${[...KEYS[2]].map(k => `<span class="k">${k}</span>`).join('')}<span class="k f w">&#9003;</span></div>
+  <div class="kr"><span class="k f w">123</span><span class="k f w">&#9786;</span><span class="k sp">пробел</span><span class="k f rt">ввод</span></div>
+</div>`;
+const CLIP = '<svg viewBox="0 0 24 24"><path d="M16.5 6.5l-7.8 7.8a2 2 0 0 0 2.8 2.8l7.4-7.4a4 4 0 0 0-5.7-5.7l-7.6 7.6a6 6 0 0 0 8.5 8.5l6.3-6.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+const MIC = '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+
+// o: { msgs, typed, kbd, empty, toast, sub }
+function phone(theme, o) {
+  const kbd = !!o.kbd || o.typed !== undefined;
+  const ibH = 50, bottom = o.empty ? 98 : ibH + (kbd ? 292 : 34);
+  const typed = o.typed || '';
+  const input = o.empty
+    ? `<div class="startbtn"><span>СТАРТ</span></div>`
+    : `<div class="ib" style="bottom:${kbd ? 292 : 0}px;${kbd ? '' : 'padding-bottom:41px'}">
+        <span class="ic">${CLIP}</span>
+        <div class="fld${typed ? '' : ' ph'}">${typed ? typed + (kbd ? '<span class="car"></span>' : '') : 'Сообщение'}</div>
+        ${typed ? '<span class="send">&#8593;</span>' : `<span class="ic">${MIC}</span>`}
+      </div>`;
+  const body = o.empty
+    ? `<div class="about"><strong>Что умеет этот бот?</strong><p>${ABOUT}</p></div>`
+    : o.msgs.map(msg).join('');
+  return `<div class="phone" data-theme="${theme}">
+    <div class="sbar"><span>21:14</span><b>▮▮▮ ◠ ▭</b></div><div class="island"></div>
+    <div class="hd"><div class="back"><i>&#8249;</i>Чаты<u>3</u></div><div class="ttl"><strong>Мзико</strong><small>${o.sub || 'бот'}</small></div><div class="av"><span>М</span></div></div>
+    <div class="chat" style="bottom:${bottom}px">${body}</div>
+    ${o.toast ? `<div class="toast">${o.toast}</div>` : ''}
+    ${input}${kbd ? KBD : ''}<div class="hbar"></div>
+  </div>`;
+}
+const fig = (t, s, inner, sm) => `<figure><figcaption>${t}<span>${s}</span></figcaption><div class="fw${sm ? ' sm' : ''}">${inner}</div></figure>`;
+const put = (id, list, { theme = 'light', sm = false } = {}) => {
+  document.getElementById(id).innerHTML = list.map(([t, s, o]) => fig(t, s, phone(theme, o), sm)).join('');
+};
+
+/* ---------------- conversations ---------------- */
+const B1 = [P].map(n => `Я — ${n}`);
+const s1 = {
+  empty: { empty: true },
+  hello: { msgs: [{ me: '/start' }, { b: HELLO, kb: [B1] }] },
+  tapped: { msgs: [{ me: '/start' }, { b: HELLO }, { b: ASK(P) }], typed: 'Сандро' },
+  done: { msgs: [{ me: '/start' }, { b: HELLO }, { b: ASK(P) }, { me: 'Сандро', t: '21:15' }, { b: DONE(P, 'Сандро'), t: '21:15' }, { b: CODE('Сандро', 'PURI-3815'), kb: [['Новые цифры']], t: '21:15' }] },
+};
+put('s1', [
+  ['1 · Пустой чат', 'человек открыл бота впервые: описание бота и кнопка «Старт» (она шлёт /start)', s1.empty],
+  ['2 · Шаг 1: имя родителя', 'кнопка с именем из профиля — чтобы не печатать', s1.hello],
+  ['3 · Шаг 2: имя ребёнка', 'кнопку нажали: она исчезла, имя повторено в «Записал»; родитель печатает', s1.tapped],
+  ['4 · Готово', 'подтверждение + сообщение, равное ответу /code', s1.done],
+]);
+put('s1d', [
+  ['1 · Пустой чат', '', s1.empty],
+  ['2 · Шаг 1: печатает сам', 'кнопку не трогает, пишет короткое имя', { msgs: [{ me: '/start' }, { b: HELLO, kb: [B1] }], typed: 'Мика' }],
+  ['3 · Шаг 2', 'кнопка снята с приветствия, в «Записал» — напечатанное', { msgs: [{ me: '/start' }, { b: HELLO }, { me: 'Мика' }, { b: ASK('Мика') }], typed: 'Сандро' }],
+  ['4 · Готово', '', { msgs: [{ b: ASK('Мика') }, { me: 'Сандро', t: '21:15' }, { b: DONE('Мика', 'Сандро'), t: '21:15' }, { b: CODE('Сандро', 'PURI-3815'), kb: [['Новые цифры']], t: '21:15' }] }],
+], { theme: 'dark' });
+
+const LONG1 = 'Микаел Казарян, папа Сандро и Мариам, живём в Тбилиси, хотим, чтобы дети заговорили по-грузински до школы, пишите в любое время, отвечу вечером';
+const LONG2 = 'Сандро, ему шесть лет, пошёл в первый класс, любит динозавров и футбол, грузинский учим с нуля, буквы пока не знает совсем';
+put('s2a', [
+  ['5 · Стикер, потом команда', 'на каждое — одна строка и тот же вопрос; кнопка под приветствием остаётся рабочей', { msgs: [{ me: '/start' }, { b: HELLO, kb: [B1] }, { sticker: '🐻' }, { b: NT1 }, { me: '/report' }, { b: CMD1 }] }],
+  ['6 · Слишком длинно', `вставили абзац (${LONG1.length} знаков) — переспрос с числом, потом короткое имя`, { msgs: [{ b: HELLO }, { me: LONG1 }, { b: LONG(LONG1.length) }, { me: 'Микаел', t: '21:15' }, { b: ASK('Микаел'), t: '21:15' }] }],
+  ['7 · Написал не /start', 'первое сообщение незнакомца — любое; ответ тот же, шаг 1', { msgs: [{ me: 'Здравствуйте! Мне дали ссылку на бота в садике' }, { b: HELLO, kb: [B1] }] }],
+  ['8 · Загрузка', 'кнопку нажали, бот ещё не ответил: часики на кнопке (рисует Telegram)', { msgs: [{ me: '/start' }, { b: HELLO, kb: [[{ t: B1[0] }]] }] }],
+]);
+put('s2b', [
+  ['9 · Голосовое, потом команда', 'шаг 2 держится так же; клавиатура открыта', { msgs: [{ b: ASK(P) }, { voice: true }, { b: NT2 }, { me: '/code' }, { b: CMD2 }], typed: 'Сан' }],
+  ['10 · Слишком длинно', `имя ребёнка с рассказом (${LONG2.length} знаков)`, { msgs: [{ b: ASK(P) }, { me: LONG2 }, { b: LONG(LONG2.length) }], typed: 'Сандро' }],
+  ['11 · Ошибка сервера', 'ответ middleware как сейчас; шаг не сбрасывается, повтор проходит', { msgs: [{ b: ASK(P) }, { me: 'Сандро' }, { b: FAIL }, { me: 'Сандро', t: '21:16' }, { b: DONE(P, 'Сандро'), t: '21:16' }, { b: CODE('Сандро', 'PURI-3815'), kb: [['Новые цифры']], t: '21:16' }] }],
+  ['12 · Старая кнопка нажата повторно', 'вчерашняя кнопка нажата после регистрации: всплывашка, ничего не меняется', { msgs: [{ date: 'Вчера' }, { me: '/start', t: '23:02' }, { b: HELLO, kb: [B1], t: '23:02' }, { date: 'Сегодня' }, { me: '/start', t: '08:41' }, { b: HELLO, t: '08:41' }, { me: 'Микаел', t: '08:42' }, { b: ASK('Микаел'), t: '08:42' }], toast: 'Имя уже записано' }],
+]);
+put('s2c', [
+  ['13 · /cancel на шаге 1', 'ничего не сохранено; кнопка с приветствия снята', { msgs: [{ me: '/start' }, { b: HELLO }, { me: '/cancel' }, { b: CANCEL1 }] }],
+  ['14 · /cancel на шаге 2', 'родитель уже есть; ребёнок — старой командой', { msgs: [{ b: ASK(P) }, { me: '/cancel' }, { b: CANCEL2 }, { me: '/addchild Сандро', t: '21:18' }, { b: 'Добавил: Сандро. Код для входа: /code', t: '21:18' }] }],
+  ['15 · Вернулся через день, бросил на шаге 2', '/start сразу ведёт к вопросу про ребёнка', { msgs: [{ date: 'Вчера' }, { b: HELLO, t: '23:02' }, { me: P, t: '23:02' }, { b: ASK(P), t: '23:02' }, { date: 'Сегодня' }, { me: '/start', t: '08:41' }, { b: BACK, t: '08:41' }], typed: 'Сандро' }],
+  ['16 · Вернулся через день, бросил на шаге 1', 'ничего не сохранено — приветствие заново; вчерашняя кнопка тоже работает', { msgs: [{ date: 'Вчера' }, { me: '/start', t: '23:02' }, { b: HELLO, kb: [B1], t: '23:02' }, { date: 'Сегодня' }, { me: '/start', t: '08:41' }, { b: HELLO, kb: [B1], t: '08:41' }] }],
+]);
+
+const NINO = 'Нино Беридзе';
+put('s3', [
+  ['17 · Код подошёл', 'второй родитель: подключил, код не повторяется', { msgs: [{ me: '/start' }, { b: HELLO }, { b: ASK(NINO) }, { me: 'LOMI-7241' }, { b: ATT(NINO, 'Сандро') }] }],
+  ['18 · Код в строчных, без тире', 'lomi7241 — то же правило, что у /addchild', { msgs: [{ b: ASK(NINO) }, { me: 'lomi7241' }, { b: ATT(NINO, 'Сандро') }] }],
+  ['19 · Такого кода нет', 'свой текст; остаёмся на шаге 2', { msgs: [{ b: ASK(NINO) }, { me: 'LOMI-7214' }, { b: BADCODE('LOMI-7214') }], typed: 'LOMI-7241' }],
+  ['20 · Код прислали на шаге 1', 'на шаге 1 код — просто имя; «Записал» показывает это сразу, исправить — /cancel', { msgs: [{ me: '/start' }, { b: HELLO, t: '21:14' }, { me: 'LOMI-7241' }, { b: ASK('LOMI-7241') }] }],
+]);
+
+put('s4', [
+  ['21 · /start, есть дети', 'визарда нет — start_text как сейчас', { msgs: [{ me: '/start' }, { b: START('Сандро, Мариам') }] }],
+  ['22 · /start, детей нет', 'родитель отключил всех (или записан админом без детей): шаг 2', { msgs: [{ me: '/start' }, { b: BACK }] }],
+  ['23 · /help, детей нет', 'список команд всегда доступен', { msgs: [{ me: '/help' }, { b: START('пока никого') }] }],
+  ['24 · Тёмная · /start, есть дети', '', { msgs: [{ me: '/start' }, { b: START('Сандро, Мариам') }] }],
+]);
+document.getElementById('s4').lastElementChild.querySelector('.phone').dataset.theme = 'dark';
+
+const LP = 'Александра-Мария Константинопольская-Мухранбатони';
+const LC = 'Анастасия-Николоза';
+put('s5', [
+  ['25 · Только имя, без фамилии', 'кнопка короче — и всё', { msgs: [{ me: '/start' }, { b: HELLO, kb: [['Я — Микаел']] }] }],
+  ['26 · Вместо имени эмодзи', 'в профиле «🦊», есть @mick_k: букв нет — кнопки нет, никнейм не предлагается', { msgs: [{ me: '/start' }, { b: HELLO }], typed: 'Мика' }],
+  ['27 · Длинное имя в профиле', `${LP.length} знаков: Telegram режет текст кнопки многоточием`, { msgs: [{ me: '/start' }, { b: HELLO, kb: [[`Я — ${LP}`]] }] }],
+  ['28 · Длинные имена в итоге', 'имя родителя и ребёнка переносятся по дефису, ссылка — где придётся', { msgs: [{ b: ASK(LP) }, { me: LC, t: '21:15' }, { b: DONE(LP, LC), t: '21:15' }, { b: CODE(LC, 'MZIA-0407'), kb: [['Новые цифры']], t: '21:15' }] }],
+]);
+
+put('dark', [
+  ['5 · Стикер, потом команда', '', { msgs: [{ me: '/start' }, { b: HELLO, kb: [B1] }, { sticker: '🐻' }, { b: NT1 }, { me: '/report' }, { b: CMD1 }] }],
+  ['15 · Возврат через день', '', { msgs: [{ date: 'Вчера' }, { b: ASK(P), t: '23:02' }, { date: 'Сегодня' }, { me: '/start', t: '08:41' }, { b: BACK, t: '08:41' }], typed: 'Сандро' }],
+  ['19 · Такого кода нет', '', { msgs: [{ b: ASK(NINO) }, { me: 'LOMI-7214' }, { b: BADCODE('LOMI-7214') }] }],
+  ['27 · Длинное имя в профиле', '', { msgs: [{ me: '/start' }, { b: HELLO, kb: [[`Я — ${LP}`]] }] }],
+], { theme: 'dark', sm: true });
+
+/* ---------------- steps table ---------------- */
+const plain = s => s.replace(/<\/?b>/g, '');
+const STEPS = [
+  ['Незнакомец', 'нет записи родителя; любое сообщение', HELLO + '\n[кнопка «Я — имя из профиля», если в профиле есть буквы и ≤ 100 знаков]', 'текст или нажатие кнопки', 'стикер/фото/голос → «' + NT1 + '»; команда → «' + plain(CMD1) + '»; > 100 знаков → «' + LONG('N') + '»; иначе создаёт родителя с этим именем → шаг 2'],
+  ['Шаг 2: ребёнок', 'после шага 1; или /start у родителя без детей', ASK('имя') + '\n— или при возврате —\n' + BACK, 'имя ребёнка или код WORD-1234', 'код → подключить (как /addchild) → «Готово… подключил»; нет такого → «' + BADCODE('…') + '»; имя → создать ребёнка → «Готово… добавил» + сообщение /code; ошибки ввода — как на шаге 1'],
+  ['/cancel', 'на любом шаге', 'шаг 1: «' + CANCEL1 + '»\nшаг 2: «' + CANCEL2 + '»', '—', 'выход из визарда; на шаге 1 ничего не записано'],
+  ['Зарегистрирован, есть дети', 'родитель и хотя бы один ребёнок', 'start_text (как сейчас)', 'команды', 'визарда нет'],
+];
+document.getElementById('steps').innerHTML = STEPS.map(r =>
+  `<tr>${r.map(c => `<td><pre>${plain(c).replace(/</g, '&lt;')}</pre></td>`).join('')}</tr>`).join('');
+</script>
+</body>
+</html>

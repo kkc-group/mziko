@@ -131,3 +131,21 @@ async def test_client_maps_api_errors(
     due = await unbound.reports_due()
     ours = next(d for d in due if d.report.child.id == child.id)
     assert ours.telegram_ids == [parent.telegram_id] and ours.report.week.coins == 5
+
+
+async def test_client_registers_a_newcomer(db: AsyncSession, child: Child, clock: Clock) -> None:
+    newcomer = api_for(db, clock, 800_000 + child.id)
+    assert await newcomer.me() is None
+
+    me = await newcomer.register("Нино Церетели")
+    assert (me.name, me.children) == ("Нино Церетели", [])
+    assert "Записал: <b>Нино Церетели</b>" in texts.name_saved_text(me.name or "")
+
+    again = await newcomer.me()
+    assert again is not None and again.name == "Нино Церетели"
+
+    added = await newcomer.add_child("Сандро")
+    done = texts.registered_text("Нино Церетели", added)
+    assert "добавил: <b>Сандро</b>" in done and "/help" in done
+    assert [c.id for c in (await newcomer.me() or me).children] == [added.id]
+    assert keyboards.name_kb("Нино").inline_keyboard[0][0].callback_data == "reg:name"

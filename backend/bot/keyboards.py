@@ -57,6 +57,13 @@ def settings_kb(child: ChildInfo) -> InlineKeyboardMarkup:
     )
 
 
+def name_kb(suggested: str) -> InlineKeyboardMarkup:
+    """One button with the Telegram profile name, so the parent need not type it."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text=f"Я — {suggested}", callback_data="reg:name")]]
+    )
+
+
 def code_kb(child: ChildInfo) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[

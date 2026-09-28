@@ -28,6 +28,17 @@ async def get_parent(db: AsyncSession, telegram_id: int) -> Parent | None:
     return (await db.execute(stmt)).scalar_one_or_none()
 
 
+async def register(db: AsyncSession, telegram_id: int, name: str) -> Parent:
+    """The first step of the bot's wizard: create the parent, or rename an existing one."""
+    parent = await get_parent(db, telegram_id)
+    if parent is None:
+        parent = Parent(telegram_id=telegram_id)
+        db.add(parent)
+    parent.name = name.strip()
+    await db.flush()
+    return parent
+
+
 async def children_of(db: AsyncSession, parent: Parent) -> list[Child]:
     stmt = (
         select(Child)

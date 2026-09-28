@@ -348,3 +348,40 @@ async def test_detach_and_attach_by_code(
         "/api/parent/children/attach", json={"code": "Сандро"}, headers=headers
     )
     assert malformed.status_code == 422
+
+
+async def test_me_and_register_drive_the_wizard(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    newcomer = bot_headers(900_000 + child.id)
+    assert (await client.get("/api/parent/me")).status_code == 401
+    assert (await client.get("/api/parent/me", headers=newcomer)).status_code == 404
+    # Registration is the only parent route a stranger may call.
+    assert (await client.get("/api/parent/children", headers=newcomer)).status_code == 403
+
+    blank = await client.put("/api/parent/me", json={"name": "  "}, headers=newcomer)
+    assert blank.status_code == 422
+    long = await client.put("/api/parent/me", json={"name": "x" * 101}, headers=newcomer)
+    assert long.status_code == 422
+
+    made = await client.put("/api/parent/me", json={"name": " Нино Церетели "}, headers=newcomer)
+    assert made.status_code == 200, made.text
+    assert made.json() == {
+        "telegram_id": 900_000 + child.id,
+        "name": "Нино Церетели",
+        "children": [],
+    }
+    assert (await client.get("/api/parent/children", headers=newcomer)).json() == []
+
+    renamed = await client.put("/api/parent/me", json={"name": "Нино"}, headers=newcomer)
+    assert renamed.json()["name"] == "Нино"
+    assert (await client.get("/api/parent/me", headers=newcomer)).json()["name"] == "Нино"
+
+    mine = (await client.get("/api/parent/me", headers=bot_headers(parent))).json()
+    assert mine["name"] == "Папа" and [c["id"] for c in mine["children"]] == [child.id]
+
+    # A child's name is capped like the parent's, instead of failing inside the database.
+    too_long = await client.post(
+        "/api/parent/children", json={"name": "y" * 101}, headers=bot_headers(parent)
+    )
+    assert too_long.status_code == 422

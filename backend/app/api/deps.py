@@ -59,14 +59,21 @@ def bot_service(authorization: Annotated[str | None, Header()] = None) -> None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "bot token required")
 
 
-async def current_parent(
-    db: Db,
+def telegram_id(
     _: Annotated[None, Depends(bot_service)],
     x_telegram_id: Annotated[int | None, Header()] = None,
-) -> Parent:
-    """The parent the bot acts for; strangers get 403 and the bot stays silent to them."""
+) -> int:
+    """The Telegram user the bot acts for, registered or not (the wizard needs both)."""
     if x_telegram_id is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "X-Telegram-Id header required")
+    return x_telegram_id
+
+
+TelegramId = Annotated[int, Depends(telegram_id)]
+
+
+async def current_parent(db: Db, x_telegram_id: TelegramId) -> Parent:
+    """The parent the bot acts for; strangers get 403 and the bot stays silent to them."""
     parent = await parents.get_parent(db, x_telegram_id)
     if parent is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "unknown parent")

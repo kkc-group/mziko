@@ -16,6 +16,7 @@ from app.schemas.parent import (
     ChildInfo,
     DeviceOut,
     DueReportOut,
+    ParentOut,
     PayOut,
     ProgressOut,
     WeekReportOut,
@@ -61,6 +62,20 @@ class ParentApi:
                 detail = response.text
             raise ApiError(response.status_code, detail)
         return response.json()
+
+    # --- the parent themselves ------------------------------------------------
+
+    async def me(self) -> ParentOut | None:
+        """None for a Telegram user who has not registered yet."""
+        try:
+            return ParentOut.model_validate(await self._call("GET", "/me"))
+        except ApiError as exc:
+            if exc.status == 404:
+                return None
+            raise
+
+    async def register(self, name: str) -> ParentOut:
+        return ParentOut.model_validate(await self._call("PUT", "/me", json={"name": name}))
 
     # --- children -------------------------------------------------------------
 

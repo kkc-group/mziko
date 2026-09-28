@@ -42,8 +42,9 @@ make token                  # общая ссылка с тестовым ток
 Бот локально: впишите `BOT_TOKEN`, свой Telegram id в `ADMIN_TELEGRAM_IDS` и
 секрет `BOT_API_TOKEN` (`openssl rand -hex 32`) в `.env`, поднимите `make api`,
 затем `make bot`. Бот ходит только в API (`API_URL`, по умолчанию
-`http://localhost:8000`), в базу он не заглядывает. В Telegram: `/start`,
-`/addchild Сандро`, `/code`.
+`http://localhost:8000`), в базу он не заглядывает. В Telegram: `/start` и два
+ответа боту, своё имя и имя ребёнка; код для входа придёт сразу.
+`ADMIN_TELEGRAM_IDS` больше не обязателен: любой, кто напишет боту, регистрируется сам.
 
 Если API слушает другой порт: `API_URL=http://localhost:8001 make web`.
 
@@ -85,8 +86,8 @@ make lint   # ruff, mypy, oxlint, tsc
    приватная — в секрет GitHub `DO_SSH_KEY`; ещё `DO_HOST` (IP) и `DO_USER`.
 4. Пуш в `main` или «Run workflow» в Actions. Поднимутся `db`, `api` (накатит
    миграции и слова), `bot`, `admin` и `web`. Бэк-офис: `https://mziko.example.com/admin/`.
-5. В Telegram: `/start`, `/addchild Сандро`, `/code`. Ссылку из ответа открыть на iPad,
-   затем «Поделиться → На экран Домой».
+5. В Telegram: `/start`, затем своё имя и имя ребёнка. Ссылку из ответа открыть на
+   iPad, затем «Поделиться → На экран Домой».
 
 Откат: на сервере `cd /srv/mziko && IMAGE_TAG=<sha> docker compose up -d`.
 Резервная копия базы: `docker compose exec db pg_dump -U mziko mziko > backup.sql`.

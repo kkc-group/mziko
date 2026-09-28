@@ -4,9 +4,9 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.deps import BotService, CurrentParent, Db, Now
+from app.api.deps import BotService, CurrentParent, Db, Now, TelegramId
 from app.core.config import get_settings
-from app.models import Child, Device, ImageKind, Week, Word
+from app.models import Child, Device, ImageKind, Parent, Week, Word
 from app.schemas.parent import (
     ChildAttach,
     ChildCodeOut,
@@ -14,6 +14,8 @@ from app.schemas.parent import (
     ChildInfo,
     DeviceOut,
     DueReportOut,
+    ParentOut,
+    ParentRegister,
     PayOut,
     ProgressOut,
     SettingsPatch,
@@ -147,6 +149,29 @@ async def pay(week_id: int, db: Db, now: Now, parent: CurrentParent) -> PayOut:
     await coins.pay_week(db, week, child, now)
     r = await report.week_report(db, child, now, start=week.week_start)
     return PayOut(already_paid=already_paid, report=report_out(r))
+
+
+async def parent_out(db: Db, parent: Parent) -> ParentOut:
+    return ParentOut(
+        telegram_id=parent.telegram_id,
+        name=parent.name,
+        children=[child_info(c) for c in await parents.children_of(db, parent)],
+    )
+
+
+@router.get("/me", response_model=ParentOut)
+async def me(db: Db, telegram_id: TelegramId) -> ParentOut:
+    """Who the bot is talking to; 404 (not 403) for a stranger, so the wizard can start."""
+    parent = await parents.get_parent(db, telegram_id)
+    if parent is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not registered")
+    return await parent_out(db, parent)
+
+
+@router.put("/me", response_model=ParentOut)
+async def register(body: ParentRegister, db: Db, telegram_id: TelegramId) -> ParentOut:
+    """Step one of the wizard: create the parent with a name, or rename them."""
+    return await parent_out(db, await parents.register(db, telegram_id, body.name))
 
 
 @router.get("/children", response_model=list[ChildInfo])
