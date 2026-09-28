@@ -1,4 +1,4 @@
-.PHONY: dev db migrate revision seed test lint api bot admin web code token tts twemoji images
+.PHONY: dev db migrate revision seed test lint api bot admin web code token tts twemoji images site
 
 # Everything in Docker, with migrations and seed applied on api start.
 dev:
@@ -56,3 +56,7 @@ twemoji:
 # Word pictures dropped into media/images/: crop to the object, square, shrink to 384 px.
 images:
 	uv run --no-project --with pillow python scripts/prep_images.py
+
+# Public site (GitHub Pages) from docs/general/parent-guide.md into _site/; open _site/index.html.
+site:
+	uv run --no-project --with markdown python scripts/build_site.py

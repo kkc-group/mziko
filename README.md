@@ -5,8 +5,10 @@
 Родитель управляет всем через Telegram-бот. Задание целиком: [TASK.md](TASK.md),
 как это работает: [docs/features/mziko-mvp.md](docs/features/mziko-mvp.md).
 
-Статическая проверочная страница «Цвета» без сервера: https://kkc-group.github.io/mziko/
-(это `index.html` в корне, GitHub Pages отдаёт его из ветки `main`).
+Сайт для родителей: https://kkc-group.github.io/mziko/ — лендинг с руководством,
+собирается из [docs/general/parent-guide.md](docs/general/parent-guide.md) при каждом
+пуше в `main` (`make site` собирает его локально в `_site/`). Старая проверочная
+страница «Цвета» без сервера живёт там же по адресу `/poc/`.
 
 ## Состав
 
@@ -21,6 +23,7 @@
 | `media/audio` | Звук слов, `<тема>/<slug>.mp3` |
 | `deploy/Caddyfile` | Caddy: статика фронта, прокси `/api`, раздача `/media`, HTTPS |
 | `docs/prototype.html` | Кликабельный прототип, визуальный референс |
+| `site` | Шаблон сайта для родителей и проверочная страница «Цвета» (`site/poc`) |
 
 ## Локальная разработка
 
