@@ -132,9 +132,10 @@ async def test_one_topic_per_section_per_day_and_unknown_lesson_raises(
         await learning.build_session(db, child, 999, at(DAY1))
 
     colors = await skip_to(db, child, "colors")
+    next_topic = path[colors].topic.slug  # the word topic that follows colors
     for _ in range(4):
         await play_day(db, child, "colors", at(DAY1))
-    with pytest.raises(LessonLocked):  # greetings is another word topic: not today
+    with pytest.raises(LessonLocked):  # another word topic: not today
         await learning.build_session(db, child, colors + 1, at(DAY1, 20))
     letters = await learning.build_session(db, child, 1, at(DAY1, 20), random.Random(23))
     assert letters is not None  # letters are a section of their own: still open today
@@ -143,7 +144,7 @@ async def test_one_topic_per_section_per_day_and_unknown_lesson_raises(
 
     tomorrow = await learning.build_session(db, child, colors + 1, at(DAY2), random.Random(23))
     assert tomorrow is not None
-    assert [s.word.topic_slug for s in steps_of(tomorrow) if s.type == "intro"] == ["greetings"] * 3
+    assert [s.word.topic_slug for s in steps_of(tomorrow) if s.type == "intro"] == [next_topic] * 3
     with pytest.raises(LessonLocked):  # yesterday's topic is locked once another one is chosen
         await learning.build_session(db, child, colors, at(DAY2, 13))
 
@@ -169,7 +170,7 @@ async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(
         title_ru="Буквы",
         title_ka="ასოები",
         icon="🔤",
-        order=99,
+        order=999,  # after every content topic, whose orders go in tens
     )
     db.add(topic)
     await db.flush()

@@ -5,7 +5,9 @@ from datetime import date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Topic, Word, WordProgress
+from app.seed import load_topics
 from app.services import lessons
+from tests.conftest import CONTENT_DIR
 
 DAY1 = date(2026, 9, 22)
 DAY2 = DAY1 + timedelta(days=1)
@@ -42,9 +44,10 @@ def test_lessons_follow_topic_order_and_word_order() -> None:
     assert len(path[1].words) == 6 and len(path[2].words) == 5
 
 
-async def test_real_content_makes_thirty_lessons(db: AsyncSession, seeded: None) -> None:
+async def test_real_content_makes_one_lesson_per_part(db: AsyncSession, seeded: None) -> None:
+    topics = load_topics(CONTENT_DIR)
     path = await lessons.load_lessons(db)
-    assert len(path) == 30
+    assert len(path) == sum(len(lessons.part_sizes(len(t.words))) for t in topics)
     assert [lsn.topic.slug for lsn in path[:5]] == [
         "letters-1",
         "letters-2",
@@ -53,7 +56,7 @@ async def test_real_content_makes_thirty_lessons(db: AsyncSession, seeded: None)
         "syllables",
     ]
     assert all(1 <= len(lsn.words) <= lessons.MAX_WORDS_PER_LESSON for lsn in path)
-    assert sum(len(lsn.words) for lsn in path) == 225
+    assert sum(len(lsn.words) for lsn in path) == sum(len(t.words) for t in topics)
 
 
 def state(pos: lessons.Position, number: int) -> lessons.LessonState:

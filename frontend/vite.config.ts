@@ -7,6 +7,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 
+const MEDIA_TYPES: Record<string, string> = {
+  '.mp3': 'audio/mpeg',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+}
+
 /** In development serve ../media the way Caddy does in production. */
 function mediaDevServer(): Plugin {
   const root = path.resolve(here, '../media')
@@ -19,8 +25,7 @@ function mediaDevServer(): Plugin {
           next()
           return
         }
-        const type = file.endsWith('.mp3') ? 'audio/mpeg' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream'
-        res.setHeader('Content-Type', type)
+        res.setHeader('Content-Type', MEDIA_TYPES[path.extname(file)] ?? 'application/octet-stream')
         fs.createReadStream(file).pipe(res)
       })
     },
@@ -69,6 +74,15 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'twemoji',
+              expiration: { maxEntries: 400, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+          {
+            // Word pictures from files (image.kind: file), same lifetime as Twemoji.
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/images/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
               expiration: { maxEntries: 400, maxAgeSeconds: 30 * 24 * 3600 },
             },
           },

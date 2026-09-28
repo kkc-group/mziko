@@ -12,7 +12,7 @@ slug: colors
 title_ru: Цвета
 title_ka: ფერები
 icon: "🎨"
-order: 2
+order: 70          # topics go in tens: a new topic slots in between without renumbering
 words:
   - slug: red
     ka: წითელი
@@ -22,9 +22,30 @@ words:
 ```
 
 `image.kind` is one of `emoji` (value is the emoji), `color` (value is a hex
-colour, rendered as a blob of that colour), `file` (value is a path under
-`/media/images`, reserved for later) or `text` (no picture: the value, a letter
-or the word itself, is drawn as large Georgian text).
+colour, rendered as a blob of that colour), `file` (value is the picture's URL,
+`/media/images/<topic>/<slug>.png` or `.svg`, see below) or `text` (no picture:
+the value, a letter or the word itself, is drawn as large Georgian text).
+
+## Adding a topic
+
+1. Write `topics/<slug>.yaml`. Pick `order` between its neighbours: topics go
+   in tens, so "after colors (70), before greetings (80)" is `75`. The section
+   on the lessons screen comes from the slug (`letters-*`, `syllables`, the
+   rest are words); nothing else needs to know about the topic.
+2. Pictures: an emoji per word where Unicode has one; otherwise drop a PNG with
+   a transparent background into `media/images/<slug>/<word slug>.png` (any
+   size, the object anywhere in the frame) and point `image` at it:
+   `image: {kind: file, value: /media/images/school-items/desk.png}`. An SVG is
+   used as it is, with a square `viewBox` around the drawing.
+3. From the repo root: `make images` (crops and shrinks the PNGs in place),
+   `make twemoji` (bundles new emoji), `make tts` (temporary audio for words
+   without a recording), then `make seed`.
+
+Tests count topics, words and lessons from the YAML, so no number needs
+updating. `tests/test_seed.py` also checks that every `file` picture exists.
+Removing or moving a word is the one thing the seed does not do: rows already
+in the database stay (a child's progress must survive), so a word moved to
+another topic has to be deleted from the old one by hand.
 
 ## Letters, syllables and text cards
 

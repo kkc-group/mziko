@@ -13,7 +13,7 @@ CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 
 async def test_seed_loads_both_topics_and_is_idempotent(db: AsyncSession) -> None:
     topics = load_topics(CONTENT_DIR)
-    assert len(topics) == 18
+    assert len(topics) == len(list((CONTENT_DIR / "topics").glob("*.yaml")))
     assert [t.slug for t in sorted(topics, key=lambda t: t.order)][:6] == [
         "letters-1",
         "letters-2",
@@ -29,7 +29,7 @@ async def test_seed_loads_both_topics_and_is_idempotent(db: AsyncSession) -> Non
     n_topics = (await db.execute(select(func.count(Topic.id)))).scalar_one()
     n_words = (await db.execute(select(func.count(Word.id)))).scalar_one()
     assert n_topics == len(topics)
-    assert n_words == sum(len(t.words) for t in topics) == 225
+    assert n_words == sum(len(t.words) for t in topics)
 
     colors = (
         (
@@ -74,6 +74,16 @@ def test_content_has_no_repeated_words_or_topic_orders() -> None:
         for word in topic.words:
             assert word.ka not in seen, f"{word.ka!r} in both {seen[word.ka]} and {topic.slug}"
             seen[word.ka] = topic.slug
+
+
+def test_file_pictures_exist_under_media() -> None:
+    """A `file` picture is served from /media, so the path must point at a committed file."""
+    for topic in load_topics(CONTENT_DIR):
+        for word in topic.words:
+            if word.image.kind is ImageKind.file:
+                path = CONTENT_DIR.parent / word.image.value.lstrip("/")
+                assert word.image.value.startswith("/media/images/"), f"{topic.slug}/{word.slug}"
+                assert path.is_file(), f"{topic.slug}/{word.slug}: {word.image.value} is missing"
 
 
 def letters_spec(text: str) -> dict[str, object]:

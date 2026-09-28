@@ -6,8 +6,10 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Child, Parent
+from app.seed import load_topics
 from app.services import login_codes, pairing
-from tests.conftest import Clock
+from app.services.lessons import part_sizes
+from tests.conftest import CONTENT_DIR, Clock
 
 
 async def pair(
@@ -52,8 +54,10 @@ async def test_full_lesson_flow_over_http(
         "lari": 0.0,
         "study_days": [],
     }
+    content = load_topics(CONTENT_DIR)
     lessons = me["lessons"]
-    assert [lsn["number"] for lsn in lessons] == list(range(1, 31))
+    n_lessons = sum(len(part_sizes(len(t.words))) for t in content)
+    assert [lsn["number"] for lsn in lessons] == list(range(1, n_lessons + 1))
     assert [lsn["topic_slug"] for lsn in lessons[:5]] == [
         "letters-1",
         "letters-2",
@@ -67,11 +71,11 @@ async def test_full_lesson_flow_over_http(
     assert (colors["total"], colors["introduced"], colors["status"]) == (10, 0, "current")
     topics = me["topics"]
     assert [t["slug"] for t in topics[:5]] == [lsn["topic_slug"] for lsn in lessons[:5]]
-    assert len(topics) == 18
+    assert len(topics) == len(content)
     assert all(t["status"] == "open" and t["done"] is False for t in topics)
     assert me["today_lesson"] is None
     assert me["review_available"] is False
-    assert len(me["stickers"]) == 225
+    assert len(me["stickers"]) == sum(len(t.words) for t in content)
 
     started = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
     assert started.status_code == 200, started.text
