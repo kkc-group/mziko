@@ -270,6 +270,12 @@ function Quiz({
                 onClick={(e) => void pick(o, e.currentTarget)}
               >
                 <WordImage word={o} />
+                {/* A letter's anchor picture as a small sticker in the corner; the letter stays the point. */}
+                {o.anchor?.emoji && (
+                  <span className="hint" aria-hidden="true">
+                    <Emoji value={o.anchor.emoji} alt="" />
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -308,7 +314,8 @@ function Quiz({
   )
 }
 
-/** The tapped option, large over the options: neutral while the answer is in flight, then ok/bad. */
+/** The tapped option, large over the options: neutral while the answer is in flight, then ok/bad.
+ *  A letter shows its anchor word under it, as on the intro card (docs/mockups/letter-anchor-pictures.html). */
 function Reveal({
   word,
   verdict,
@@ -318,13 +325,15 @@ function Reveal({
   verdict: 'ok' | 'bad' | null
   asText?: boolean
 }) {
-  const shape = asText ? ' txt' : textClass(word)
+  const anchor = !asText && word.anchor ? word.anchor : null
+  const shape = asText ? ' txt' : anchor ? ' anc' : textClass(word)
   // A recall answer can be any word, e.g. მასწავლებელი (12 letters): --len lets the CSS shrink it to fit.
   const style = asText ? ({ '--len': word.ka.length } as CSSProperties) : undefined
   return (
     <div className="reveal" aria-hidden="true">
       <div className={`pic${shape}${verdict ? ` ${verdict}` : ''}`} style={style}>
         {asText ? <span className="glyph w ka">{word.ka}</span> : <WordImage word={word} />}
+        {anchor && <Anchor letter={word.image.value} anchor={anchor} showHint={false} />}
         {verdict === 'ok' && (
           <span className="check">
             <svg viewBox="0 0 24 24" aria-hidden="true">

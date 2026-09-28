@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Занятие: картинка опорного слова в «Послушай и найди»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --hill1: #a4db86; --hill2: #72c36b; --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+    --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+  }
+}
+/* the same two sets, scoped, so light and dark frames sit side by side */
+.th-light {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+.th-dark {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.pic-img { width: var(--s, 64px); height: var(--s, 64px); object-fit: contain; }
+.lesson {
+  position: fixed; inset: 0; z-index: 20; background: var(--bg); display: flex; flex-direction: column;
+  padding: calc(var(--safe-top) + 12px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
+}
+.lbar { display: flex; align-items: center; gap: 12px; max-width: 540px; width: 100%; margin: 0 auto; }
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.prog { flex: 1; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 10px; transition: width 0.3s; }
+.minijar { display: flex; align-items: center; gap: 4px; font-weight: 900; font-size: 18px; }
+.minijar svg { width: 34px; height: 34px; }
+.stage { flex: 1; max-width: 540px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 10px 0; overflow-y: auto; }
+.prompt { text-align: center; font-weight: 800; font-size: 20px; color: var(--muted); margin: 0; }
+.pic { width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; --s: 96px; flex: none; }
+.speak { width: 84px; height: 84px; margin: 0 auto; border-radius: 50%; background: var(--sun); box-shadow: 0 5px 0 var(--sun-dark); display: grid; place-items: center; flex: none; }
+.speak svg { width: 40px; height: 40px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile { aspect-ratio: 1 / 1; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; box-shadow: 0 5px 0 var(--line); --s: 64px; }
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.anchor {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 auto;
+  padding: 8px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); --s: 34px;
+}
+.anchor .ka { font-size: 28px; line-height: 1.2; color: var(--ink); }
+.anchor .ka b { color: var(--word-color); font-weight: 800; }
+.anchor small { color: var(--muted); font-weight: 700; font-size: 16px; }
+.grid-wrap { position: relative; }
+.dim { opacity: 0.35; pointer-events: none; }
+.reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.reveal .pic { position: relative; box-shadow: 0 10px 20px var(--blob-edge); }
+.check {
+  position: absolute; top: -16px; right: -16px; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--mint); border: 4px solid var(--surface); box-shadow: 0 4px 0 var(--mint-dark);
+  display: grid; place-items: center; pointer-events: none;
+  animation: checkPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.check svg { width: 28px; height: 28px; }
+@keyframes checkPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.ok { border-color: var(--mint) !important; background: var(--mint-soft) !important; box-shadow: 0 5px 0 var(--mint) !important; }
+.bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.toast { max-width: 540px; width: 100%; margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; font-weight: 900; font-size: 20px; }
+.toast.good { color: var(--mint); }
+.toast.try { color: var(--pom); }
+.toast.offline { color: var(--muted); font-size: 17px; }
+.retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+.mascot { flex: none; }
+
+/* iPad landscape: verbatim body of `@media (orientation: landscape) and (max-height: 620px)`,
+   scoped to a frame (.land) so it applies to that frame only, not to the browser window */
+.land .pic { width: 120px; height: 120px; --s: 68px; }
+.land .speak { width: 64px; height: 64px; }
+.land .grid { grid-template-columns: repeat(4, 1fr); }
+
+/* ---------- proposed: the anchor picture on the letter tile and on the revealed card ----------
+   Tile: the anchor emoji sits in the tile's bottom-right corner, inside the border. The letter
+   keeps its exact place and size (the tile is still a centered grid; the picture is taken out of
+   flow), so every letter tile looks as it does today plus a small sticker. Size is tied to the
+   letter (--s), not to the tile, so it stays a hint on a 126 px and on a 264 px tile alike.
+   Card: the circle becomes a rounded card (.pic.txt shape) holding the big letter and, under it,
+   the existing <Anchor> row without its own plaque: emoji (or anchor.ru when there is none) and
+   the word with its first letter highlighted. */
+.tile { position: relative; }
+.tile .hint { position: absolute; right: 10px; bottom: 10px; display: flex; --s: 30px; pointer-events: none; }
+.pic.anc {
+  width: auto; min-width: 170px; max-width: 100%; height: auto; padding: 12px 22px 16px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pic.anc .glyph.l { line-height: 1.25; } /* room for descenders (ჭ, უ, ყ, ჯ) above the word */
+.reveal .anchor { padding: 0; border: 0; border-radius: 0; background: none; white-space: nowrap; }
+/* inside the same landscape media query: the grid is one row 126 px tall, so the card lies down */
+.land .tile .hint { --s: 24px; right: 7px; bottom: 7px; }
+.land .pic.anc { flex-direction: row; gap: 14px; padding: 10px 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1900px; margin: 0 auto; padding: 32px 28px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 48px 0 4px; padding-top: 20px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1000px; }
+.mk code { background: var(--surface); padding: 1px 6px; border-radius: 6px; font-weight: 800; }
+.row { display: flex; flex-wrap: wrap; gap: 36px; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 10px; max-width: 410px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 14px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.dev .lesson { position: absolute; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; }
+.phl { width: 864px; height: 410px; border-radius: 54px; --safe-top: 0px; --safe-bottom: 21px; --safe-left: 47px; --safe-right: 47px; }
+.pad-wrap { width: 461px; height: 660px; }
+.pad { width: 840px; height: 1200px; border-radius: 38px; --safe-top: 24px; --safe-bottom: 20px; transform: scale(0.55); transform-origin: 0 0; }
+.padl-wrap { width: 600px; height: 420px; }
+.padl { width: 1200px; height: 840px; border-radius: 38px; --safe-top: 24px; --safe-bottom: 20px; transform: scale(0.5); transform-origin: 0 0; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; }
+.phone .sbar { height: 47px; }
+.pad .sbar, .padl .sbar { height: 24px; font-size: 13px; padding: 0 22px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.phl .island { top: 50%; left: 11px; width: 36px; height: 124px; margin: -62px 0 0; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.pad .hbar, .padl .hbar { width: 220px; margin-left: -110px; bottom: 7px; }
+.phl .hbar { width: 180px; margin-left: -90px; bottom: 6px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Занятие · «Послушай и найди»: картинка опорного слова</h1>
+  <p class="lead">Экран <code>.lesson</code> (Quiz, ветка <code>listen</code> → Reveal) из <code>Lesson.tsx</code>. Токены и классы — дословно из
+  <code>styles.css</code>; новые — <code>.tile .hint</code>, <code>.pic.anc</code>, <code>.reveal .anchor</code>. Опорные слова и эмодзи —
+  из <code>content/topics/letters-*.yaml</code>. Варианты берутся из той же темы, что и верная буква (<code>learning.py:179</code>), поэтому набор
+  «ბ დ ლ მ» в жизни не встречается: ლ из «Букв 1», остальные из «Букв 2». Здесь вместо ლ стоит ვ (ვაშლი 🍎) из той же «Буквы 2».
+  Телефон 390×844, телефон в альбомной 844×390, iPad 820×1180 и 1180×820 (в масштабе).</p>
+
+  <h2>1 · В покое — картинка в углу плитки</h2>
+  <p class="lead">Звучит «ბა … ბურთი». Буква стоит ровно там и того же размера, что и сейчас (80 px); эмодзи опорного слова 30 px — в правом нижнем
+  углу, внутри рамки. Порядок чтения слева направо и сверху вниз: сначала буква, потом «как в …». Картинка меньше буквы в 2,7 раза.</p>
+  <div class="row" id="s1"></div>
+
+  <h2>2 · Плитка нажата, ответ в пути</h2>
+  <p class="lead">Сетка и «Послушать ещё раз» погасли. Над ними — карточка: большая буква, под ней опорное слово без собственной плашки
+  (<code>&lt;Anchor&gt;</code> из карточки «Новая буква!»): ⚽ и ბურთი с подсвеченной первой буквой. Вердикта ещё нет.</p>
+  <div class="row" id="s2"></div>
+
+  <h2>3 · Верно — зелёная галочка</h2>
+  <p class="lead">Карточка становится мятной, галочка <code>.check</code> в правом верхнем углу — там же, где на круглой карточке сейчас.
+  Картинка и слово внизу ей не мешают. Тост — как в коде: пусто, «Молодец! +1 🪙» или «Буква выучена! +1 🪙».</p>
+  <div class="row" id="s3"></div>
+
+  <h2>4 · Неверно — красная карточка, потом красная плитка</h2>
+  <p class="lead">Звучит «ბა … ბურთი», тронута დ. Первые 0,4 с — красная трясущаяся карточка с 🐻 დათვი (ребёнок видит и слышит, что выбрал).
+  Потом карточка исчезает, сетка оживает, а плитка დ остаётся красной и не нажимается до конца задания; медведь на ней остаётся.</p>
+  <div class="row" id="s4"></div>
+
+  <h2>5 · Буква без эмодзи: უ → უთო «утюг»</h2>
+  <p class="lead">На плитке угол пустой — плитка выглядит как сегодня. Подпись «утюг» кириллицей в угол не ставится: это перевод, а не картинка,
+  и он начинается на ту же «у», то есть для читающего по-русски ребёнка это готовый ответ. На карточке — ровно как делает <code>Anchor</code>:
+  «утюг» мелко вместо картинки и უთო с подсвеченной უ (к этому моменту выбор уже сделан, подсказывать нечего). Набор — из «Букв 1».</p>
+  <div class="row" id="s5"></div>
+
+  <h2>6 · Альбомная ориентация</h2>
+  <p class="lead">Медиа-запрос <code>(orientation: landscape) and (max-height: 620px)</code> срабатывает на телефоне, повёрнутом набок: плитки в ряд
+  по 126 px, круг 120 px. Там эмодзи на плитке 24 px с отступом 7 px, а карточка ложится набок: буква слева, слово справа — в столбик она
+  была бы выше ряда плиток. На iPad в альбомной (820 px по высоте) запрос <b>не срабатывает</b>: сетка 2×2, как в портрете.</p>
+  <div class="row" id="s6"></div>
+
+  <h2>7 · Длинное опорное слово</h2>
+  <p class="lead">Самое длинное в контенте — ჭიანჭველა (9 знаков, 🐜, «Буквы 4»), дальше ავტობუსი (8, 🚌) и ინდაური (7, 🦃) из «Букв 1».
+  Слово не переносится и не уменьшается: карточка растёт вширь (≈270 px при колонке 358 px на телефоне).</p>
+  <div class="row" id="s7"></div>
+
+  <h2>8 · Сбои</h2>
+  <p class="lead">Верный ответ, а сервер не ответил: карточка остаётся с галочкой, внизу «Нет связи. Проверь интернет» и «Повторить»
+  (<code>Lesson.tsx:136</code>). Сломался сам ответ (например, звук не смог сыграть): карточки нет, сетка снова живая, внизу текст ошибки
+  (<code>Lesson.tsx:102</code>) — картинки на плитках не меняются.</p>
+  <div class="row" id="s8"></div>
+</main>
+
+<script>
+const SPK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#4a3200"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="#4a3200" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+const JAR = '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 14 H46 L44 20 Q56 30 52 48 Q48 60 32 60 Q16 60 12 48 Q8 30 20 20Z" fill="#C8683E"/><path d="M18 14 H46 L44 20 H20Z" fill="#A4532F"/><path d="M14 38 Q32 44 50 38" stroke="#E7A07A" stroke-width="3" fill="none"/><circle cx="32" cy="10" r="6" fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="2"/></svg>';
+const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l5 5L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+
+const toast = {
+  none: '<div class="toast" aria-live="polite"></div>',
+  good: `<div class="toast good" aria-live="polite">${MASCOT(44)}Молодец! +1 🪙</div>`,
+  learned: `<div class="toast good" aria-live="polite">${MASCOT(44)}Буква выучена! +1 🪙</div>`,
+  try: '<div class="toast try" aria-live="polite">Почти! Попробуй ещё</div>',
+  offline: '<div class="toast offline" aria-live="polite">Нет связи. Проверь интернет<button type="button" class="retry">Повторить</button></div>',
+  err: '<div class="toast offline" aria-live="polite">Что-то сломалось: NotAllowedError: play() failed because the user didn\'t interact with the document first.</div>',
+};
+
+function lesson(prog, coins, stage, t) {
+  return `<div class="lesson" role="dialog" aria-label="Занятие">
+    <div class="lbar"><button type="button" class="x" aria-label="Закрыть">✕</button>
+      <div class="prog"><i style="width:${prog}%"></i></div>
+      <div class="minijar">${JAR}<span>${coins}</span></div></div>
+    <div class="stage">${stage}</div>${t}</div>`;
+}
+function phone(theme, body) {
+  return `<div class="dev phone th-${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div>`;
+}
+function phoneLand(theme, body) {
+  return `<div class="dev phl land th-${theme}"><div class="island"></div>${body}<div class="hbar"></div></div>`;
+}
+function pad(theme, body) {
+  return `<div class="pad-wrap"><div class="dev pad th-${theme}"><div class="sbar"><span>9:41 Пн 28 сент.</span><span>100%</span></div>${body}<div class="hbar"></div></div></div>`;
+}
+function padLand(theme, body) {
+  return `<div class="padl-wrap"><div class="dev padl th-${theme}"><div class="sbar"><span>9:41 Пн 28 сент.</span><span>100%</span></div>${body}<div class="hbar"></div></div></div>`;
+}
+function fig(title, sub, frame) {
+  return `<figure><figcaption>${title}<span>${sub}</span></figcaption>${frame}</figure>`;
+}
+
+/* content: verbatim from content/topics/letters-*.yaml — [slug, letter, ru, anchor.ka, anchor.ru, anchor.emoji] */
+const W = {
+  ban: ['ban', 'ბ', 'буква б', 'ბურთი', 'мяч', '⚽'],
+  don: ['don', 'დ', 'буква д', 'დათვი', 'медведь', '🐻'],
+  man: ['man', 'მ', 'буква м', 'მზე', 'солнце', '☀️'],
+  vin: ['vin', 'ვ', 'буква в', 'ვაშლი', 'яблоко', '🍎'],
+  un: ['un', 'უ', 'буква у', 'უთო', 'утюг', null],
+  en: ['en', 'ე', 'буква э', 'ექიმი', 'врач', '🩺'],
+  an: ['an', 'ა', 'буква а', 'ავტობუსი', 'автобус', '🚌'],
+  las: ['las', 'ლ', 'буква л', 'ლომი', 'лев', '🦁'],
+  in: ['in', 'ი', 'буква и', 'ინდაური', 'индюк', '🦃'],
+  on: ['on', 'ო', 'буква о', 'ობობა', 'паук', '🕷️'],
+  char: ['char', 'ჭ', 'буква ч (твёрдая)', 'ჭიანჭველა', 'муравей', '🐜'],
+  jan: ['jan', 'ჯ', 'буква дж', 'ჯინსი', 'джинсы', '👖'],
+  khar: ['khar', 'ქ', 'буква к (с придыханием)', 'ქუდი', 'шапка', '🧢'],
+  qar: ['qar', 'ყ', 'буква къ', 'ყვავილი', 'цветок', '🌸'],
+};
+const L2 = [W.ban, W.don, W.man, W.vin];   // Буквы 2
+const L1u = [W.un, W.en, W.an, W.las];     // Буквы 1, with უ
+const L1a = [W.an, W.in, W.on, W.un];      // Буквы 1, long anchors
+const L4 = [W.char, W.jan, W.khar, W.qar]; // Буквы 4, the longest anchor
+
+/* WordImage for a letter (kind: text) */
+const face = w => `<span class="glyph l ka" role="img" aria-label="${w[2]}">${w[1]}</span>`;
+/* proposed: the anchor emoji in the tile corner; nothing when the anchor has no emoji */
+const hint = w => w[5] ? `<span class="hint" aria-hidden="true"><span class="emoji">${w[5]}</span></span>` : '';
+/* Anchor component, verbatim logic: emoji or <small>ru</small>, then the word with its first letter in <b> */
+function anchor(w) {
+  const [, letter, , ka, ru, emoji] = w;
+  const rest = ka.startsWith(letter) ? ka.slice(letter.length) : ka;
+  return `<div class="anchor" aria-label="${ka} — ${ru}">${emoji ? `<span class="emoji">${emoji}</span>` : `<small>${ru}</small>`}<span class="ka">${rest === ka ? ka : `<b>${letter}</b>${rest}`}</span></div>`;
+}
+function reveal(w, verdict) {
+  const badge = verdict === 'ok' ? `<span class="check">${CHECK}</span>` : '';
+  return `<div class="reveal" aria-hidden="true"><div class="pic anc${verdict ? ` ${verdict}` : ''}">${face(w)}${anchor(w)}${badge}</div></div>`;
+}
+/* Quiz, listen branch: Lesson.tsx:254-279 structure. st = {picked, verdict, ok, wrong[]} */
+function listen(items, st = {}) {
+  const wrong = st.wrong || [];
+  const dim = st.picked ? ' dim' : '';
+  const tiles = items.map(w => {
+    const cls = `tile${w[0] === st.ok ? ' ok' : ''}${wrong.includes(w[0]) ? ' bad' : ''}`;
+    const dis = st.picked || st.ok || wrong.includes(w[0]) ? ' disabled' : '';
+    return `<button type="button" class="${cls}" aria-label="${w[2]}"${dis}>${face(w)}${hint(w)}</button>`;
+  }).join('');
+  const rv = st.picked ? reveal(items.find(w => w[0] === st.picked), st.verdict || null) : '';
+  return `
+  <p class="prompt">Послушай и найди</p>
+  <div class="${dim.trim()}"><button type="button" class="speak" aria-label="Послушать ещё раз">${SPK}</button></div>
+  <div class="grid-wrap"><div class="grid${dim}">${tiles}</div>${rv}</div>`;
+}
+
+/* ---- 1 · idle ---- */
+document.getElementById('s1').innerHTML = [
+  fig('Телефон · светлая', 'звучит «ბა … ბურთი»; ничего не нажато', phone('light', lesson(43, 12, listen(L2), toast.none))),
+  fig('Телефон · тёмная', 'буквы жёлтые (--word-color), эмодзи на тёмной плитке читаются', phone('dark', lesson(43, 12, listen(L2), toast.none))),
+  fig('iPad портрет · светлая', 'плитка 264 px, буква и картинка того же размера, что на телефоне', pad('light', lesson(43, 12, listen(L2), toast.none))),
+].join('');
+
+/* ---- 2 · in flight ---- */
+document.getElementById('s2').innerHTML = [
+  fig('Телефон · светлая', 'тронута ბ; сетка и кнопка погасли, ответа ещё нет', phone('light', lesson(43, 12, listen(L2, { picked: 'ban' }), toast.none))),
+  fig('Телефон · тёмная', '', phone('dark', lesson(43, 12, listen(L2, { picked: 'ban' }), toast.none))),
+].join('');
+
+/* ---- 3 · correct ---- */
+document.getElementById('s3').innerHTML = [
+  fig('Верно · светлая', 'монет за этот ответ нет — тост пуст', phone('light', lesson(57, 12, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.none))),
+  fig('Верно · тёмная', '«Молодец! +1 🪙» и Мзико', phone('dark', lesson(57, 13, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.good))),
+  fig('Верно · буква выучена · светлая', 'самый длинный текст тоста в этой ветке', phone('light', lesson(57, 13, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.learned))),
+].join('');
+
+/* ---- 4 · wrong ---- */
+document.getElementById('s4').innerHTML = [
+  fig('Неверно, 0–0,4 с · светлая', 'звучит «ბა … ბურთი», тронута დ: красная карточка с 🐻 დათვი', phone('light', lesson(43, 12, listen(L2, { picked: 'don', verdict: 'bad', wrong: ['don'] }), toast.try))),
+  fig('Неверно, 0–0,4 с · тёмная', '', phone('dark', lesson(43, 12, listen(L2, { picked: 'don', verdict: 'bad', wrong: ['don'] }), toast.try))),
+  fig('Неверно, после 0,4 с · светлая', 'карточки нет, сетка живая; დ красная и не нажимается', phone('light', lesson(43, 12, listen(L2, { wrong: ['don'] }), toast.try))),
+].join('');
+
+/* ---- 5 · no emoji ---- */
+document.getElementById('s5').innerHTML = [
+  fig('უ в покое · светлая', 'звучит «უ … უთო»; у უ угол пустой, у остальных — их картинки', phone('light', lesson(29, 12, listen(L1u), toast.none))),
+  fig('უ верно · тёмная', 'на карточке «утюг» мелко вместо картинки, как в Anchor', phone('dark', lesson(29, 13, listen(L1u, { picked: 'un', verdict: 'ok', ok: 'un' }), toast.good))),
+  fig('უ неверно · светлая', 'звучит «ე … ექიმი», тронута უ', phone('light', lesson(29, 12, listen(L1u, { picked: 'un', verdict: 'bad', wrong: ['un'] }), toast.try))),
+].join('');
+
+/* ---- 6 · landscape ---- */
+document.getElementById('s6').innerHTML = [
+  fig('Телефон набок · светлая · в покое', '844×390: запрос срабатывает, плитки 126 px в ряд, эмодзи 24 px. Низ плиток уходит под тост — так и сегодня, без картинок', phoneLand('light', lesson(43, 12, listen(L2), toast.none))),
+  fig('Телефон набок · тёмная · верно', 'карточка лёжа: буква 85 px, справа ⚽ ბურთი; чуть выше ряда плиток', phoneLand('dark', lesson(57, 13, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.good))),
+  fig('Телефон набок · светлая · самое длинное слово', 'ჭიანჭველა лёжа ≈ 330 px из 540', phoneLand('light', lesson(43, 12, listen(L4, { picked: 'char', verdict: 'ok', ok: 'char' }), toast.none))),
+  fig('Телефон набок · тёмная · без эмодзи, неверно', '', phoneLand('dark', lesson(29, 12, listen(L1u, { picked: 'un', verdict: 'bad', wrong: ['un'] }), toast.try))),
+  fig('iPad набок · светлая · в покое', '1180×820: запрос не срабатывает, сетка 2×2 выше экрана — заголовок срезан сверху, низ плиток снизу. Так и сегодня, без картинок', padLand('light', lesson(43, 12, listen(L2), toast.none))),
+  fig('iPad набок · тёмная · верно', '', padLand('dark', lesson(57, 13, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.good))),
+].join('');
+
+/* ---- 7 · long anchors ---- */
+document.getElementById('s7').innerHTML = [
+  fig('ჭიანჭველა · в пути · светлая', '«Буквы 4»: ჭ ჯ ქ ყ; самое длинное опорное слово', phone('light', lesson(71, 12, listen(L4, { picked: 'char' }), toast.none))),
+  fig('ჭიანჭველა · верно · тёмная', 'галочка на углу широкой карточки', phone('dark', lesson(71, 13, listen(L4, { picked: 'char', verdict: 'ok', ok: 'char' }), toast.learned))),
+  fig('ავტობუსი · неверно · светлая', 'звучит «ი … ინდაური», тронута ა', phone('light', lesson(14, 12, listen(L1a, { picked: 'an', verdict: 'bad', wrong: ['an'] }), toast.try))),
+  fig('ინდაური · в пути · тёмная', '', phone('dark', lesson(14, 12, listen(L1a, { picked: 'in' }), toast.none))),
+].join('');
+
+/* ---- 8 · failures ---- */
+document.getElementById('s8').innerHTML = [
+  fig('Верно, но нет связи · светлая', 'карточка с галочкой стоит, пока не нажато «Повторить»', phone('light', lesson(57, 12, listen(L2, { picked: 'ban', verdict: 'ok', ok: 'ban' }), toast.offline))),
+  fig('Ошибка ответа · тёмная', 'карточка снята, сетка снова нажимается; текст ошибки — как придёт', phone('dark', lesson(43, 12, listen(L2), toast.err))),
+].join('');
+</script>
+</body>
+</html>

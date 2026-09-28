@@ -178,7 +178,10 @@ button:disabled { cursor: default; }
 .speak.playing { animation: pulse 0.5s ease 2; }
 @keyframes pulse { 50% { transform: scale(1.12); } }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.tile { aspect-ratio: 1 / 1; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; box-shadow: 0 5px 0 var(--line); --s: 64px; }
+.tile { position: relative; aspect-ratio: 1 / 1; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; box-shadow: 0 5px 0 var(--line); --s: 64px; }
+/* A letter tile's anchor picture (docs/mockups/letter-anchor-pictures.html): a small sticker in the corner, out of
+   flow so the letter keeps its place and size; sized from --s, not the tile, so it stays a hint at any tile size. */
+.tile .hint { position: absolute; right: 10px; bottom: 10px; display: flex; --s: 30px; pointer-events: none; }
 .tile .blob { --s: min(96px, 60%); }
 /* image.kind = text: a letter (.glyph.l) or a word (.glyph.w) drawn where the picture would be.
    Word size follows the container width (cqi; Safari 16+) so long words fit the tile grid. */
@@ -210,6 +213,13 @@ button:disabled { cursor: default; }
 .dim { opacity: 0.35; pointer-events: none; }
 .reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .reveal .pic { position: relative; box-shadow: 0 10px 20px var(--blob-edge); }
+/* The reveal of a letter: a rounded card with the big letter and, under it, the Anchor row without its plaque. */
+.pic.anc {
+  width: auto; min-width: 170px; max-width: 100%; height: auto; padding: 12px 22px 16px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pic.anc .glyph.l { line-height: 1.25; } /* room for descenders (ჭ, უ, ყ, ჯ) above the word */
+.reveal .anchor { padding: 0; border: 0; border-radius: 0; background: none; white-space: nowrap; }
 /* The big green check on a correct answer: the lesson list's .ok-b badge, scaled up onto the card. */
 .check {
   position: absolute; top: -16px; right: -16px; width: 56px; height: 56px; border-radius: 50%;
@@ -246,6 +256,9 @@ button:disabled { cursor: default; }
   .word .ka { font-size: 42px; }
   .speak { width: 64px; height: 64px; }
   .grid { grid-template-columns: repeat(4, 1fr); }
+  /* the grid is one row about 126 px tall: a smaller sticker, and the letter card lies down */
+  .tile .hint { --s: 24px; right: 7px; bottom: 7px; }
+  .pic.anc { flex-direction: row; gap: 14px; padding: 10px 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
