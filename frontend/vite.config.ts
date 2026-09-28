@@ -57,7 +57,8 @@ export default defineConfig({
       },
       workbox: {
         // API responses are never cached; /c/<code> must reach the app shell.
-        navigateFallbackDenylist: [/^\/api\//, /^\/media\//],
+        // /about is the parents' landing page served by Caddy, not a route of the app.
+        navigateFallbackDenylist: [/^\/api\//, /^\/media\//, /^\/about(\/|$)/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/media/audio/'),

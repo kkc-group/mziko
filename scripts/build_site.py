@@ -1,9 +1,10 @@
-"""Build the public site (GitHub Pages) from docs/general/parent-guide.md.
+"""Build the parents' landing page (served at /about/) from docs/general/parent-guide.md.
 
 The guide is the single source of the page text: the landing is that file
 rendered into site/template.html, so a change in the guide is a change on the
-site with no extra step. Output goes to _site/: index.html, the screenshots the
-guide refers to, and the old static POC under poc/.
+site with no extra step. Output goes to _site/: index.html and the screenshots
+the guide refers to. frontend/Dockerfile runs this build and bakes _site/ into
+the web image, where Caddy serves it under /about/.
 
 What the converter does on top of plain Markdown, in the order it happens:
   * the first two paragraphs before the first `##` become the hero lead and
@@ -40,9 +41,6 @@ ROOT = Path(__file__).resolve().parents[1]
 GUIDE = ROOT / "docs" / "general" / "parent-guide.md"
 SHOTS_DIR = GUIDE.parent / "parent-guide"
 TEMPLATE = ROOT / "site" / "template.html"
-POC_DIR = ROOT / "site" / "poc"
-# The POC plays its sound from a relative media/audio/colors/ next to itself.
-POC_AUDIO = ROOT / "media" / "audio" / "colors"
 OUT = ROOT / "_site"
 
 BOT_URL = "https://t.me/MyMzikoBot"
@@ -381,7 +379,10 @@ def render_toc(sections: list[Section]) -> tuple[str, str]:
 
 
 def updated_on() -> str:
-    """Date of the last commit that touched the guide, else of HEAD, else today."""
+    """Date of the last commit that touched the guide, else of HEAD, else today.
+
+    Inside the Docker build there is no git, so the footer shows the build date.
+    """
     for args in (["--", str(GUIDE)], []):
         try:
             out = subprocess.run(
@@ -430,9 +431,6 @@ def main() -> None:
     OUT.mkdir()
     (OUT / "index.html").write_text(page, encoding="utf-8")
     shutil.copytree(SHOTS_DIR, OUT / "parent-guide")
-    if POC_DIR.is_dir():
-        shutil.copytree(POC_DIR, OUT / "poc")
-        shutil.copytree(POC_AUDIO, OUT / "poc" / "media" / "audio" / "colors")
     print(
         f"{OUT.relative_to(ROOT)}/index.html: {len(sections)} sections, {len(page) // 1024} KB",
         file=sys.stderr,
