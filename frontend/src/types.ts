@@ -68,7 +68,8 @@ export interface Me {
   topics: TopicOut[]
   today_lesson: number | null
   review_available: boolean
-  stickers: { word: WordOut; learned: boolean }[]
+  /** Every word of the path in order; `lesson` is the number of the lesson it belongs to. */
+  stickers: { word: WordOut; learned: boolean; lesson: number }[]
 }
 
 export interface SessionOut {

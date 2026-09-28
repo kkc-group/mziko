@@ -7,11 +7,13 @@ export function Menu({
   onOpen,
   onClose,
   onLessons,
+  onMap,
 }: {
   open: boolean
   onOpen: () => void
   onClose: () => void
   onLessons: () => void
+  onMap: () => void
 }) {
   return (
     <>
@@ -28,6 +30,10 @@ export function Menu({
             <button type="button" className="mi on" onClick={onLessons}>
               <Emoji value="📚" alt="" />
               <span className="t">Уроки</span>
+            </button>
+            <button type="button" className="mi on" onClick={onMap}>
+              <Emoji value="🗺️" alt="" />
+              <span className="t">Карта прогресса</span>
             </button>
             <div className="mi off" aria-disabled="true">
               <Emoji value="⚙️" alt="" />

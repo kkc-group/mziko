@@ -56,6 +56,7 @@ class TopicOut(BaseModel):
 class StickerOut(BaseModel):
     word: WordOut
     learned: bool
+    lesson: int  # number of the lesson the word belongs to (the progress map opens it)
 
 
 class MeOut(BaseModel):

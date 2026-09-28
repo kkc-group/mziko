@@ -5,8 +5,6 @@ import { JarIcon, Mascot } from '../components/Mascot'
 import { Menu } from '../components/Menu'
 import { PlayButton } from '../components/PlayButton'
 import type { Busy } from '../busy'
-import { WordImage } from '../components/WordImage'
-import { textClass } from '../wordText'
 
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -99,6 +97,7 @@ export function Home({
   onOpenMenu,
   onCloseMenu,
   onOpenLessons,
+  onOpenMap,
 }: {
   me: Me
   busy: Busy
@@ -108,6 +107,7 @@ export function Home({
   onOpenMenu: () => void
   onCloseMenu: () => void
   onOpenLessons: () => void
+  onOpenMap: () => void
 }) {
   const learnedTotal = me.stickers.filter((s) => s.learned).length
   const lesson = me.today_lesson != null ? (me.lessons.find((l) => l.number === me.today_lesson) ?? null) : null
@@ -117,7 +117,7 @@ export function Home({
     <main className="wrap">
       {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
       {busy && <div className="scrim" aria-hidden="true" />}
-      <Menu open={menuOpen} onOpen={onOpenMenu} onClose={onCloseMenu} onLessons={onOpenLessons} />
+      <Menu open={menuOpen} onOpen={onOpenMenu} onClose={onCloseMenu} onLessons={onOpenLessons} onMap={onOpenMap} />
 
       <div className="hello">
         <Mascot />
@@ -197,21 +197,6 @@ export function Home({
             </div>
           </div>
         )}
-      </div>
-
-      <div className="learned">
-        Наклейки: {learnedTotal} из {me.stickers.length}
-      </div>
-      <div className="stickers">
-        {me.stickers.map((s) => (
-          <div
-            key={`${s.word.topic_slug}/${s.word.slug}`}
-            className={`stk${textClass(s.word)}${s.learned ? '' : ' lock'}`}
-            title={s.word.ru}
-          >
-            <WordImage word={s.word} />
-          </div>
-        ))}
       </div>
     </main>
   )

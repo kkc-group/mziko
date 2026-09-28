@@ -5,12 +5,7 @@ import { BackIcon, LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { BusyLabel, PlayButton } from '../components/PlayButton'
 import { isBusyFor, type Busy } from '../busy'
-
-const SECTIONS: { key: TopicOut['section']; title: string; icon: string }[] = [
-  { key: 'letters', title: 'Буквы', icon: '🔤' },
-  { key: 'syllables', title: 'Слоги', icon: '🧩' },
-  { key: 'words', title: 'Слова', icon: '💬' },
-]
+import { SECTIONS } from '../sections'
 
 /** "Все буквы/слоги/слова пройдены" — the word varies by section. */
 const ALL_DONE_LABEL: Record<TopicOut['section'], string> = {
