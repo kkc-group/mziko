@@ -5,10 +5,10 @@
 Родитель управляет всем через Telegram-бот. Задание целиком: [TASK.md](TASK.md),
 как это работает: [docs/features/mziko-mvp.md](docs/features/mziko-mvp.md).
 
-Сайт для родителей: https://kkc-group.github.io/mziko/ — лендинг с руководством,
-собирается из [docs/general/parent-guide.md](docs/general/parent-guide.md) при каждом
-пуше в `main` (`make site` собирает его локально в `_site/`). Старая проверочная
-страница «Цвета» без сервера живёт там же по адресу `/poc/`.
+Страница для родителей: https://mziko.smartagency.online/about/ — лендинг с
+руководством, собирается из [docs/general/parent-guide.md](docs/general/parent-guide.md)
+внутри образа `web` при каждом деплое (`make site` собирает его локально в `_site/`).
+Старый адрес на GitHub Pages перенаправляет сюда.
 
 ## Состав
 
@@ -21,9 +21,9 @@
 | `frontend` | React + TypeScript + Vite, PWA |
 | `content/topics` | Слова по темам в YAML, порядок = порядок изучения |
 | `media/audio` | Звук слов, `<тема>/<slug>.mp3` |
-| `deploy/Caddyfile` | Caddy: статика фронта, прокси `/api`, раздача `/media`, HTTPS |
+| `deploy/Caddyfile` | Caddy: статика фронта, прокси `/api`, раздача `/media` и `/about`, HTTPS |
 | `docs/prototype.html` | Кликабельный прототип, визуальный референс |
-| `site` | Шаблон сайта для родителей и проверочная страница «Цвета» (`site/poc`) |
+| `site` | Шаблон страницы для родителей (`/about`) и редирект со старого адреса на Pages |
 
 ## Локальная разработка
 

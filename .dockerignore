@@ -5,6 +5,10 @@
 .env
 docs
 scripts
+# The web image builds the parents' landing page from the guide.
+!docs/general/parent-guide.md
+!docs/general/parent-guide
+!scripts/build_site.py
 **/node_modules
 **/dist
 **/.venv
