@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, ApiError, getToken, setToken } from './api'
 import { Speaker } from './audio'
+import type { Busy } from './busy'
 import { Hills } from './components/Mascot'
 import { ReplaySheet } from './components/ReplaySheet'
 import { Home } from './screens/Home'
@@ -49,7 +50,7 @@ export default function App() {
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
   /** The done lesson whose «Повторить» was tapped: the replay sheet is open for it. */
   const [replay, setReplay] = useState<LessonOut | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<Busy>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const speaker = useMemo(() => new Speaker(), [])
 
@@ -79,9 +80,10 @@ export default function App() {
     if (getToken() && !loginCodeFromUrl()) void loadMe()
   }, [loadMe])
 
-  /** Ask the server for a session and open it; the replay sheet closes either way. */
-  const openSession = async (load: () => Promise<SessionOut>) => {
-    setBusy(true)
+  /** Ask the server for a session and open it; the replay sheet closes either way.
+   *  `lesson` is the one whose button shows "Открываю…" meanwhile (null: review all). */
+  const openSession = async (lesson: LessonOut | null, load: () => Promise<SessionOut>) => {
+    setBusy({ lesson })
     setNotice(null)
     try {
       const s = await load()
@@ -104,15 +106,16 @@ export default function App() {
         setNotice('Нет связи. Проверь интернет и попробуй ещё')
       }
     } finally {
-      setBusy(false)
+      setBusy(null)
       setReplay(null)
     }
   }
 
   const startLesson = (lesson: LessonOut | null) =>
-    openSession(() => api.startSession(lesson ? lesson.number : null))
+    openSession(lesson, () => api.startSession(lesson ? lesson.number : null))
 
-  const restartTopic = (topic: TopicOut) => openSession(() => api.restartTopic(topic.slug))
+  // Only reachable from the replay sheet, so `replay` is the lesson whose sheet is open.
+  const restartTopic = (topic: TopicOut) => openSession(replay, () => api.restartTopic(topic.slug))
 
   const closeLesson = () => {
     setLesson(null)
@@ -170,7 +173,7 @@ export default function App() {
         <ReplaySheet
           lesson={replay}
           topic={replayTopic}
-          busy={busy}
+          busy={busy !== null}
           onClose={() => setReplay(null)}
           onQuiz={startLesson}
           onRestart={restartTopic}

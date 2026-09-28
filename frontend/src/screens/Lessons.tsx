@@ -3,6 +3,8 @@ import type { LessonOut, Me, TopicOut } from '../types'
 import { Emoji } from '../components/Emoji'
 import { BackIcon, LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
+import { BusyLabel, PlayButton } from '../components/PlayButton'
+import { isBusyFor, type Busy } from '../busy'
 
 const SECTIONS: { key: TopicOut['section']; title: string; icon: string }[] = [
   { key: 'letters', title: 'Буквы', icon: '🔤' },
@@ -60,19 +62,23 @@ function OpenRow({
 }: {
   topic: TopicOut
   lessons: LessonOut[]
-  busy: boolean
+  busy: Busy
   onPlay: (lesson: LessonOut) => void
   onReplay: (lesson: LessonOut) => void
 }) {
+  const target = topicLesson(lessons)
+  const mine = isBusyFor(busy, target)
   const open = topic.done ? onReplay : onPlay
   return (
-    <button type="button" className="lsn" disabled={busy} onClick={() => open(topicLesson(lessons))}>
+    <button type="button" className="lsn" aria-busy={mine || undefined} onClick={() => open(target)}>
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
         <small>{topicMeta(lessons)}</small>
       </span>
-      <span className="mini-play">{topic.done ? 'Повторить' : 'Играть'}</span>
+      <span className={`mini-play${mine ? ' busy' : ''}`}>
+        {mine ? <BusyLabel /> : topic.done ? 'Повторить' : 'Играть'}
+      </span>
     </button>
   )
 }
@@ -104,7 +110,7 @@ function TodayCard({
 }: {
   topic: TopicOut
   lessons: LessonOut[]
-  busy: boolean
+  busy: Busy
   onPlay: (lesson: LessonOut) => void
   onReplay: (lesson: LessonOut) => void
 }) {
@@ -132,14 +138,12 @@ function TodayCard({
             <i style={{ width: `${pct}%` }} />
           </div>
         )}
-        <button
-          type="button"
-          className="play"
-          disabled={busy}
+        <PlayButton
+          lesson={l}
+          busy={busy}
+          label={finished ? 'Повторить' : 'Играть'}
           onClick={() => (finished ? onReplay(l) : onPlay(l))}
-        >
-          {finished ? 'Повторить' : 'Играть'}
-        </button>
+        />
       </div>
     )
   }
@@ -171,12 +175,13 @@ function TodayCard({
           )
         }
         if (l.status === 'done') {
+          const mine = isBusyFor(busy, l)
           return (
             <button
               key={l.number}
               type="button"
               className="lsn review"
-              disabled={busy}
+              aria-busy={mine || undefined}
               onClick={() => onReplay(l)}
             >
               <span className="num">✓</span>
@@ -184,7 +189,7 @@ function TodayCard({
                 <LessonTitle lesson={l} />
                 <small>{wordsW(l.total)}</small>
               </span>
-              <span className="mini-play">Повторить</span>
+              <span className={`mini-play${mine ? ' busy' : ''}`}>{mine ? <BusyLabel /> : 'Повторить'}</span>
             </button>
           )
         }
@@ -199,11 +204,7 @@ function TodayCard({
           </div>
         )
       })}
-      {current && (
-        <button type="button" className="play" disabled={busy} onClick={() => onPlay(current)}>
-          Играть
-        </button>
-      )}
+      {current && <PlayButton lesson={current} busy={busy} label="Играть" onClick={() => onPlay(current)} />}
     </div>
   )
 }
@@ -216,13 +217,15 @@ export function Lessons({
   onBack,
 }: {
   me: Me
-  busy: boolean
+  busy: Busy
   onPlay: (lesson: LessonOut) => void
   onReplay: (lesson: LessonOut) => void
   onBack: () => void
 }) {
   return (
     <main className="wrap">
+      {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
+      {busy && <div className="scrim" aria-hidden="true" />}
       <div className="topbar">
         <button type="button" className="x" aria-label="На главную" onClick={onBack}>
           <BackIcon />

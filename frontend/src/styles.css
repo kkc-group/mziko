@@ -36,6 +36,28 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 button:focus-visible { outline: 3px solid var(--grape); outline-offset: 3px; }
 button:disabled { cursor: default; }
 
+/* Press law (docs/mockups/button-feedback.html): a button with a shadow sinks by two thirds of
+   it, one third stays, so the bottom edge (button + shadow) stays put and the button goes INTO
+   the page rather than sliding. Flat buttons shrink 4% and take the --line fill. Press 80ms,
+   release 120ms: the destination state's transition wins, so :active carries the 80ms.
+   iOS Safari applies :active to a touch only when a touchstart listener exists (main.tsx). */
+.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn {
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out, background-color 120ms ease-out;
+}
+:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn):active:not(:disabled) {
+  transition-duration: 80ms;
+}
+.play:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
+.mini-play:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
+.next:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--mint-dark); }
+.tile:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.opt .ans:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.speak:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--sun-dark); }
+.speak.sm:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--sun-dark); }
+.key:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.mi.on:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--pom-dark); }
+:is(.x, button.lsn):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
+
 .hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
 .wrap {
   position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
@@ -201,7 +223,6 @@ button:disabled { cursor: default; }
 .bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
 @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 .next { display: block; width: 100%; min-height: 56px; padding: 18px; border-radius: 22px; background: var(--mint); color: #fff; font-size: 22px; font-weight: 900; box-shadow: 0 5px 0 var(--mint-dark); }
-.next:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--mint-dark); }
 .next:disabled { opacity: 0.6; }
 .toast { max-width: 540px; width: 100%; margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; font-weight: 900; font-size: 20px; }
 .toast.good { color: var(--mint); }
@@ -281,7 +302,12 @@ button:disabled { cursor: default; }
 .keys.digits .key.sw { font-size: 18px; }
 
 .play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
-.play.busy { pointer-events: none; }
+/* Busy (docs/mockups/button-feedback.html): the tapped button stays pressed, spins and sits above
+   the screen's .scrim. The scrim lives inside .wrap, which is its own stacking context (z 1), so
+   inside it: scrim 20, busy button 21, the burger's 2 stays under. */
+.play.busy { position: relative; z-index: 21; pointer-events: none; transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
+.mini-play.busy { position: relative; z-index: 21; pointer-events: none; display: flex; align-items: center; gap: 6px; transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
+.mini-play .spin { width: 14px; height: 14px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 
 /* centered screens: link check, lock, success (same frame as .wrap.center) */

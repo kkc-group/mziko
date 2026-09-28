@@ -3,6 +3,8 @@ import type { LessonOut, Me } from '../types'
 import { Emoji } from '../components/Emoji'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { Menu } from '../components/Menu'
+import { PlayButton } from '../components/PlayButton'
+import type { Busy } from '../busy'
 import { WordImage } from '../components/WordImage'
 import { textClass } from '../wordText'
 
@@ -34,7 +36,7 @@ function TodayLessonCard({
 }: {
   lesson: LessonOut
   lessons: LessonOut[]
-  busy: boolean
+  busy: Busy
   onPlay: (lesson: LessonOut) => void
   onReplay: (lesson: LessonOut) => void
 }) {
@@ -74,19 +76,15 @@ function TodayLessonCard({
             <LessonTitle lesson={l} />
             <small>{wordsW(l.total)}</small>
           </span>
-          <button type="button" className="mini-play" disabled={busy} onClick={() => onReplay(l)}>
-            Повторить
-          </button>
+          <PlayButton lesson={l} busy={busy} small label="Повторить" onClick={() => onReplay(l)} />
         </div>
       ))}
-      <button
-        type="button"
-        className="play"
-        disabled={busy}
+      <PlayButton
+        lesson={lesson}
+        busy={busy}
+        label={finished ? 'Повторить' : 'Играть'}
         onClick={() => (finished ? onReplay(lesson) : onPlay(lesson))}
-      >
-        {finished ? 'Повторить' : 'Играть'}
-      </button>
+      />
       {finished && <p className="soon">Новый урок — завтра</p>}
     </div>
   )
@@ -103,7 +101,7 @@ export function Home({
   onOpenLessons,
 }: {
   me: Me
-  busy: boolean
+  busy: Busy
   onPlay: (lesson: LessonOut | null) => void
   onReplay: (lesson: LessonOut) => void
   menuOpen: boolean
@@ -117,6 +115,8 @@ export function Home({
 
   return (
     <main className="wrap">
+      {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
+      {busy && <div className="scrim" aria-hidden="true" />}
       <Menu open={menuOpen} onOpen={onOpenMenu} onClose={onCloseMenu} onLessons={onOpenLessons} />
 
       <div className="hello">
@@ -176,14 +176,13 @@ export function Home({
               <Mascot size={88} />
               <b>Все уроки пройдены!</b>
               <small>{learnedTotal} слов выучено</small>
-              <button
-                type="button"
-                className="play"
-                disabled={busy || !me.review_available}
+              <PlayButton
+                lesson={null}
+                busy={busy}
+                disabled={!me.review_available}
+                label={me.review_available ? 'Повторить слова' : 'Всё закреплено!'}
                 onClick={() => onPlay(null)}
-              >
-                {me.review_available ? 'Повторить слова' : 'Всё закреплено!'}
-              </button>
+              />
             </div>
           </div>
         ) : (
@@ -192,7 +191,7 @@ export function Home({
               <Mascot size={88} />
               <b>Выбери урок на сегодня</b>
               <small>Каждый день — одна тема из каждого раздела</small>
-              <button type="button" className="play" disabled={busy} onClick={onOpenLessons}>
+              <button type="button" className="play" onClick={onOpenLessons}>
                 К урокам
               </button>
             </div>
