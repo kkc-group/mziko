@@ -124,14 +124,13 @@ export function Lesson({
                   if (r.coins_gained && jarRef.current) flyCoins(el, jarRef.current, r.coins_gained)
                   setCoins(r.week_coins)
                   setBounce((n) => n + 1)
-                  setToast({
-                    kind: 'good',
-                    text: r.word_learned
-                      ? `${isLetter(step.word) ? 'Буква выучена' : 'Слово выучено'}! +${r.coins_gained} 🪙`
-                      : r.coins_gained
-                        ? `Молодец! +${r.coins_gained} 🪙`
-                        : 'Правильно!',
-                  })
+                  // A plain correct answer shows only the green check on the card (see Reveal).
+                  const text = r.word_learned
+                    ? `${isLetter(step.word) ? 'Буква выучена' : 'Слово выучено'}! +${r.coins_gained} 🪙`
+                    : r.coins_gained
+                      ? `Молодец! +${r.coins_gained} 🪙`
+                      : null
+                  setToast(text ? { kind: 'good', text } : null)
                   setTimeout(next, r.word_learned ? 1700 : 1200)
                 } catch {
                   setToast({ kind: 'offline', text: 'Нет связи. Проверь интернет' })
@@ -324,6 +323,13 @@ function Reveal({
     <div className="reveal" aria-hidden="true">
       <div className={`pic${shape}${verdict ? ` ${verdict}` : ''}`}>
         {asText ? <span className="glyph w ka">{word.ka}</span> : <WordImage word={word} />}
+        {verdict === 'ok' && (
+          <span className="check">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 13l5 5L19 7" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
       </div>
     </div>
   )
