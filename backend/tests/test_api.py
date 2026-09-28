@@ -76,6 +76,9 @@ async def test_full_lesson_flow_over_http(
     assert me["today_lesson"] is None
     assert me["review_available"] is False
     assert len(me["stickers"]) == sum(len(t.words) for t in content)
+    # every lesson has its words, in path order
+    assert sorted(set(s["lesson"] for s in me["stickers"])) == [lsn["number"] for lsn in lessons]
+    assert [s["lesson"] for s in me["stickers"]] == sorted(s["lesson"] for s in me["stickers"])
 
     started = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
     assert started.status_code == 200, started.text

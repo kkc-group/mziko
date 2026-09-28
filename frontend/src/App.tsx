@@ -8,6 +8,7 @@ import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
 import { Lessons } from './screens/Lessons'
 import { Login } from './screens/Login'
+import { ProgressMap, type MapLock } from './screens/ProgressMap'
 import type { LessonOut, Me, SessionOut, Step, TopicOut } from './types'
 
 type Screen =
@@ -16,8 +17,14 @@ type Screen =
   | { kind: 'error'; message: string }
   | { kind: 'home'; me: Me }
 
-/** Which of the two screens under the "home" state is shown; the menu opens only over 'home'. */
-type View = 'home' | 'lessons'
+/** Which of the screens under the "home" state is shown; the menu opens only over 'home'. */
+type View = 'home' | 'lessons' | 'map'
+
+/** What a sticker of a lesson that cannot start today says when tapped. */
+const LOCK_NOTICE: Record<MapLock, string> = {
+  topic: 'Этот урок откроется завтра',
+  part: 'Сначала пройди предыдущий урок',
+}
 
 interface ActiveLesson {
   sessionId: string
@@ -133,6 +140,11 @@ export default function App() {
     setView('lessons')
   }
 
+  const openMap = () => {
+    setMenuOpen(false)
+    setView('map')
+  }
+
   return (
     <>
       <Hills />
@@ -158,6 +170,7 @@ export default function App() {
           onOpenMenu={() => setMenuOpen(true)}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenLessons={openLessons}
+          onOpenMap={openMap}
         />
       )}
       {screen.kind === 'home' && view === 'lessons' && (
@@ -166,6 +179,16 @@ export default function App() {
           busy={busy}
           onPlay={startLesson}
           onReplay={setReplay}
+          onBack={() => setView('home')}
+        />
+      )}
+      {screen.kind === 'home' && view === 'map' && (
+        <ProgressMap
+          me={screen.me}
+          busy={busy}
+          onPlay={startLesson}
+          onReplay={setReplay}
+          onLocked={(lock) => setNotice(LOCK_NOTICE[lock])}
           onBack={() => setView('home')}
         />
       )}

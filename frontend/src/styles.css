@@ -41,10 +41,10 @@ button:disabled { cursor: default; }
    the page rather than sliding. Flat buttons shrink 4% and take the --line fill. Press 80ms,
    release 120ms: the destination state's transition wins, so :active carries the 80ms.
    iOS Safari applies :active to a touch only when a touchstart listener exists (main.tsx). */
-.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn {
+.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk {
   transition: transform 120ms ease-out, box-shadow 120ms ease-out, background-color 120ms ease-out;
 }
-:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn):active:not(:disabled) {
+:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk):active:not(:disabled) {
   transition-duration: 80ms;
 }
 .play:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
@@ -56,7 +56,7 @@ button:disabled { cursor: default; }
 .speak.sm:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--sun-dark); }
 .key:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
 .mi.on:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--pom-dark); }
-:is(.x, button.lsn):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
+:is(.x, button.lsn, button.stk):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
 
 .hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
 .wrap {
@@ -143,7 +143,6 @@ button:disabled { cursor: default; }
 .cur.all { align-items: center; text-align: center; }
 .cur.all b { font-size: 26px; font-weight: 900; line-height: 1.1; }
 .cur.all small { color: var(--muted); font-size: 15px; font-weight: 800; margin-top: -8px; }
-.learned { margin-top: 18px; text-align: center; color: var(--muted); font-weight: 700; }
 .stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
 .stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }
 .stk .blob { border-width: 2px; }
@@ -384,6 +383,7 @@ button:disabled { cursor: default; }
 .topbar h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1; }
 .lhello { display: flex; align-items: flex-end; gap: 8px; margin: 4px 0 6px; }
 .lhello .bubble { margin-bottom: 14px; font-weight: 800; font-size: 16px; line-height: 1.25; }
+.lhello .bubble small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; }
 .sec { margin-top: 8px; }
 .sech { position: sticky; z-index: 5; top: calc(var(--safe-top) + 56px); display: flex; align-items: center; gap: 10px; margin: 0 -16px; padding: 14px 20px 10px; background: var(--bg); font-size: 24px; font-weight: 900; line-height: 1.1; --s: 26px; }
 .rows { display: flex; flex-direction: column; gap: 10px; }
@@ -398,6 +398,22 @@ button:disabled { cursor: default; }
 .allnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 16px; border-radius: 22px; background: var(--mint-soft); font-weight: 800; font-size: 17px; line-height: 1.25; }
 .allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
 .lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
+
+/* --- progress map (screens/ProgressMap.tsx): one card per lesson, its words as sticker buttons.
+   The header reuses .cur-h / .cur-t at the row size of .lsn; a locked lesson takes the dashed
+   look of .lsn.lock. Stickers keep their .stk look (unlearned: grey) and press like flat buttons. */
+.mapl { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); }
+.mapl .cur-h { gap: 10px; }
+.mapl .ic { flex: none; display: flex; --s: 34px; }
+.mapl .cur-t b { font-size: 20px; }
+.mapl .cur-t small { margin-top: 2px; font-size: 14px; }
+.mapl .num { font-size: 16px; border: 2px solid var(--line); }
+.mapl .num.ok { background: var(--mint); border-color: var(--mint); color: #fff; font-size: 20px; }
+.mapl.lock { background: transparent; border-style: dashed; }
+.mapl.lock .num { border-style: dashed; color: var(--muted); }
+.mapl.lock .ic { filter: grayscale(1); opacity: 0.35; }
+.mapl.lock .cur-t { color: var(--muted); }
+.mapl .stickers { justify-content: flex-start; margin-top: 0; }
 
 /* --- replay sheet: docs/mockups/lesson-restart.html ---
    The same .sheet as the menu, docked to the bottom edge instead of the right one; rows are the

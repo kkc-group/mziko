@@ -100,7 +100,9 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
         today_lesson=today_lesson.lesson.number if today_lesson else None,
         review_available=review_available,
         stickers=[
-            StickerOut(word=word_out(w, lesson.topic.slug), learned=learned(w))
+            StickerOut(
+                word=word_out(w, lesson.topic.slug), learned=learned(w), lesson=lesson.number
+            )
             for lesson in path
             for w in lesson.words
         ],
