@@ -60,7 +60,7 @@ export default defineConfig({
             options: {
               // Bump when files are regenerated under the same names: CacheFirst
               // would otherwise serve the old recording for up to 30 days.
-              cacheName: 'audio-v3',
+              cacheName: 'audio-v4',
               expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 3600 },
             },
           },
