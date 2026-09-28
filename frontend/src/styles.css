@@ -163,7 +163,9 @@ button:disabled { cursor: default; }
 .glyph { color: var(--word-color); text-align: center; }
 .glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
 .pic.txt { width: 100%; max-width: 360px; border-radius: 26px; padding: 0 16px; container-type: inline-size; }
-.pic.txt .glyph.w { font-size: min(54px, 15cqi); line-height: 1.2; text-wrap: balance; }
+/* --len (letters in the word, set by the recall reveal) caps the size so one unbreakable word fits:
+   the widest Noto Sans Georgian 800 glyph is about 0.7em, 0.72 leaves a hair of slack. */
+.pic.txt .glyph.w { font-size: min(54px, 15cqi, calc(100cqi / (var(--len, 8) * 0.72))); line-height: 1.2; text-wrap: balance; }
 .tile.txt { container-type: inline-size; padding: 6px; }
 .tile .glyph.w { font-size: 13cqi; line-height: 1.15; text-wrap: balance; overflow-wrap: normal; hyphens: none; }
 .stk .glyph.l { line-height: 1; }

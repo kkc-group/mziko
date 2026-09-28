@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { api, withRetry, type AnswerBody } from '../api'
 import type { Speaker } from '../audio'
 import { flyCoins, fmtLari, uuid } from '../fx'
@@ -319,9 +319,11 @@ function Reveal({
   asText?: boolean
 }) {
   const shape = asText ? ' txt' : textClass(word)
+  // A recall answer can be any word, e.g. მასწავლებელი (12 letters): --len lets the CSS shrink it to fit.
+  const style = asText ? ({ '--len': word.ka.length } as CSSProperties) : undefined
   return (
     <div className="reveal" aria-hidden="true">
-      <div className={`pic${shape}${verdict ? ` ${verdict}` : ''}`}>
+      <div className={`pic${shape}${verdict ? ` ${verdict}` : ''}`} style={style}>
         {asText ? <span className="glyph w ka">{word.ka}</span> : <WordImage word={word} />}
         {verdict === 'ok' && (
           <span className="check">
