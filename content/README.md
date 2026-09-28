@@ -46,11 +46,16 @@ shown under it on the intro card:
 ```yaml
   - slug: ban
     ka: ბ
-    tr: б
+    tr: ба
     ru: буква б
     image: {kind: text, value: ბ}
     anchor: {ka: ბურთი, tr: бурти, ru: мяч, emoji: "⚽"}   # emoji is optional
 ```
+
+A consonant's `tr` is the syllable the voice says, with «а» («ба», «дза»,
+«къа»); a vowel's `tr` is the vowel itself. A lone consonant is near-inaudible,
+so `make tts` reads a letter as that syllable followed by the anchor word, and
+the hint under the letter must match what is heard.
 
 Words that still lack a good picture are text cards marked `# TODO picture`;
 `grep -rn "TODO picture" content/topics` lists them. Letter order follows the

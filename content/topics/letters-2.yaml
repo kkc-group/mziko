@@ -7,49 +7,49 @@ order: 2
 words:
   - slug: vin
     ka: ვ
-    tr: в
+    tr: ва
     ru: буква в
     image: {kind: text, value: ვ}
     anchor: {ka: ვაშლი, tr: вашли, ru: яблоко, emoji: "🍎"}
   - slug: don
     ka: დ
-    tr: д
+    tr: да
     ru: буква д
     image: {kind: text, value: დ}
     anchor: {ka: დათვი, tr: датви, ru: медведь, emoji: "🐻"}
   - slug: man
     ka: მ
-    tr: м
+    tr: ма
     ru: буква м
     image: {kind: text, value: მ}
     anchor: {ka: მზე, tr: мзе, ru: солнце, emoji: "☀️"}
   - slug: kan
     ka: კ
-    tr: к
+    tr: ка
     ru: буква к
     image: {kind: text, value: კ}
     anchor: {ka: კატა, tr: ката, ru: кошка, emoji: "🐱"}
   - slug: rae
     ka: რ
-    tr: р
+    tr: ра
     ru: буква р
     image: {kind: text, value: რ}
     anchor: {ka: რადიო, tr: радио, ru: радио, emoji: "📻"}
   - slug: nar
     ka: ნ
-    tr: н
+    tr: на
     ru: буква н
     image: {kind: text, value: ნ}
     anchor: {ka: ნავი, tr: нави, ru: лодка, emoji: "⛵"}
   - slug: ban
     ka: ბ
-    tr: б
+    tr: ба
     ru: буква б
     image: {kind: text, value: ბ}
     anchor: {ka: ბურთი, tr: бурти, ru: мяч, emoji: "⚽"}
   - slug: tar
     ka: ტ
-    tr: т
+    tr: та
     ru: буква т (твёрдая)
     image: {kind: text, value: ტ}
     anchor: {ka: ტორტი, tr: торти, ru: торт, emoji: "🎂"}

@@ -7,49 +7,49 @@ order: 3
 words:
   - slug: gan
     ka: გ
-    tr: г
+    tr: га
     ru: буква г
     image: {kind: text, value: გ}
     anchor: {ka: გოგო, tr: гого, ru: девочка, emoji: "👧"}
   - slug: shin
     ka: შ
-    tr: ш
+    tr: ша
     ru: буква ш
     image: {kind: text, value: შ}
     anchor: {ka: შველი, tr: швели, ru: олень, emoji: "🦌"}
   - slug: khan
     ka: ხ
-    tr: х
+    tr: ха
     ru: буква х
     image: {kind: text, value: ხ}
     anchor: {ka: ხე, tr: хе, ru: дерево, emoji: "🌳"}
   - slug: zen
     ka: ზ
-    tr: з
+    tr: за
     ru: буква з
     image: {kind: text, value: ზ}
     anchor: {ka: ზებრა, tr: зебра, ru: зебра, emoji: "🦓"}
   - slug: par
     ka: პ
-    tr: п
+    tr: па
     ru: буква п
     image: {kind: text, value: პ}
     anchor: {ka: პური, tr: пури, ru: хлеб, emoji: "🍞"}
   - slug: tsil
     ka: წ
-    tr: ц
+    tr: ца
     ru: буква ц (твёрдая)
     image: {kind: text, value: წ}
     anchor: {ka: წყალი, tr: цкали, ru: вода, emoji: "💧"}
   - slug: ghan
     ka: ღ
-    tr: г
+    tr: га
     ru: буква г (гортанная)
     image: {kind: text, value: ღ}
     anchor: {ka: ღორი, tr: гори, ru: свинья, emoji: "🐷"}
   - slug: chin
     ka: ჩ
-    tr: ч
+    tr: ча
     ru: буква ч
     image: {kind: text, value: ჩ}
     anchor: {ka: ჩაი, tr: чаи, ru: чай, emoji: "🍵"}

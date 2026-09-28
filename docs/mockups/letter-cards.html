@@ -119,6 +119,13 @@ button:disabled { cursor: default; }
 .reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .reveal .pic { box-shadow: 0 10px 20px var(--blob-edge); }
 
+/* ---------- proposed: listen step names what was said ----------
+   One line under "Послушать ещё раз", same .word .tr as the hint on the intro card:
+   word.tr for a word, "word.tr · anchor.tr" for a letter. It sits outside the dimmed
+   wrapper and outside .grid-wrap, so it is never dimmed or covered by .reveal and stays
+   put through neutral / ok / bad. Shown only while the parent's Cyrillic hint is on. */
+.heard .tr { display: block; }
+
 /* ---------- mockup chrome (not product) ---------- */
 .mk { max-width: 1900px; margin: 0 auto; padding: 32px 28px 80px; }
 .mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
@@ -148,11 +155,11 @@ figcaption span { display: block; font-weight: 600; color: var(--muted); font-si
   <p class="lead">Экран <code>.lesson</code> из Lesson.tsx. Токены и классы — из styles.css; новые — <code>.glyph</code>, <code>.pic.txt</code>, <code>.tile.txt</code>, <code>.stk.txt</code>, <code>.anchor</code>. Телефон 390×844, iPad портрет 820×1180 (в масштабе 0,55).</p>
 
   <h2>1 · intro — буква</h2>
-  <p class="lead">ka «ბ», tr «б», ru «буква б» (в aria-label). Опорное слово «ბურთი» — ссылка на уже существующее слово <code>ball</code> (⚽), первая буква подсвечена.</p>
+  <p class="lead">ka «ბ», tr «ба», ru «буква б» (в aria-label). Опорное слово «ბურთი» — ссылка на уже существующее слово <code>ball</code> (⚽), первая буква подсвечена.</p>
   <div class="row" id="s1"></div>
 
   <h2>2 · listen — буквы ბ დ ლ მ</h2>
-  <p class="lead">Звучит «ბ». Похожие по форме буквы. Неверная плитка трясётся 0,35 с, краснеет и блокируется до конца шага.</p>
+  <p class="lead">Звучит «ბა … ბურთი». Похожие по форме буквы. Неверная плитка трясётся 0,35 с, краснеет и блокируется до конца шага. Под кнопкой — что прозвучало: «ба · бурти» (слог буквы · опорное слово).</p>
   <div class="row" id="s2"></div>
 
   <h2>3 · intro — слово без картинки</h2>
@@ -160,7 +167,7 @@ figcaption span { display: block; font-weight: 600; color: var(--muted); font-si
   <div class="row" id="s3"></div>
 
   <h2>4 · listen — слова без картинки, с длинным</h2>
-  <p class="lead">Звучит «მადლობა». Размер шрифта в плитке — 13% её ширины; перенос только по пробелу, слово не рвётся.</p>
+  <p class="lead">Звучит «მადლობა». Размер шрифта в плитке — 13% её ширины; перенос только по пробелу, слово не рвётся. Под кнопкой — «мадлоба».</p>
   <div class="row" id="s4"></div>
 
   <h2>5 · наклейки на главном</h2>
@@ -168,12 +175,16 @@ figcaption span { display: block; font-weight: 600; color: var(--muted); font-si
   <div class="row" id="s5"></div>
 
   <h2>6 · listen — экран заперт после тапа (буквы)</h2>
-  <p class="lead">Тронул плитку — она не окрашивается на месте, а буква всплывает большим кругом по центру сетки (тот же <code>.glyph.l</code>, что в <code>.pic</code> карточки знакомства, ≈120 px при <code>--s:96px</code>). Сетка и «Послушать ещё раз» приглушены и не отвечают на тап до ответа сервера: второй тап физически не долетает. Звучит «ლ».</p>
+  <p class="lead">Тронул плитку — она не окрашивается на месте, а буква всплывает большим кругом по центру сетки (тот же <code>.glyph.l</code>, что в <code>.pic</code> карточки знакомства, ≈120 px при <code>--s:96px</code>). Сетка и «Послушать ещё раз» приглушены и не отвечают на тап до ответа сервера: второй тап физически не долетает. Звучит «ლ … ლომი»; строка «ла · ломи» не приглушается и не перекрывается кругом.</p>
   <div class="row" id="s6"></div>
 
   <h2>7 · listen — то же для слога «მა»</h2>
-  <p class="lead">Слог из двух знаков в той же обёртке <code>.glyph.l</code> — проверка, что не только одна буква умещается в круг без переноса и уменьшения шрифта.</p>
+  <p class="lead">Слог из двух знаков в той же обёртке <code>.glyph.l</code> — проверка, что не только одна буква умещается в круг без переноса и уменьшения шрифта. Под кнопкой — «ма» (у слогов нет опорного слова).</p>
   <div class="row" id="s7"></div>
+
+  <h2>8 · listen — строка «что прозвучало»: слова с картинкой и длинные случаи</h2>
+  <p class="lead">Строка стоит сразу под «Послушать ещё раз» и над сеткой: подпись к звуку, а не к плиткам. Слово — <code>word.tr</code>; буква — <code>word.tr · anchor.tr</code>. Только кириллица: без грузинского написания (в задании на буквы оно было бы ответом) и без перевода (в задании на картинки он был бы ответом). Строка вне приглушаемой обёртки и вне <code>.grid-wrap</code> — всплывающий круг её не закрывает, по высоте она не меняется между нейтральным, верным и неверным состоянием.</p>
+  <div class="row" id="s8"></div>
 </main>
 
 <script>
@@ -210,7 +221,7 @@ function fig(title, sub, frame) {
 const introLetter = hint => `
   <p class="prompt">Новая буква!</p>
   <div class="pic"><span class="glyph l ka" role="img" aria-label="буква б">ბ</span></div>
-  ${hint ? '<div class="word"><span class="tr">б</span></div>' : ''}
+  ${hint ? '<div class="word"><span class="tr">ба</span></div>' : ''}
   <div class="anchor" aria-label="ბურთი — мяч"><span class="emoji">⚽</span><span class="ka"><b>ბ</b>ურთი</span>${hint ? '<small>бурти</small>' : ''}</div>
   <button type="button" class="speak" aria-label="Послушать">${SPK}</button>
   <button type="button" class="next">Дальше</button>`;
@@ -218,27 +229,32 @@ const introLetter = hint => `
 document.getElementById('s1').innerHTML = [
   fig('Телефон · светлая', 'подсказка кириллицей включена', phone('light', lesson(0, 12, introLetter(true), toast.none))),
   fig('Телефон · тёмная', 'подсказка включена', phone('dark', lesson(0, 12, introLetter(true), toast.none))),
-  fig('Телефон · подсказка выключена', 'родитель снял «Подсказку кириллицей»: нет «б» и «бурти»', phone('light', lesson(0, 12, introLetter(false), toast.none))),
+  fig('Телефон · подсказка выключена', 'родитель снял «Подсказку кириллицей»: нет «ба» и «бурти»', phone('light', lesson(0, 12, introLetter(false), toast.none))),
   fig('iPad портрет · светлая', 'колонка 540 px по центру, как во всём занятии', pad('light', lesson(0, 12, introLetter(true), toast.none))),
 ].join('');
 
 /* ---- 2 · listen letters ---- */
 const LET = [['ბ', 'буква б', 'b'], ['დ', 'буква д', 'd'], ['ლ', 'буква л', 'l'], ['მ', 'буква м', 'm']];
-const listen = (items, state, cls) => `
+const heardLine = h => h ? `<div class="word heard"><span class="tr">${h}</span></div>` : '';
+const face = (ka, cls) => cls === 'e' ? `<span class="emoji">${ka}</span>` : `<span class="glyph ${cls} ka">${ka}</span>`;
+const tileCls = cls => cls === 'e' ? 'tile' : 'tile txt';
+const listen = (items, state, cls, heard) => `
   <p class="prompt">Послушай и найди</p>
   <button type="button" class="speak" aria-label="Послушать ещё раз">${SPK}</button>
+  ${heardLine(heard)}
   <div class="grid">${items.map(([ka, ru, id]) => {
     const s = state[id] || '';
     const locked = state.locked || s;
-    return `<button type="button" class="tile txt ${s}" aria-label="${ru}"${locked ? ' disabled' : ''}><span class="glyph ${cls} ka">${ka}</span></button>`;
+    return `<button type="button" class="${tileCls(cls)} ${s}" aria-label="${ru}"${locked ? ' disabled' : ''}>${face(ka, cls)}</button>`;
   }).join('')}</div>`;
 
+const B = 'ба · бурти';
 document.getElementById('s2').innerHTML = [
-  fig('Исходное', 'звучит «ბ» (автоплей через 300 мс)', phone('light', lesson(43, 12, listen(LET, {}, 'l'), toast.none))),
-  fig('Неверно', 'тронул «დ»: красная, заблокирована; слово звучит ещё раз', phone('light', lesson(43, 12, listen(LET, { d: 'bad' }, 'l'), toast.try))),
-  fig('Верно с первой попытки', 'зелёная, все плитки заблокированы, монета летит в копилку', phone('light', lesson(43, 13, listen(LET, { b: 'ok', locked: 1 }, 'l'), toast.good))),
-  fig('Верно после ошибки · тёмная', 'красная остаётся; монеты нет — сервер даёт +1 только с первой попытки', phone('dark', lesson(43, 12, listen(LET, { d: 'bad', b: 'ok', locked: 1 }, 'l'), toast.plain))),
-  fig('Верно, но нет связи · тёмная', 'ответ не ушёл: плитка зелёная, копилка не выросла, «Повторить»', phone('dark', lesson(43, 12, listen(LET, { b: 'ok', locked: 1 }, 'l'), toast.offline))),
+  fig('Исходное', 'звучит «ბ … ბურთი» (автоплей через 300 мс); под кнопкой «ба · бурти»', phone('light', lesson(43, 12, listen(LET, {}, 'l', B), toast.none))),
+  fig('Неверно', 'тронул «დ»: красная, заблокирована; слово звучит ещё раз', phone('light', lesson(43, 12, listen(LET, { d: 'bad' }, 'l', B), toast.try))),
+  fig('Верно с первой попытки', 'зелёная, все плитки заблокированы, монета летит в копилку', phone('light', lesson(43, 13, listen(LET, { b: 'ok', locked: 1 }, 'l', B), toast.good))),
+  fig('Верно после ошибки · тёмная', 'красная остаётся; монеты нет — сервер даёт +1 только с первой попытки', phone('dark', lesson(43, 12, listen(LET, { d: 'bad', b: 'ok', locked: 1 }, 'l', B), toast.plain))),
+  fig('Верно, но нет связи · тёмная', 'ответ не ушёл: плитка зелёная, копилка не выросла, «Повторить»', phone('dark', lesson(43, 12, listen(LET, { b: 'ok', locked: 1 }, 'l', B), toast.offline))),
 ].join('');
 
 /* ---- 3 · intro word ---- */
@@ -258,11 +274,11 @@ document.getElementById('s3').innerHTML = [
 /* ---- 4 · listen words ---- */
 const WRD = [['გამარჯობა', 'привет', 'hi'], ['ნახვამდის', 'до свидания', 'bye'], ['მადლობა', 'спасибо', 'thx'], ['დილა მშვიდობისა', 'доброе утро', 'morning']];
 document.getElementById('s4').innerHTML = [
-  fig('Телефон · светлая · исходное', 'плитка 173 px → шрифт ~20 px', phone('light', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
-  fig('Телефон · тёмная · неверно', 'тронул длинную плитку', phone('dark', lesson(57, 12, listen(WRD, { morning: 'bad' }, 'w'), toast.try))),
-  fig('Телефон · светлая · верно', '', phone('light', lesson(57, 13, listen(WRD, { thx: 'ok', locked: 1 }, 'w'), toast.good))),
-  fig('iPad портрет · светлая', 'плитка 264 px → шрифт ~33 px', pad('light', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
-  fig('iPad портрет · тёмная', '', pad('dark', lesson(57, 12, listen(WRD, {}, 'w'), toast.none))),
+  fig('Телефон · светлая · исходное', 'плитка 173 px → шрифт ~20 px', phone('light', lesson(57, 12, listen(WRD, {}, 'w', 'мадлоба'), toast.none))),
+  fig('Телефон · тёмная · неверно', 'тронул длинную плитку', phone('dark', lesson(57, 12, listen(WRD, { morning: 'bad' }, 'w', 'мадлоба'), toast.try))),
+  fig('Телефон · светлая · верно', '', phone('light', lesson(57, 13, listen(WRD, { thx: 'ok', locked: 1 }, 'w', 'мадлоба'), toast.good))),
+  fig('iPad портрет · светлая', 'плитка 264 px → шрифт ~33 px', pad('light', lesson(57, 12, listen(WRD, {}, 'w', 'мадлоба'), toast.none))),
+  fig('iPad портрет · тёмная', '', pad('dark', lesson(57, 12, listen(WRD, {}, 'w', 'мадлоба'), toast.none))),
 ].join('');
 
 /* ---- 5 · stickers ---- */
@@ -288,36 +304,58 @@ document.getElementById('s5').innerHTML = [
 ].join('');
 
 /* ---- 6 · listen locked (letter) ---- */
-const revealGlyph = (ka, ru, cls) => `<div class="reveal"><div class="pic ${cls}"><span class="glyph l ka" role="img" aria-label="${ru}">${ka}</span></div></div>`;
-const listenLocked = (items, cls, id, result) => {
+const revealGlyph = (ka, ru, cls, kind) => kind === 'e'
+  ? `<div class="reveal"><div class="pic ${cls}"><span class="emoji" role="img" aria-label="${ru}">${ka}</span></div></div>`
+  : `<div class="reveal"><div class="pic ${cls}"><span class="glyph l ka" role="img" aria-label="${ru}">${ka}</span></div></div>`;
+const listenLocked = (items, cls, id, result, heard) => {
   const target = items.find(i => i[2] === id);
   return `
   <p class="prompt">Послушай и найди</p>
   <button type="button" class="speak dim" aria-label="Послушать ещё раз" disabled>${SPK}</button>
+  ${heardLine(heard)}
   <div class="grid-wrap">
     <div class="grid dim">${items.map(([ka, ru, iid]) => {
       const s = iid === id ? result : '';
-      return `<button type="button" class="tile txt ${s}" aria-label="${ru}" disabled><span class="glyph ${cls} ka">${ka}</span></button>`;
+      return `<button type="button" class="${tileCls(cls)} ${s}" aria-label="${ru}" disabled>${face(ka, cls)}</button>`;
     }).join('')}</div>
-    ${revealGlyph(target[0], target[1], result)}
+    ${revealGlyph(target[0], target[1], result, cls)}
   </div>`;
 };
 
 document.getElementById('s6').innerHTML = [
-  fig('Нажал плитку — ждём ответа', 'экран заперт, второй тап не проходит: сетка и «Послушать ещё раз» не реагируют', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', ''), toast.none))),
-  fig('Ждём ответа · тёмная', '', phone('dark', lesson(43, 12, listenLocked(LET, 'l', 'l', ''), toast.none))),
-  fig('Верно', 'буква на зелёном, тронутая плитка .ok — ответ уже улетел на сервер', phone('light', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok'), toast.plain))),
-  fig('Верно · тёмная', '', phone('dark', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok'), toast.plain))),
-  fig('Неверно — в момент ответа', 'буква на красном трясётся, тронутая плитка .bad, сетка ещё заперта', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', 'bad'), toast.try))),
-  fig('Неверно — секунду спустя', 'всплывшая буква исчезла, сетка снова доступна; красная плитка остаётся заблокированной, остальные — нет', phone('light', lesson(43, 12, listen(LET, { l: 'bad' }, 'l'), toast.try))),
+  fig('Нажал плитку — ждём ответа', 'экран заперт, второй тап не проходит: сетка и «Послушать ещё раз» не реагируют', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', '', 'ла · ломи'), toast.none))),
+  fig('Ждём ответа · тёмная', '', phone('dark', lesson(43, 12, listenLocked(LET, 'l', 'l', '', 'ла · ломи'), toast.none))),
+  fig('Верно', 'буква на зелёном, тронутая плитка .ok — ответ уже улетел на сервер', phone('light', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok', 'ла · ломи'), toast.plain))),
+  fig('Верно · тёмная', '', phone('dark', lesson(43, 13, listenLocked(LET, 'l', 'l', 'ok', 'ла · ломи'), toast.plain))),
+  fig('Неверно — в момент ответа', 'буква на красном трясётся, тронутая плитка .bad, сетка ещё заперта', phone('light', lesson(43, 12, listenLocked(LET, 'l', 'l', 'bad', 'ла · ломи'), toast.try))),
+  fig('Неверно — секунду спустя', 'всплывшая буква исчезла, сетка снова доступна; красная плитка остаётся заблокированной, остальные — нет', phone('light', lesson(43, 12, listen(LET, { l: 'bad' }, 'l', 'ла · ломи'), toast.try))),
 ].join('');
 
 /* ---- 7 · listen locked (syllable) ---- */
 const SYL = [['მა', 'слог ма', 'ma'], ['ლა', 'слог ла', 'la'], ['ბა', 'слог ба', 'ba'], ['და', 'слог да', 'da']];
 document.getElementById('s7').innerHTML = [
-  fig('Ждём ответа', 'слог в той же обёртке .glyph.l — того же размера, что одна буква', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', ''), toast.none))),
-  fig('Верно', '', phone('light', lesson(71, 13, listenLocked(SYL, 'l', 'ma', 'ok'), toast.plain))),
-  fig('Неверно', '', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', 'bad'), toast.try))),
+  fig('Ждём ответа', 'слог в той же обёртке .glyph.l — того же размера, что одна буква', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', '', 'ма'), toast.none))),
+  fig('Верно', '', phone('light', lesson(71, 13, listenLocked(SYL, 'l', 'ma', 'ok', 'ма'), toast.plain))),
+  fig('Неверно', '', phone('light', lesson(71, 12, listenLocked(SYL, 'l', 'ma', 'bad', 'ма'), toast.try))),
+].join('');
+
+/* ---- 8 · listen: the "what was said" line ---- */
+const ANI = [['🐻', 'медведь', 'bear'], ['🦊', 'лиса', 'fox'], ['🐸', 'лягушка', 'frog'], ['🐭', 'мышь', 'mouse']];
+const SCH = [['🧑‍🏫', 'учитель', 'teacher'], ['🏫', 'школа', 'school'], ['🎒', 'рюкзак', 'backpack'], ['📝', 'урок', 'lesson']];
+const L4 = [['ჭ', 'буква ч (твёрдая)', 'char'], ['ც', 'буква ц', 'can'], ['ყ', 'буква къ', 'qar'], ['ჯ', 'буква дж', 'jan']];
+document.getElementById('s8').innerHTML = [
+  fig('Короткое слово · светлая', 'звучит «დათვი» → «датви»', phone('light', lesson(29, 12, listen(ANI, {}, 'e', 'датви'), toast.none))),
+  fig('Короткое слово · тёмная · неверно', 'тронул лису: красная, строка на месте', phone('dark', lesson(29, 12, listen(ANI, { fox: 'bad' }, 'e', 'датви'), toast.try))),
+  fig('Длинное слово · светлая', '«масцавлебели» — самая длинная транскрипция среди слов с картинкой; в одну строку', phone('light', lesson(57, 12, listen(SCH, {}, 'e', 'масцавлебели'), toast.none))),
+  fig('Длинное · нажал — ждём ответа', 'варианты пригашены, всплыл учитель; строка не пригашена и не под кругом', phone('light', lesson(57, 12, listenLocked(SCH, 'e', 'teacher', '', 'масцавлебели'), toast.none))),
+  fig('Длинное · верно · тёмная', 'круг зелёный, строка та же и на том же месте', phone('dark', lesson(57, 13, listenLocked(SCH, 'e', 'teacher', 'ok', 'масцавлебели'), toast.good))),
+  fig('Длинное · неверно', 'всплыл рюкзак на красном; строка не сдвинулась', phone('light', lesson(57, 12, listenLocked(SCH, 'e', 'backpack', 'bad', 'масцавлебели'), toast.try))),
+  fig('Буква с длинным опорным словом', 'звучит «ჭ … ჭიანჭველა» → «ча · чианчвела»', phone('light', lesson(43, 12, listen(L4, {}, 'l', 'ча · чианчвела'), toast.none))),
+  fig('Буква · ждём ответа · тёмная', 'всплыла «ჭ», строка «ча · чианчвела» над сеткой, не пригашена', phone('dark', lesson(43, 12, listenLocked(L4, 'l', 'char', '', 'ча · чианчвела'), toast.none))),
+  fig('Буква «къа · квавили» · неверно', 'тронул «ც»: круг красный, строка на месте', phone('light', lesson(43, 12, listenLocked(L4, 'l', 'can', 'bad', 'къа · квавили'), toast.try))),
+  fig('Подсказка кириллицей выключена', 'родитель снял «Подсказку кириллицей»: строки нет, как и «б» / «бурти» на карточке знакомства', phone('light', lesson(43, 12, listen(L4, {}, 'l', ''), toast.none))),
+  fig('iPad портрет · светлая · длинное слово', 'колонка 540 px: плитка 264 px, строка по центру под кнопкой', pad('light', lesson(57, 12, listenLocked(SCH, 'e', 'teacher', '', 'масцавлебели'), toast.none))),
+  fig('iPad портрет · тёмная · буква', '', pad('dark', lesson(43, 13, listenLocked(L4, 'l', 'char', 'ok', 'ча · чианчвела'), toast.good))),
 ].join('');
 </script>
 </body>

@@ -21,7 +21,7 @@ words:
     anchor: {ka: ინდაური, tr: индаури, ru: индюк, emoji: "🦃"}
   - slug: tan
     ka: თ
-    tr: т
+    tr: та
     ru: буква т
     image: {kind: text, value: თ}
     anchor: {ka: თევზი, tr: тевзи, ru: рыба, emoji: "🐟"}
@@ -33,7 +33,7 @@ words:
     anchor: {ka: ობობა, tr: обоба, ru: паук, emoji: "🕷️"}
   - slug: san
     ka: ს
-    tr: с
+    tr: са
     ru: буква с
     image: {kind: text, value: ს}
     anchor: {ka: სახლი, tr: сахли, ru: дом, emoji: "🏠"}
@@ -45,7 +45,7 @@ words:
     anchor: {ka: ექიმი, tr: экими, ru: врач, emoji: "🩺"}
   - slug: las
     ka: ლ
-    tr: л
+    tr: ла
     ru: буква л
     image: {kind: text, value: ლ}
     anchor: {ka: ლომი, tr: ломи, ru: лев, emoji: "🦁"}

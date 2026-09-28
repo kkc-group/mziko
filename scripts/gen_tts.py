@@ -6,7 +6,16 @@ never overwritten, so recordings made by a native speaker stay untouched.
 
 A letter (a word with an `anchor`) is two clips glued by ffmpeg with a pause
 in between: edge-tts escapes SSML, so a <break> cannot be passed, and "ბ. ბურთი."
-read as one utterance sounds like a single long word.
+read as one utterance sounds like a single long word. A consonant is read as
+a syllable with ა ("ბა"): a lone consonant is physically near-inaudible (the
+ear picks "b" from the transition into a vowel) and comes out of the voice
+10-20 dB quieter than a word. A vowel is read on its own.
+
+A syllable (a letter's sound, or a card of the "syllables" topic) is never
+synthesized on its own: the voice renders a one-word sentence rushed, 0.09 s
+with a weak burst, and "ბუ" is heard as "ვუ", "მა" as "ნა". Inside a short
+carrier phrase ("აი, ბუ.") the same syllable is spoken in full, so it is cut
+out of the carrier by the word boundaries the service reports.
 
 Run from the repo root:
 
@@ -37,20 +46,25 @@ DEFAULT_RATE = "-15%"  # slightly slower than natural: easier for a child to rep
 # Silence added after the letter's sound, before the anchor word. edge-tts leaves
 # ~0.3 s of its own tail after trimming, so the audible pause is about 0.9 s.
 LETTER_PAUSE_SEC = 0.6
-# A lone sound is read at this rate (the anchor word keeps --rate): stretched a
-# little, it is easier to catch. Rate and punctuation change its length only
-# slightly (0.2-0.3 s for a consonant), so the level is what matters most.
-LETTER_RATE = "-40%"
-# A lone consonant comes out ~10 dB quieter than a word (peak -15 dB vs -5 dB)
-# and is simply not heard before the word; the clip is levelled to this peak.
+# The syllable clip is levelled to this peak, so every letter is equally loud
+# and no quieter than the word that follows.
 LETTER_PEAK_DB = -2.0
+# Vowels are read on their own; every other letter gets ა after it: "ბა", "რა".
+VOWELS = {"ა", "ე", "ი", "ო", "უ"}
+SYLLABLE_VOWEL = "ა"
+# A syllable is spoken inside this phrase ("here, …") and cut out as its second
+# word: CUT_LEAD_SEC before the reported word start (the burst begins a little
+# before the boundary), CUT_TAIL_SEC after its reported end, then a fade.
+CARRIER = "აი, {}."
+CUT_LEAD_SEC = 0.03
+CUT_TAIL_SEC = 0.35
+SYLLABLES_TOPIC = "syllables"
 # Trim the synthesizer's silence around the sound: ~0.25 s in front (keep 50 ms)
 # and ~1.5 s of tail, so the pause is ours, not edge-tts's.
 TRIM = (
     "silenceremove=start_periods=1:start_silence=0.05:start_threshold=-40dB:"
     "stop_periods=1:stop_duration=0.15:stop_threshold=-40dB"
 )
-
 # Spoken feedback in the quiz, media/audio/ui/<name>.mp3. Georgian like everything else.
 PHRASES = {
     "correct": "სწორია! ყოჩაღ!",  # "correct, well done"
@@ -59,10 +73,12 @@ PHRASES = {
 
 
 def parts_for(word: dict) -> list[str]:
-    """A letter is read as its sound, a pause, then its anchor word: "ბ." … "ბურთი."."""
+    """A letter is read as a syllable, a pause, then its anchor word: "ბა" … "ბურთი."."""
     anchor = word.get("anchor")
     if anchor:
-        return [f"{word['ka']}.", f"{anchor['ka']}."]
+        ka = str(word["ka"])
+        sound = ka if ka in VOWELS else ka + SYLLABLE_VOWEL
+        return [sound, f"{anchor['ka']}."]
     return [str(word["ka"])]
 
 
@@ -86,10 +102,50 @@ async def synthesize(text: str, out: Path, voice: str, rate: str) -> None:
     await edge_tts.Communicate(text, voice=voice, rate=rate).save(str(out))
 
 
+async def synthesize_syllable(text: str, out: Path, voice: str, rate: str) -> None:
+    """Speak the syllable inside CARRIER and cut it out by the reported word boundaries."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    audio = bytearray()
+    words: list[tuple[float, float]] = []  # (start, duration) in seconds
+    communicate = edge_tts.Communicate(
+        CARRIER.format(text), voice=voice, rate=rate, boundary="WordBoundary"
+    )
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio += chunk["data"]
+        elif chunk["type"] == "WordBoundary":
+            words.append((chunk["offset"] / 1e7, chunk["duration"] / 1e7))
+    if len(words) < 2:  # the service did not split the phrase: keep what it said
+        out.write_bytes(audio)
+        return
+    start, duration = words[1]
+    cut_clip(
+        bytes(audio),
+        out,
+        max(0.0, start - CUT_LEAD_SEC),
+        start + duration + CUT_TAIL_SEC,
+    )
+
+
+def cut_clip(audio: bytes, out: Path, t0: float, t1: float) -> None:
+    """Write audio[t0:t1] to out with short fades and 0.4 s of trailing silence."""
+    fade_out_at = max(0.0, t1 - t0 - 0.05)
+    filters = (
+        f"atrim={t0:.3f}:{t1:.3f},asetpts=PTS-STARTPTS,afade=t=in:d=0.015,"
+        f"afade=t=out:st={fade_out_at:.3f}:d=0.05,apad=pad_dur=0.4"
+    )
+    with tempfile.NamedTemporaryFile(suffix=".mp3") as whole:
+        whole.write(audio)
+        whole.flush()
+        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", whole.name]
+        cmd += ["-af", filters, "-ar", "24000", "-b:a", "48k", str(out)]
+        subprocess.run(cmd, check=True)
+
+
 async def synthesize_parts(parts: list[str], out: Path, voice: str, rate: str) -> None:
     """One clip per part, joined with LETTER_PAUSE_SEC of silence between them.
 
-    Every part but the last is a lone sound: read at LETTER_RATE, trimmed and
+    Every part but the last is a syllable: cut out of the carrier phrase, then
     levelled to LETTER_PEAK_DB. The last part (the anchor word) is left as read.
     """
     if len(parts) == 1:
@@ -98,9 +154,10 @@ async def synthesize_parts(parts: list[str], out: Path, voice: str, rate: str) -
     with tempfile.TemporaryDirectory() as tmp:
         clips = [Path(tmp) / f"{i}.mp3" for i in range(len(parts))]
         for i, (text, clip) in enumerate(zip(parts, clips, strict=True)):
-            await synthesize(
-                text, clip, voice, LETTER_RATE if i < len(parts) - 1 else rate
-            )
+            if i < len(parts) - 1:
+                await synthesize_syllable(text, clip, voice, rate)
+            else:
+                await synthesize(text, clip, voice, rate)
         join_with_pauses(clips, out)
 
 
@@ -166,7 +223,10 @@ async def main() -> None:
                 skipped += 1
                 continue
             parts = parts_for(word)
-            await synthesize_parts(parts, out, args.voice, args.rate)
+            if topic["slug"] == SYLLABLES_TOPIC:
+                await synthesize_syllable(parts[0], out, args.voice, args.rate)
+            else:
+                await synthesize_parts(parts, out, args.voice, args.rate)
             generated += 1
             print(f"{out.relative_to(REPO_DIR)}  ←  {' … '.join(parts)}")
 
