@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — бот: вводные слова регистрации</title>
+<style>
+/* ---------- page chrome: tokens verbatim from frontend/src/styles.css (light set) ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --word-color: var(--grape);
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 17px; line-height: 1.45; }
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b, .mk .lead code { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(4, 328px); gap: 20px; justify-content: center; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 80px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); transform-origin: 0 0; }
+table.st { border-collapse: collapse; background: var(--surface); border: 2px solid var(--line); font-size: 14px; line-height: 1.35; max-width: 1400px; margin-top: 12px; }
+.st th, .st td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.st th { color: var(--muted); font-weight: 800; }
+.st td:first-child { font-weight: 800; white-space: nowrap; }
+.st td pre { margin: 0; white-space: pre-wrap; font: inherit; }
+@media (max-width: 1420px) { .cols { grid-template-columns: repeat(2, 328px); } }
+@media (max-width: 720px) { .cols { grid-template-columns: 328px; } }
+
+/* ---------- context blocks: replies that do not change ---------- */
+.ctx { background: var(--line); opacity: .55; border-radius: 16px; min-height: 48px;
+       display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+
+/* ---------- Telegram iOS imitation (foreign UI, its own palette) ---------- */
+[data-theme='light'] {
+  --t-hdr: #f7f7f7; --t-hdr-line: #d0d0d4; --t-title: #000; --t-sub: #8e8e93; --t-acc: #3390ec;
+  --t-wall: linear-gradient(160deg, #dbe6b8 0%, #b4d3a0 55%, #9cc59e 100%);
+  --t-in: #ffffff; --t-out: #effedd; --t-text: #000; --t-link: #168acd;
+  --t-meta-in: #a1aab3; --t-meta-out: #5fa85a; --t-kb: rgba(52, 84, 40, 0.34); --t-kb-text: #fff;
+  --t-pill: rgba(46, 72, 38, 0.36);
+  --t-ib: #f7f7f7; --t-field: #fff; --t-field-line: #d6d6da; --t-ph: #a0a0a6;
+  --t-kbd: #d1d4da; --t-key: #fff; --t-key2: #abb1bb; --t-keyt: #000; --t-home: #000;
+  --t-card: rgba(255, 255, 255, 0.92);
+}
+[data-theme='dark'] {
+  --t-hdr: #1c1c1d; --t-hdr-line: #000; --t-title: #fff; --t-sub: #8e8e93; --t-acc: #3e88f7;
+  --t-wall: linear-gradient(160deg, #1b2a38 0%, #121c26 60%, #0e1621 100%);
+  --t-in: #222e3a; --t-out: #2b5278; --t-text: #f5f5f5; --t-link: #6ab3f3;
+  --t-meta-in: #7d8b99; --t-meta-out: #8cbbe6; --t-kb: rgba(255, 255, 255, 0.13); --t-kb-text: #fff;
+  --t-pill: rgba(0, 0, 0, 0.38);
+  --t-ib: #1c1c1d; --t-field: #2c2c2e; --t-field-line: #3a3a3c; --t-ph: #7c7c80;
+  --t-kbd: #2b2b2d; --t-key: #6b6b6e; --t-key2: #474749; --t-keyt: #fff; --t-home: #fff;
+  --t-card: rgba(28, 38, 50, 0.94);
+}
+.phone { position: relative; overflow: hidden; width: 410px; height: 864px; border: 10px solid #0d0d12; border-radius: 54px; background: var(--t-wall); color: var(--t-text); font-family: -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.32; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 700; font-size: 16px; color: var(--t-title); }
+.sbar b { font-weight: 700; letter-spacing: 1px; font-size: 13px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--t-home); z-index: 31; }
+.hd { position: absolute; top: 0; left: 0; right: 0; height: 92px; padding-top: 47px; z-index: 20; background: var(--t-hdr); border-bottom: 0.5px solid var(--t-hdr-line); display: flex; align-items: center; }
+.hd .back { width: 90px; padding-left: 8px; color: var(--t-acc); font-size: 17px; display: flex; align-items: center; gap: 2px; }
+.hd .back i { font-style: normal; font-size: 30px; line-height: 1; margin-top: -3px; }
+.hd .back u { text-decoration: none; background: var(--t-acc); color: #fff; font-size: 13px; font-weight: 600; border-radius: 10px; padding: 0 6px; margin-left: 2px; }
+.hd .ttl { flex: 1; text-align: center; line-height: 1.2; }
+.hd .ttl strong { display: block; font-size: 17px; color: var(--t-title); }
+.hd .ttl small { font-size: 13px; color: var(--t-sub); }
+.hd .av { width: 90px; display: flex; justify-content: flex-end; padding-right: 12px; }
+.hd .av span { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(#ffd45e, #f1a500); display: grid; place-items: center; color: #5b2e8c; font-weight: 800; font-size: 17px; }
+.chat { position: absolute; left: 0; right: 0; top: 92px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 8px 8px 10px; overflow: hidden; }
+.row { display: flex; }
+.row.me { justify-content: flex-end; }
+.bm { display: inline-flex; flex-direction: column; gap: 4px; max-width: 84%; min-width: 0; }
+.me .bm { max-width: 78%; }
+.bb { position: relative; padding: 7px 11px 7px; border-radius: 17px 17px 17px 6px; background: var(--t-in); white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: 0 1px 1px rgba(0,0,0,.12); }
+.me .bb { border-radius: 17px 17px 6px 17px; background: var(--t-out); }
+.bb b { font-weight: 650; }
+.lnk { color: var(--t-link); }
+.tm { float: right; margin: 7px -3px -4px 10px; font-size: 11.5px; color: var(--t-meta-in); line-height: 1; white-space: nowrap; }
+.me .tm { color: var(--t-meta-out); }
+.ik { display: flex; flex-direction: column; gap: 4px; }
+.ik div { display: flex; gap: 4px; }
+.ik span { position: relative; flex: 1; min-width: 0; height: 40px; line-height: 40px; padding: 0 12px; border-radius: 10px; background: var(--t-kb); color: var(--t-kb-text); font-weight: 600; font-size: 15px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; backdrop-filter: blur(6px); }
+/* a context bubble keeps the exact height of the real text, but hides it */
+.bb.ctx { display: block; min-height: 0; box-shadow: none; border-radius: 17px 17px 17px 6px; }
+.me .bb.ctx { border-radius: 17px 17px 6px 17px; }
+.bb.ctx .gh { visibility: hidden; }
+.bb.ctx i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; padding: 0 8px; line-height: 1.2; }
+.bm.cm .ik span { background: var(--line); opacity: .55; color: transparent; backdrop-filter: none; }
+.ib { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--t-ib); border-top: 0.5px solid var(--t-hdr-line); display: flex; align-items: center; gap: 8px; padding: 7px 10px; }
+.ib .ic { width: 30px; height: 30px; flex: none; display: grid; place-items: center; color: var(--t-sub); }
+.ib .ic svg { width: 26px; height: 26px; }
+/* Telegram menu button (MenuButtonWebApp «Кабинет»), backend/bot/main.py:35-39 */
+.ib .menu { flex: none; height: 34px; line-height: 34px; padding: 0 13px; border-radius: 17px; background: var(--t-acc); color: #fff; font-weight: 600; font-size: 15px; }
+.ib .fld { flex: 1; min-width: 0; min-height: 36px; border-radius: 18px; border: 0.5px solid var(--t-field-line); background: var(--t-field); padding: 7px 14px; font-size: 16px; color: var(--t-text); line-height: 1.3; white-space: nowrap; overflow: hidden; }
+.ib .fld.ph { color: var(--t-ph); }
+.ib .fld .car { display: inline-block; width: 2px; height: 19px; vertical-align: -4px; background: var(--t-acc); margin-left: 1px; }
+.ib .send { width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--t-acc); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.kbd { position: absolute; left: 0; right: 0; bottom: 0; height: 292px; z-index: 21; background: var(--t-kbd); padding: 8px 3px 0; }
+.kbd .kr { display: flex; justify-content: center; gap: 5px; margin-bottom: 11px; }
+.kbd .k { flex: none; width: 30px; height: 42px; border-radius: 5px; background: var(--t-key); color: var(--t-keyt); display: grid; place-items: center; font-size: 21px; box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.kbd .k.f { background: var(--t-key2); font-size: 15px; }
+.kbd .k.w { width: 44px; }
+.kbd .k.sp { width: 180px; font-size: 16px; }
+.kbd .k.rt { width: 88px; font-size: 16px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Бот: вводные слова регистрации</h1>
+  <p class="lead">Меняются два текста, всё остальное в диалоге — как в <code>docs/mockups/bot-registration.html</code> и показано серыми блоками той же высоты, что настоящие сообщения. Как сейчас: первое сообщение незнакомцу — <code>HELLO</code> (<code>backend/bot/texts.py:79-83</code>), два абзаца: что умеет бот и «Два вопроса, и готово. Как вас зовут?». Хвост финального сообщения — <code>NEXT_STEPS</code> (<code>backend/bot/texts.py:90-92</code>): /settings, /report, /help; он стоит в <code>registered_text</code> (<code>texts.py:112-116</code>) и <code>registered_attached_text</code> (<code>texts.py:119-123</code>). Кнопка меню «Кабинет» слева от строки ввода ставится ботом при запуске (<code>backend/bot/main.py:35-39</code>) и видна с первого сообщения, но ни один текст регистрации о ней не говорит; единственное упоминание кабинета — inline-кнопка «Открыть кабинет» под /progress (<code>backend/bot/keyboards.py:21</code>). Кадр — Telegram на iPhone, 390×844, масштаб 0,8. Имена и коды выдуманы.</p>
+
+  <table class="st">
+    <thead><tr><th>Текст</th><th>Как сейчас</th><th>Как будет</th></tr></thead>
+    <tbody id="diff"></tbody>
+  </table>
+
+  <h2>1 · /start: новое приветствие</h2>
+  <p class="lead">Добавлен средний абзац: регистрация заводит одного ребёнка, остальных — одной командой, которую бот покажет в конце. Вопрос по-прежнему последней строкой, кнопка «Я — Нино Беридзе» под сообщением как сейчас. Кнопка «Кабинет» у строки ввода есть уже здесь, хотя до конца регистрации кабинету показывать нечего. С открытой клавиатурой место над ней — около 410 px: приветствие влезает целиком вместе с кнопкой, запас около 40 px — ещё одна строка текста, и его верх уйдёт под шапку.</p>
+  <div class="cols" id="s1"></div>
+
+  <h2>2 · Финал: ребёнок добавлен по имени</h2>
+  <p class="lead">Новый хвост: первой строкой /addchild — это обещание из приветствия («покажу в конце»); строка про «Кабинет» — перед /help, последней по смыслу. Следом, как сейчас, сообщение с кодом и кнопкой «Новые цифры»: оно ниже всех и ближе всего к пальцу, так что строка про кабинет оказывается примерно на середине экрана, над ним.</p>
+  <div class="cols" id="s2"></div>
+
+  <h2>3 · Финал: ребёнок подключён по коду</h2>
+  <p class="lead">Второй родитель прислал код вместо имени. Сообщения с кодом нет (как сейчас), поэтому финал — последнее сообщение, и строка про «Кабинет» стоит почти вплотную над кнопкой, о которой говорит.</p>
+  <div class="cols" id="s3"></div>
+
+  <h2>4 · Переполнение: длинные имена</h2>
+  <p class="lead">Имя родителя и ребёнка — по две строки каждое. С закрытой клавиатурой финал и сообщение с кодом влезают оба, под шапку уходят только старые реплики (4а, 4б); подключение по коду влезает с запасом (4в, 4г). Худший случай — клавиатура осталась открытой после отправки имени ребёнка (Telegram её сам не закрывает): над ней ~410 px, сообщение с кодом занимает их почти целиком, и от финала видны только последние строки — «Кабинет» и /help (4д, 4е). Telegram прокручивает к последнему сообщению, так что это честная картина первого взгляда.</p>
+  <div class="cols" id="s4"></div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Что уступает при нехватке места.</b> Сообщения бота не сокращаются, старые уезжают вверх под шапку. Поэтому порядок строк задаёт, что пропадёт первым. Приветствие сейчас влезает над клавиатурой целиком (кадр 1в), но с запасом в одну-две строки; при нехватке первым уйдёт верх — абзац о том, что умеет бот, а вопрос останется последней строкой. Если приветствие придётся ужимать, первым кандидатом будет средний абзац: без него регистрация работает, просто родитель узнает про /addchild на минуту позже. В финале при открытой клавиатуре (кадр 4д) первым уходит «Готово! Вы в Мзико как …» и верх списка команд; строка про «Кабинет» и /help остаются видны над сообщением с кодом — поэтому «Кабинет» стоит в хвосте, а не сразу после «Дальше:». Сообщение с кодом не уступает никогда: его сейчас передают ребёнку.</li>
+    <li><b>Где стоит фраза про кабинет.</b> В финале, а не в приветствии: до регистрации в кабинете нет ребёнка, и кнопка вела бы в пустоту. Внутри хвоста — после трёх команд и перед «Все команды: /help»: /help остаётся последней строкой, как сейчас, и не спорит с кабинетом за внимание, а кабинет не теряется среди команд, потому что это единственная строка без «/» в начале.</li>
+    <li><b>/addchild — первой строкой.</b> Приветствие обещает «одной командой, я её покажу в конце», и обещание выполняется первой же строкой после «Дальше:», а не третьей.</li>
+    <li><b>Один хвост на оба финала.</b> <code>NEXT_STEPS</code> общий для «добавил» и «подключил»; для второго родителя строка «добавить ещё одного ребёнка» тоже верна (кадр 3), так что разводить тексты не нужно.</li>
+    <li><b>Кнопку «Кабинет» текст называет, но не дублирует.</b> Inline-кнопки «Открыть кабинет» под финалом нет: это новый элемент, его в задаче нет, и под финальным сообщением он встал бы вторым действием рядом с кодом.</li>
+  </ul>
+
+  <h2>Чего нет на макете</h2>
+  <ul class="lead">
+    <li><b>/help и <code>start_text</code> уже зарегистрированного</b> — не трогаются этой задачей.</li>
+    <li><b>Пустой чат до /start, ошибки ввода, /cancel, возврат через день</b> — поведение не меняется, эти кадры есть в <code>bot-registration.html</code>; приветствие в них то же, новое.</li>
+    <li><b>Загрузка и ошибка сервера</b> — тексты статичные, у них нет своих состояний; ответ middleware «Не получилось, попробуйте позже» как сейчас.</li>
+    <li><b>Чат без кнопки «Кабинет».</b> Если <code>PUBLIC_URL</code> не https, бот кнопку не ставит (<code>main.py:36-41</code>), а текст на неё ссылается. На проде адрес https, поэтому кадра нет — но это надо решить в коде: не показывать строку про кабинет без кнопки.</li>
+    <li><b>Telegram Desktop и Android</b> — кнопка меню там тоже слева от поля ввода, отдельными кадрами не рисовались.</li>
+  </ul>
+</main>
+
+<script>
+/* ---------------- texts the bot sends ---------------- */
+const P = 'Нино Беридзе';
+const HELLO_OLD =
+  'Привет! Я Мзико, бот для родителей. Здесь вы добавляете ребёнка, выдаёте ему код для входа в приложение и видите, сколько слов он выучил и сколько лари заработал.\n\n' +
+  'Два вопроса, и готово. Как вас зовут?';
+const HELLO =
+  'Привет! Я Мзико, бот для родителей. Здесь вы добавляете ребёнка, выдаёте ему код для входа в приложение и видите, сколько слов он выучил и сколько лари заработал.\n\n' +
+  'Сейчас один раз заведём первого ребёнка. Следующих детей добавите потом одной командой, я её покажу в конце.\n\n' +
+  'Два вопроса, и готово. Как вас зовут?';
+const NEXT_OLD = 'Дальше:\n/settings — курс, лимит, подсказка\n/report — итоги недели\nВсе команды: /help';
+const NEXT =
+  'Дальше:\n/addchild Имя — добавить ещё одного ребёнка\n/settings — курс, лимит, подсказка\n/report — итоги недели\n' +
+  'Кнопка «Кабинет» слева от строки ввода — прогресс ребёнка экраном: темы, слова, занятия, монеты.\n' +
+  'Все команды: /help';
+const DONE = (p, c) => `Готово! Вы в Мзико как <b>${p}</b>, добавил: <b>${c}</b>.\n\n${NEXT}`;
+const ATT = (p, c) => `Готово! Вы в Мзико как <b>${p}</b>, подключил: <b>${c}</b>. Код для входа тот же: /code\n\n${NEXT}`;
+
+/* context: unchanged replies, used only for their real height */
+const ASKQ =
+  'Как зовут ребёнка? С этим именем приложение будет с ним здороваться.\n' +
+  'Если ребёнок уже занимается у другого родителя, пришлите вместо имени его код, например LOMI-7241.';
+const ASK = n => `Записал: <b>${n}</b>.\n\n${ASKQ}`;
+const HOST = 'https://mziko.example.com';
+const CODE = (c, code) =>
+  `Код для входа ${c}: <b>${code}</b>\nСсылка для входа: ${HOST}/c/${code}\n\n` +
+  'Ребёнок вводит код на экране входа на любом устройстве, или откройте ссылку там. ' +
+  'Три ошибки подряд закрывают вход на час; «Новые цифры» открывают его сразу и меняют цифры (слово остаётся).';
+
+/* ---------------- pieces ---------------- */
+const lk = s => s
+  .replace(/(https?:\/\/[^\s<]+)/g, '<span class="lnk">$1</span>')
+  .replace(/(^|[\s(>])(\/[a-z]+)/g, '$1<span class="lnk">$2</span>');
+const ik = rows => `<div class="ik">${rows.map(r => `<div>${r.map(b => `<span>${b}</span>`).join('')}</div>`).join('')}</div>`;
+
+// m: { b, kb } bot · { me } user · add cx: 'label' to render it as a context block of the same height
+function msg(m) {
+  const t = m.t || '21:14';
+  const mine = m.me !== undefined;
+  const text = mine ? m.me : m.b;
+  const tm = `<span class="tm">${t}${mine ? ' ✓✓' : ''}</span>`;
+  const inner = m.cx
+    ? `<div class="bb ctx"><span class="gh">${lk(text)}${tm}</span><i>${m.cx}</i></div>`
+    : `<div class="bb">${lk(text)}${tm}</div>`;
+  return `<div class="row${mine ? ' me' : ''}"><div class="bm${m.cx ? ' cm' : ''}">${inner}${m.kb ? ik(m.kb) : ''}</div></div>`;
+}
+
+const KEYS = ['йцукенгшщзх', 'фывапролджэ', 'ячсмитьбю'];
+const KBD = `<div class="kbd">
+  <div class="kr">${[...KEYS[0]].map(k => `<span class="k">${k}</span>`).join('')}</div>
+  <div class="kr">${[...KEYS[1]].map(k => `<span class="k">${k}</span>`).join('')}</div>
+  <div class="kr"><span class="k f w">&#8679;</span>${[...KEYS[2]].map(k => `<span class="k">${k}</span>`).join('')}<span class="k f w">&#9003;</span></div>
+  <div class="kr"><span class="k f w">123</span><span class="k f w">&#9786;</span><span class="k sp">пробел</span><span class="k f rt">ввод</span></div>
+</div>`;
+const CLIP = '<svg viewBox="0 0 24 24"><path d="M16.5 6.5l-7.8 7.8a2 2 0 0 0 2.8 2.8l7.4-7.4a4 4 0 0 0-5.7-5.7l-7.6 7.6a6 6 0 0 0 8.5 8.5l6.3-6.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+const MIC = '<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+
+// o: { msgs, typed }
+function phone(theme, o) {
+  const kbd = o.typed !== undefined;
+  const bottom = 50 + (kbd ? 292 : 34);
+  const typed = o.typed || '';
+  const input = `<div class="ib" style="bottom:${kbd ? 292 : 0}px;${kbd ? '' : 'padding-bottom:41px'}">
+      <span class="menu">Кабинет</span>
+      <span class="ic">${CLIP}</span>
+      <div class="fld${typed ? '' : ' ph'}">${typed ? typed + '<span class="car"></span>' : 'Сообщение'}</div>
+      ${typed ? '<span class="send">&#8593;</span>' : `<span class="ic">${MIC}</span>`}
+    </div>`;
+  return `<div class="phone" data-theme="${theme}">
+    <div class="sbar"><span>21:14</span><b>▮▮▮ ◠ ▭</b></div><div class="island"></div>
+    <div class="hd"><div class="back"><i>&#8249;</i>Чаты<u>3</u></div><div class="ttl"><strong>Мзико</strong><small>бот</small></div><div class="av"><span>М</span></div></div>
+    <div class="chat" style="bottom:${bottom}px">${o.msgs.map(msg).join('')}</div>
+    ${input}${kbd ? KBD : ''}<div class="hbar"></div>
+  </div>`;
+}
+const fig = (t, s, inner) => `<figure><figcaption>${t}<span>${s}</span></figcaption><div class="fw">${inner}</div></figure>`;
+const put = (id, list) => {
+  document.getElementById(id).innerHTML = list.map(([t, s, theme, o]) => fig(t, s, phone(theme, o))).join('');
+};
+
+/* ---------------- what changed, as text ---------------- */
+const plain = s => s.replace(/<\/?b>/g, '');
+document.getElementById('diff').innerHTML = [
+  ['HELLO · texts.py:79-83', HELLO_OLD, HELLO],
+  ['NEXT_STEPS · texts.py:90-92', NEXT_OLD, NEXT],
+].map(r => `<tr>${r.map(c => `<td><pre>${plain(c).replace(/</g, '&lt;')}</pre></td>`).join('')}</tr>`).join('');
+
+/* ---------------- conversations ---------------- */
+const START = { me: '/start', cx: 'как сейчас' };
+const B1 = [`Я — ${P}`];
+const hello = { msgs: [START, { b: HELLO, kb: [B1] }] };
+const helloTyping = { msgs: [START, { b: HELLO, kb: [B1] }], typed: 'Нино' };
+put('s1', [
+  ['1а · Приветствие', 'новый HELLO, кнопка с именем из профиля; «Кабинет» уже у строки ввода', 'light', hello],
+  ['1б · Приветствие · тёмная', '', 'dark', hello],
+  ['1в · Печатает имя сам', 'клавиатура открыта: над ней ~410 px, приветствие с кнопкой влезает, запас ~40 px', 'light', helloTyping],
+  ['1г · Печатает имя сам · тёмная', '', 'dark', helloTyping],
+]);
+
+const C = 'Сандро';
+const done = { msgs: [
+  { b: ASK(P), cx: '«Записал… Как зовут ребёнка?» — как сейчас' },
+  { me: C, t: '21:15', cx: 'как сейчас' },
+  { b: DONE(P, C), t: '21:15' },
+  { b: CODE(C, 'PURI-3815'), kb: [['Новые цифры']], t: '21:15', cx: 'сообщение с кодом и кнопка «Новые цифры» — как сейчас (/code)' },
+] };
+put('s2', [
+  ['2а · Готово, добавил', 'новый хвост; ниже — сообщение с кодом', 'light', done],
+  ['2б · Готово, добавил · тёмная', '', 'dark', done],
+]);
+
+const att = { msgs: [
+  START,
+  { b: HELLO, cx: 'приветствие без кнопки — новое, см. 1' },
+  { b: ASK(P), cx: '«Записал… Как зовут ребёнка?» — как сейчас' },
+  { me: 'LOMI-7241', cx: 'как сейчас' },
+  { b: ATT(P, C) },
+] };
+put('s3', [
+  ['3а · Готово, подключил', 'код вместо имени; сообщения с кодом нет — финал последний', 'light', att],
+  ['3б · Готово, подключил · тёмная', '', 'dark', att],
+]);
+
+const LP = 'Александра-Мария Константинопольская-Мухранбатони';
+const LC = 'Анастасия-Николоза Мухранбатони-Константинопольская';
+const longDone = { msgs: [
+  { b: ASK(LP), cx: '«Записал… Как зовут ребёнка?» — как сейчас' },
+  { me: LC, t: '21:15', cx: 'как сейчас' },
+  { b: DONE(LP, LC), t: '21:15' },
+  { b: CODE(LC, 'MZIA-0407'), kb: [['Новые цифры']], t: '21:15', cx: 'сообщение с кодом — как сейчас (/code)' },
+] };
+const longAtt = { msgs: [
+  { b: ASK(LP), cx: '«Записал… Как зовут ребёнка?» — как сейчас' },
+  { me: 'MZIA-0407', t: '21:15', cx: 'как сейчас' },
+  { b: ATT(LP, LC), t: '21:15' },
+] };
+put('s4', [
+  ['4а · Добавил, длинные имена', `родитель ${LP.length} знаков, ребёнок ${LC.length}: клавиатура закрыта — финал и код влезают оба`, 'light', longDone],
+  ['4б · Добавил, длинные имена · тёмная', '', 'dark', longDone],
+  ['4в · Подключил, длинные имена', 'без сообщения с кодом финал влезает целиком', 'light', longAtt],
+  ['4г · Подключил, длинные имена · тёмная', '', 'dark', longAtt],
+  ['4д · Клавиатура не закрылась', 'после отправки имени ребёнка: над клавиатурой только код и хвост финала — «Кабинет» и /help', 'light', { ...longDone, typed: '' }],
+  ['4е · Клавиатура не закрылась · тёмная', '', 'dark', { ...longDone, typed: '' }],
+]);
+</script>
+</body>
+</html>

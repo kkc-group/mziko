@@ -154,5 +154,7 @@ async def test_client_registers_a_newcomer(db: AsyncSession, child: Child, clock
     added = await newcomer.add_child("Сандро")
     done = texts.registered_text("Нино Церетели", added)
     assert "добавил: <b>Сандро</b>" in done and "/help" in done
+    assert "/addchild Имя" in done and "«Кабинет»" in done
+    assert "один раз заведём первого ребёнка" in texts.HELLO
     assert [c.id for c in (await newcomer.me() or me).children] == [added.id]
     assert keyboards.name_kb("Нино").inline_keyboard[0][0].callback_data == "reg:name"
