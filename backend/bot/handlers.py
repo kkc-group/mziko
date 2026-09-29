@@ -9,6 +9,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
+from app.core.config import get_settings
 from app.schemas.parent import ChildInfo, ParentOut
 from bot import keyboards, texts
 from bot.api import ApiError, ParentApi
@@ -30,7 +31,9 @@ async def show_report(message: Message, api: ParentApi, child: ChildInfo) -> Non
 
 async def show_progress(message: Message, api: ParentApi, child: ChildInfo) -> None:
     p = await api.progress(child.id)
-    await message.answer(texts.progress_text(p.child, p.topics))
+    url = keyboards.cabinet_url(get_settings().public_url)
+    kb = keyboards.cabinet_kb(url) if url else None
+    await message.answer(texts.progress_text(p.child, p.topics), reply_markup=kb)
 
 
 async def show_settings(message: Message, api: ParentApi, child: ChildInfo) -> None:

@@ -65,6 +65,13 @@ async def test_client_round_trip_children_report_and_payout(
     assert "Выдайте наличные" in texts.report_text(r)
     assert keyboards.report_kb(r).inline_keyboard[0][0].callback_data == f"pay:{r.week.id}"
 
+    # The cabinet button is a Mini App link, offered only where Telegram accepts one (https).
+    assert keyboards.cabinet_url("http://localhost") is None
+    url = keyboards.cabinet_url("https://mziko.example.com/")
+    assert url == "https://mziko.example.com/cabinet/"
+    button = keyboards.cabinet_kb(url).inline_keyboard[0][0]
+    assert button.web_app is not None and button.web_app.url == url
+
     clock.moment = at(DAY1 + timedelta(days=6), 20)
     paid = await api.pay(r.week.id)
     assert paid.already_paid is False and paid.report.week.status == "paid"

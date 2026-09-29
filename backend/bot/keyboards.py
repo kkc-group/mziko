@@ -1,7 +1,26 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
 from app.schemas.parent import CAP_OPTIONS, RATE_OPTIONS, ChildInfo, DeviceOut, WeekReportOut
 from bot.texts import week_label
+
+
+def cabinet_url(public_url: str) -> str | None:
+    """Where the parents' cabinet opens as a Mini App; None when Telegram would refuse it.
+
+    Telegram accepts only https for Mini App buttons, so on a local http setup
+    the bot shows no cabinet buttons at all instead of failing to send.
+    """
+    if not public_url.startswith("https://"):
+        return None
+    return f"{public_url.rstrip('/')}/cabinet/"
+
+
+def cabinet_kb(url: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Открыть кабинет", web_app=WebAppInfo(url=url))]
+        ]
+    )
 
 
 def report_kb(r: WeekReportOut) -> InlineKeyboardMarkup:

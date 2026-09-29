@@ -119,10 +119,13 @@ class WordProgressOut(BaseModel):
     ka: str
     ru: str
     stage: int
+    # The last day the stage grew (Asia/Tbilisi); None until the first correct answer.
+    last_correct_date: date | None = None
 
 
 class TopicProgressOut(BaseModel):
     slug: str
+    section: Literal["letters", "syllables", "words"]
     icon: str
     title_ru: str
     learned: int

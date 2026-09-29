@@ -15,7 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api import AdminApi, ApiError, make_client
+from app.api import AdminApi, ApiError, ParentApi, make_client, make_parent_client
+from app.cabinet import router as cabinet_router
 from app.calendar import calendar_grid
 from app.config import ADMIN_DIR, get_settings
 from app.format import (
@@ -224,6 +225,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     s = get_settings()
     app.state.oauth = make_oauth()
     app.state.api = AdminApi(make_client(s.api_url, s.admin_api_token))
+    app.state.parent_api = ParentApi(make_parent_client(s.api_url, s.bot_api_token))
     yield
 
 
@@ -242,7 +244,10 @@ def create_app() -> FastAPI:
         max_age=14 * 24 * 3600,
     )
     app.include_router(router)
-    app.mount("/admin/static", StaticFiles(directory=ADMIN_DIR / "app" / "static"), name="static")
+    app.include_router(cabinet_router)
+    static = StaticFiles(directory=ADMIN_DIR / "app" / "static")
+    app.mount("/admin/static", static, name="static")
+    app.mount("/cabinet/static", static, name="cabinet_static")
 
     @app.exception_handler(HTTPException)
     async def redirect_or_error(request: Request, exc: HTTPException) -> Response:

@@ -94,25 +94,27 @@ async def week_by_id(db: AsyncSession, week_id: int) -> Week | None:
 @dataclass
 class TopicProgress:
     topic: Topic
-    words: list[tuple[Word, int]]  # (word, stage)
+    words: list[tuple[Word, int, date | None]]  # (word, stage, last correct day)
 
     @property
     def learned(self) -> int:
-        return sum(1 for _, stage in self.words if stage >= LEARNED_STAGE)
+        return sum(1 for _, stage, _ in self.words if stage >= LEARNED_STAGE)
 
 
 async def progress_by_topic(db: AsyncSession, child: Child) -> list[TopicProgress]:
     topics = list((await db.execute(select(Topic).order_by(Topic.order))).scalars())
     words = list((await db.execute(select(Word).order_by(Word.topic_id, Word.order))).scalars())
-    stages = {
-        p.word_id: p.stage
+    progress = {
+        p.word_id: p
         for p in (
             await db.execute(select(WordProgress).where(WordProgress.child_id == child.id))
         ).scalars()
     }
+
+    def row(w: Word) -> tuple[Word, int, date | None]:
+        p = progress.get(w.id)
+        return (w, p.stage, p.last_correct_date) if p is not None else (w, 0, None)
+
     return [
-        TopicProgress(
-            topic=t, words=[(w, stages.get(w.id, 0)) for w in words if w.topic_id == t.id]
-        )
-        for t in topics
+        TopicProgress(topic=t, words=[row(w) for w in words if w.topic_id == t.id]) for t in topics
     ]

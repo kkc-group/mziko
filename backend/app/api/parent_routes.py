@@ -25,7 +25,7 @@ from app.schemas.parent import (
     WordBrief,
     WordProgressOut,
 )
-from app.services import coins, login_codes, pairing, parents, report
+from app.services import coins, lessons, login_codes, pairing, parents, report
 from app.services.report import TopicProgress, WeekReport
 
 router = APIRouter()
@@ -76,11 +76,15 @@ def report_out(r: WeekReport) -> WeekReportOut:
 def topic_progress_out(tp: TopicProgress) -> TopicProgressOut:
     return TopicProgressOut(
         slug=tp.topic.slug,
+        section=lessons.section_of(tp.topic),
         icon=tp.topic.icon,
         title_ru=tp.topic.title_ru,
         learned=tp.learned,
         total=len(tp.words),
-        words=[WordProgressOut(ka=w.ka, ru=w.ru, stage=stage) for w, stage in tp.words],
+        words=[
+            WordProgressOut(ka=w.ka, ru=w.ru, stage=stage, last_correct_date=last)
+            for w, stage, last in tp.words
+        ],
     )
 
 

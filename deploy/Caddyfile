@@ -13,6 +13,12 @@ handle /admin/* {
 	reverse_proxy admin:8080
 }
 
+# The parents' cabinet (Telegram Mini App) lives in the same process as the back office.
+redir /cabinet /cabinet/ permanent
+handle /cabinet/* {
+	reverse_proxy admin:8080
+}
+
 handle_path /media/* {
 	root * /srv/media
 	file_server
