@@ -8,8 +8,9 @@ import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
 import { Lessons } from './screens/Lessons'
 import { Login } from './screens/Login'
-import { ProgressMap, type MapLock } from './screens/ProgressMap'
-import type { LessonOut, Me, SessionOut, Step, TopicOut } from './types'
+import { ProgressMap } from './screens/ProgressMap'
+import { StickerCard } from './screens/StickerCard'
+import type { LessonOut, Me, SessionOut, Step, TopicOut, WordOut } from './types'
 
 type Screen =
   | { kind: 'login'; code: string | null }
@@ -19,12 +20,6 @@ type Screen =
 
 /** Which of the screens under the "home" state is shown; the menu opens only over 'home'. */
 type View = 'home' | 'lessons' | 'map'
-
-/** What a sticker of a lesson that cannot start today says when tapped. */
-const LOCK_NOTICE: Record<MapLock, string> = {
-  topic: 'Этот урок откроется завтра',
-  part: 'Сначала пройди предыдущий урок',
-}
 
 interface ActiveLesson {
   sessionId: string
@@ -57,6 +52,8 @@ export default function App() {
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
   /** The done lesson whose «Повторить» was tapped: the replay sheet is open for it. */
   const [replay, setReplay] = useState<LessonOut | null>(null)
+  /** The sticker tapped on the progress map: its own page is open over the map. */
+  const [sticker, setSticker] = useState<WordOut | null>(null)
   const [busy, setBusy] = useState<Busy>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const speaker = useMemo(() => new Speaker(), [])
@@ -77,6 +74,7 @@ export default function App() {
   const reload = useCallback(() => {
     setScreen({ kind: 'loading' })
     setView('home') // a fresh load always lands on the home screen
+    setSticker(null)
     void loadMe()
   }, [loadMe])
 
@@ -185,10 +183,14 @@ export default function App() {
       {screen.kind === 'home' && view === 'map' && (
         <ProgressMap
           me={screen.me}
-          busy={busy}
-          onPlay={startLesson}
-          onReplay={setReplay}
-          onLocked={(lock) => setNotice(LOCK_NOTICE[lock])}
+          onOpen={(word) => {
+            // Sound must start inside the tap itself: iOS only allows programmatic
+            // playback from a user gesture (see Speaker.unlock in audio.ts:30-33).
+            speaker.preload([word])
+            speaker.unlock()
+            void speaker.play(word)
+            setSticker(word)
+          }}
           onBack={() => setView('home')}
         />
       )}
@@ -200,6 +202,14 @@ export default function App() {
           onClose={() => setReplay(null)}
           onQuiz={startLesson}
           onRestart={restartTopic}
+        />
+      )}
+      {sticker && screen.kind === 'home' && view === 'map' && (
+        <StickerCard
+          word={sticker}
+          speaker={speaker}
+          showHint={screen.me.settings.show_hint}
+          onBack={() => setSticker(null)}
         />
       )}
       {notice && (

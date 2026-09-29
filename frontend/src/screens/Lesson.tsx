@@ -193,7 +193,7 @@ function Intro({
 }
 
 /** "ბ as in ⚽ ბურთი": the example word under a letter, its first letter highlighted. */
-function Anchor({ letter, anchor, showHint }: { letter: string; anchor: AnchorOut; showHint: boolean }) {
+export function Anchor({ letter, anchor, showHint }: { letter: string; anchor: AnchorOut; showHint: boolean }) {
   const rest = anchor.ka.startsWith(letter) ? anchor.ka.slice(letter.length) : anchor.ka
   return (
     <div className="anchor" aria-label={`${anchor.ka} — ${anchor.ru}`}>
