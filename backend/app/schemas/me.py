@@ -43,7 +43,7 @@ class LessonOut(BaseModel):
 
 
 class TopicOut(BaseModel):
-    """A row of the "Уроки" screen. `today`: the section's topic of the day; `locked`: yields."""
+    """A row of the "Уроки" screen. `today`: played today; `locked`: waits its turn."""
 
     slug: str
     title_ru: str

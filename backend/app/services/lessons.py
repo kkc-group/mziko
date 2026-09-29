@@ -7,20 +7,23 @@ order, and a child's position from word progress and today's sessions:
 - a lesson is done when every word in it has been introduced;
 - within a topic lessons go in order: the first one not done is current,
   the ones after it wait for it;
-- a day has one topic per section: the first session of a topic today (a new
-  lesson or a replay) makes it the section's topic of the day and locks the
-  other topics of that section until tomorrow;
+- within a section topics go in order: a topic is started once it has had a
+  session on any day; a started topic is never locked, so it can be replayed
+  or started over at any time;
+- a topic not started yet opens when the one before it in its section is done,
+  and a section starts at most one new topic a day: the day a topic has its
+  first session, the next one waits for tomorrow;
 - done lessons of an open topic can be replayed as often as the child likes;
 - older words come back only as review steps mixed into any session.
 """
 
-from collections.abc import Collection, Sequence
-from dataclasses import dataclass
+from collections.abc import Collection, Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import date
 from math import ceil
 from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Session, Topic, Word, WordProgress
@@ -126,6 +129,24 @@ async def load_today_topics(db: AsyncSession, child_id: int, today: date) -> lis
     return ordered
 
 
+async def load_topic_first_days(db: AsyncSession, child_id: int) -> dict[int, date]:
+    """Topic id -> the day of the child's first session in it, for every topic ever started.
+
+    Sessions, not word progress: starting a topic over forgets its words were
+    shown, yet the topic stays started.
+    """
+    stmt = (
+        select(Session.topic_id, func.min(Session.study_date))
+        .where(Session.child_id == child_id, Session.topic_id.is_not(None))
+        .group_by(Session.topic_id)
+    )
+    return {
+        topic_id: first_day
+        for topic_id, first_day in (await db.execute(stmt)).all()
+        if topic_id is not None  # filtered above; keeps the type checker honest
+    }
+
+
 @dataclass(frozen=True)
 class TopicState:
     topic: Topic
@@ -163,27 +184,27 @@ class Position:
 
 
 def position(
-    lessons: Sequence[Lesson], progress: dict[int, WordProgress], today_topics: Collection[int]
+    lessons: Sequence[Lesson],
+    progress: dict[int, WordProgress],
+    today_topics: Collection[int],
+    first_days: Mapping[int, date],
+    today: date,
 ) -> Position:
-    """`today_topics` are the ids of the topics the child had sessions in today."""
+    """Where the child stands today: lesson statuses and which topics may be played.
+
+    `today_topics` are the ids of the topics the child had sessions in today,
+    `first_days` maps every started topic to the day of its first session.
+    A started topic is "today" if it had a session today, else "open". A topic
+    not started yet is "locked" while the topic before it in its section is not
+    done, or while its section has a topic first started today (one new topic
+    a section a day); otherwise it is "open". A done topic is never locked.
+    """
 
     def introduced(word: Word) -> bool:
         p = progress.get(word.id)
         return p is not None and p.introduced
 
-    today_by_section: dict[Section, int] = {}
-    for lesson in lessons:
-        if lesson.topic.id in today_topics:
-            today_by_section[section_of(lesson.topic)] = lesson.topic.id
-
-    def topic_status(topic: Topic) -> TopicStatus:
-        chosen = today_by_section.get(section_of(topic))
-        if chosen is None:
-            return "open"
-        return "today" if chosen == topic.id else "locked"
-
     states: list[LessonState] = []
-    topics: list[TopicState] = []
     current_of: dict[int, bool] = {}  # topic id -> its current lesson has been placed
     for lesson in lessons:
         topic = lesson.topic
@@ -195,13 +216,44 @@ def position(
             current_of[topic.id] = True
         else:
             status = "locked"
-        playable = status != "locked" and topic_status(topic) != "locked"
-        states.append(LessonState(lesson, introduced=count, status=status, playable=playable))
-        if lesson.part == lesson.parts:
-            done = all(s.status == "done" for s in states if s.lesson.topic.id == topic.id)
-            topics.append(
-                TopicState(
-                    topic=topic, section=section_of(topic), status=topic_status(topic), done=done
-                )
-            )
+        states.append(LessonState(lesson, introduced=count, status=status, playable=False))
+
+    done_of: dict[int, bool] = {}
+    for s in states:
+        done_of[s.lesson.topic.id] = done_of.get(s.lesson.topic.id, True) and s.status == "done"
+
+    new_today: set[Section] = {
+        section_of(lesson.topic) for lesson in lessons if first_days.get(lesson.topic.id) == today
+    }
+    topic_status: dict[int, TopicStatus] = {}
+    previous_done: dict[Section, bool] = {}  # section -> the topic before this one is done
+    for lesson in lessons:
+        topic = lesson.topic
+        section = section_of(topic)
+        if lesson.part != 1:
+            continue
+        if topic.id in today_topics:
+            topic_status[topic.id] = "today"
+        elif topic.id in first_days or done_of[topic.id]:
+            topic_status[topic.id] = "open"
+        elif not previous_done.get(section, True) or section in new_today:
+            topic_status[topic.id] = "locked"
+        else:
+            topic_status[topic.id] = "open"
+        previous_done[section] = done_of[topic.id]
+
+    states = [
+        replace(s, playable=s.status != "locked" and topic_status[s.lesson.topic.id] != "locked")
+        for s in states
+    ]
+    topics = [
+        TopicState(
+            topic=lesson.topic,
+            section=section_of(lesson.topic),
+            status=topic_status[lesson.topic.id],
+            done=done_of[lesson.topic.id],
+        )
+        for lesson in lessons
+        if lesson.part == lesson.parts
+    ]
     return Position(lessons=states, topics=topics)

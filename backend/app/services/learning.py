@@ -96,7 +96,7 @@ async def build_session(
     """Create a session for lesson `lesson_number`, or a review-only one for None.
 
     The lesson must be playable today (see services.lessons), else LessonLocked.
-    The session itself makes its topic the section's topic of the day.
+    The first session of a topic starts it (see services.lessons for the day's limit).
     Up to 3 of its words not yet shown are introduced (in order). The quiz then
     reviews: first the lesson's own words not answered correctly today, then the
     longest-waiting unlearned words of earlier lessons, 4 in all. Replaying a
@@ -108,7 +108,10 @@ async def build_session(
     topics = await _topics_by_id(db)
     progress_by_word = await lessons.load_progress(db, child.id)
     today_topics = await lessons.load_today_topics(db, child.id, today)
-    position = lessons.position(await lessons.load_lessons(db), progress_by_word, today_topics)
+    first_days = await lessons.load_topic_first_days(db, child.id)
+    position = lessons.position(
+        await lessons.load_lessons(db), progress_by_word, today_topics, first_days, today
+    )
 
     lesson: lessons.Lesson | None = None
     if lesson_number is not None:
@@ -223,7 +226,7 @@ async def restart_topic(
 ) -> Session | None:
     """Start the topic over: forget its words were shown, then play its first lesson.
 
-    The topic must be open today (its section not taken by another topic), else
+    The topic must not be locked today (a started topic never is), else
     LessonLocked. Stages and coins stay, so the child earns nothing twice.
     """
     today = local_date(now)
@@ -233,7 +236,8 @@ async def restart_topic(
         raise NotFound(f"topic {topic_slug}")
     progress_by_word = await lessons.load_progress(db, child.id)
     today_topics = await lessons.load_today_topics(db, child.id, today)
-    position = lessons.position(path, progress_by_word, today_topics)
+    first_days = await lessons.load_topic_first_days(db, child.id)
+    position = lessons.position(path, progress_by_word, today_topics, first_days, today)
     state = position.get(first.number)
     if state is None or not state.playable:
         raise LessonLocked(f"topic {topic_slug} cannot be played today")

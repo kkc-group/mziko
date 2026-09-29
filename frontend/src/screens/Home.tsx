@@ -190,7 +190,7 @@ export function Home({
             <div className="cur all">
               <Mascot size={88} />
               <b>Выбери урок на сегодня</b>
-              <small>Каждый день — одна тема из каждого раздела</small>
+              <small>Каждый день — одна новая тема из каждого раздела</small>
               <button type="button" className="play" onClick={onOpenLessons}>
                 К урокам
               </button>

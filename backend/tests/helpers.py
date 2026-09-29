@@ -55,8 +55,11 @@ async def skip_to(db: AsyncSession, child: Child, topic_slug: str) -> int:
 async def lesson_to_play(db: AsyncSession, child: Child, topic_slug: str, now: datetime) -> int:
     """The topic's lesson to play now: its first unfinished one, else its last (a replay)."""
     path = await lessons.load_lessons(db)
-    today_topics = await lessons.load_today_topics(db, child.id, local_date(now))
-    position = lessons.position(path, await lessons.load_progress(db, child.id), today_topics)
+    today = local_date(now)
+    today_topics = await lessons.load_today_topics(db, child.id, today)
+    first_days = await lessons.load_topic_first_days(db, child.id)
+    progress = await lessons.load_progress(db, child.id)
+    position = lessons.position(path, progress, today_topics, first_days, today)
     topic = next(lesson.topic for lesson in path if lesson.topic.slug == topic_slug)
     state = position.lesson_of_topic(topic.id)
     assert state is not None

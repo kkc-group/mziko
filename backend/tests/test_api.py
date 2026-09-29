@@ -66,13 +66,18 @@ async def test_full_lesson_flow_over_http(
         "syllables",
     ]
     assert (lessons[0]["status"], lessons[0]["playable"]) == ("current", True)
-    assert (lessons[1]["status"], lessons[1]["playable"]) == ("current", True)  # any letters topic
+    # letters-2 waits for letters-1: topics go in order within a section.
+    assert (lessons[1]["status"], lessons[1]["playable"]) == ("current", False)
     colors = next(lsn for lsn in lessons if lsn["topic_slug"] == "colors")
     assert (colors["total"], colors["introduced"], colors["status"]) == (10, 0, "current")
+    assert colors["playable"] is False  # basics comes first among the word topics
+    basics = next(lsn for lsn in lessons if lsn["topic_slug"] == "basics")
     topics = me["topics"]
     assert [t["slug"] for t in topics[:5]] == [lsn["topic_slug"] for lsn in lessons[:5]]
     assert len(topics) == len(content)
-    assert all(t["status"] == "open" and t["done"] is False for t in topics)
+    assert all(t["done"] is False for t in topics)
+    firsts = {"letters-1", "syllables", "basics"}  # the first topic of each section
+    assert all(t["status"] == ("open" if t["slug"] in firsts else "locked") for t in topics)
     assert me["today_lesson"] is None
     assert me["review_available"] is False
     assert len(me["stickers"]) == sum(len(t.words) for t in content)
@@ -80,7 +85,7 @@ async def test_full_lesson_flow_over_http(
     assert sorted(set(s["lesson"] for s in me["stickers"])) == [lsn["number"] for lsn in lessons]
     assert [s["lesson"] for s in me["stickers"]] == sorted(s["lesson"] for s in me["stickers"])
 
-    started = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
+    started = await client.post("/api/sessions", json={"lesson": basics["number"]}, headers=headers)
     assert started.status_code == 200, started.text
     session_id, steps = started.json()["session_id"], started.json()["steps"]
     assert [s["type"] for s in steps] == ["intro"] * 3 + ["listen"] * 3
@@ -148,31 +153,28 @@ async def test_full_lesson_flow_over_http(
 
     me = (await client.get("/api/me", headers=headers)).json()
     assert me["week"]["coins"] == 1 and me["week"]["study_days"] == ["2026-09-22"]
-    colors = next(lsn for lsn in me["lessons"] if lsn["topic_slug"] == "colors")
-    assert (colors["introduced"], colors["status"], colors["playable"]) == (3, "current", True)
-    assert me["today_lesson"] == colors["number"]
+    basics = next(lsn for lsn in me["lessons"] if lsn["topic_slug"] == "basics")
+    assert (basics["introduced"], basics["status"], basics["playable"]) == (3, "current", True)
+    assert me["today_lesson"] == basics["number"]
     by_slug = {t["slug"]: t["status"] for t in me["topics"]}
-    assert (by_slug["colors"], by_slug["greetings"], by_slug["letters-1"]) == (
+    assert (by_slug["basics"], by_slug["colors"], by_slug["letters-1"]) == (
         "today",
         "locked",
         "open",
     )
-    greetings = next(lsn for lsn in me["lessons"] if lsn["topic_slug"] == "greetings")
-    locked = await client.post(
-        "/api/sessions", json={"lesson": greetings["number"]}, headers=headers
-    )
+    locked = await client.post("/api/sessions", json={"lesson": colors["number"]}, headers=headers)
     assert locked.status_code == 409
 
     foreign = await client.post(f"/api/sessions/{uuid.uuid4()}/finish", headers=headers)
     assert foreign.status_code == 404
 
     # Starting a topic over: the words come back as intro cards, a locked topic is 409.
-    restarted = await client.post("/api/topics/colors/restart", headers=headers)
+    restarted = await client.post("/api/topics/basics/restart", headers=headers)
     assert restarted.status_code == 200, restarted.text
     assert [s["word"]["slug"] for s in restarted.json()["steps"] if s["type"] == "intro"] == [
-        "red",
-        "blue",
-        "green",
+        "dog",
+        "cat",
+        "apple",
     ]
-    assert (await client.post("/api/topics/greetings/restart", headers=headers)).status_code == 409
+    assert (await client.post("/api/topics/colors/restart", headers=headers)).status_code == 409
     assert (await client.post("/api/topics/nope/restart", headers=headers)).status_code == 404

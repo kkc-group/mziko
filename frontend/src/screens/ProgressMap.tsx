@@ -5,10 +5,10 @@ import { BackIcon, LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { WordImage } from '../components/WordImage'
 import { textClass } from '../wordText'
-import { SECTIONS } from '../sections'
+import { lockedReason, SECTIONS } from '../sections'
 
-/** Why a lesson's header still shows as locked: another topic of its section was chosen
- *  (`topic`), or an earlier part of its topic is not finished yet (`part`). Only drives the
+/** Why a lesson's header still shows as locked: its topic is not open yet (`topic`, see
+ *  `lockedReason`), or an earlier part of its topic is not finished yet (`part`). Only drives the
  *  dashed card and the timer text now — a locked lesson's stickers are simply not learned yet. */
 type MapLock = 'topic' | 'part'
 
@@ -23,13 +23,16 @@ function lockOf(lesson: LessonOut): MapLock | null {
 function LessonGroup({
   lesson,
   stickers,
+  topics,
   onOpen,
 }: {
   lesson: LessonOut
   stickers: Me['stickers']
+  topics: Me['topics']
   onOpen: (word: WordOut) => void
 }) {
   const lock = lockOf(lesson)
+  const topic = topics.find((t) => t.slug === lesson.topic_slug)
   const done = lesson.status === 'done'
   const learned = stickers.filter((s) => s.learned).length
   const sub = done
@@ -55,7 +58,7 @@ function LessonGroup({
         {lock ? (
           <span className="tmr">
             <LockIcon />
-            {lock === 'topic' ? 'завтра' : `после ${lesson.part - 1}`}
+            {lock === 'topic' ? (topic ? lockedReason(topics, topic) : 'завтра') : `после ${lesson.part - 1}`}
           </span>
         ) : null}
       </div>
@@ -129,6 +132,7 @@ export function ProgressMap({
                   key={lesson.number}
                   lesson={lesson}
                   stickers={me.stickers.filter((s) => s.lesson === lesson.number)}
+                  topics={me.topics}
                   onOpen={onOpen}
                 />
               ))}
