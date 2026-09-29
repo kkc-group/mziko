@@ -9,6 +9,8 @@ handle /api/* {
 }
 
 # The back office keeps the /admin prefix itself, so nothing is stripped here.
+# Without the redirect a bare /admin falls through to the app shell below.
+redir /admin /admin/ permanent
 handle /admin/* {
 	reverse_proxy admin:8080
 }
