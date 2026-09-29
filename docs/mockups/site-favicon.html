@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико · фавикон и иконка приложения — концепции</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* tokens: verbatim from frontend/src/styles.css */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c;
+  --pom: #e23b55; --pom-dark: #b8243d; --pom-soft: #ffe3e8;
+  --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee;
+  --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px); --safe-right: env(safe-area-inset-right, 0px);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+} }
+:root[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 17px; line-height: 1.45; color: var(--ink); background: var(--bg); }
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+.mk { max-width: 1440px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 34px; line-height: 1.15; margin: 8px 0 12px; }
+h2 { font-size: 24px; margin: 40px 0 10px; }
+.lead { color: var(--muted); max-width: 980px; }
+.lead b { color: var(--ink); }
+.lead li { margin: 6px 0; }
+code { font-size: 14px; background: var(--line); padding: 1px 5px; border-radius: 6px; color: var(--ink); }
+
+/* gallery grid: one row per concept */
+.scroll { overflow-x: auto; padding-bottom: 8px; }
+.grid { display: grid; grid-template-columns: 250px 250px 84px 404px 168px 176px; gap: 14px; min-width: 1392px; }
+.colh { font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 0 2px; align-self: end; }
+.row { display: contents; }
+.cell { background: var(--surface); border-radius: 24px; padding: 14px; display: flex; flex-direction: column; gap: 10px; justify-content: center; align-items: center; }
+.meta { align-items: flex-start; justify-content: flex-start; }
+.meta h3 { margin: 0; font-size: 19px; line-height: 1.2; }
+.meta p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.4; }
+.meta details { font-size: 13px; color: var(--muted); width: 100%; }
+.meta summary { cursor: pointer; font-weight: 700; }
+.meta pre { font-size: 10px; line-height: 1.3; white-space: pre-wrap; word-break: break-all; background: var(--bg); border-radius: 10px; padding: 8px; margin: 6px 0 0; max-height: 180px; overflow: auto; color: var(--ink); }
+.fb { display: flex; gap: 10px; align-items: end; background: #fff; border: 1px dashed var(--muted); border-radius: 12px; padding: 8px 10px; }
+.fb small { font-size: 11px; color: #6a5e86; display: block; max-width: 96px; line-height: 1.25; }
+.tagbad { font-size: 12px; font-weight: 800; color: var(--pom-dark); background: var(--pom-soft); border-radius: 8px; padding: 2px 8px; }
+.tagrec { font-size: 12px; font-weight: 800; color: var(--mint-dark); background: var(--mint-soft); border-radius: 8px; padding: 2px 8px; }
+.sz { font-size: 11px; color: var(--muted); }
+
+/* browser tab strip — context, not product colours */
+.tabbar { width: 222px; height: 42px; border-radius: 10px 10px 0 0; padding: 7px 7px 0; display: flex; align-items: end; gap: 4px; }
+.tabbar.l { background: #dee1e6; } .tabbar.d { background: #202124; }
+.tab { flex: 0 0 172px; min-width: 0; height: 35px; border-radius: 9px 9px 0 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; font: 12px/1 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+.tab span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab i { width: 16px; height: 16px; flex: 0 0 16px; display: block; }
+.tab i svg { display: block; }
+.l .tab { background: #fff; color: #1f1f1f; } .d .tab { background: #35363a; color: #e8eaed; }
+.ghost { flex: 1; height: 26px; border-radius: 7px; opacity: .5; }
+.l .ghost { background: #c4c7cc; } .d .ghost { background: #3c3d41; }
+
+/* 32 px */
+.b32 { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; }
+.b32.l { background: #fff; border: 1px solid var(--line); } .b32.d { background: #202124; }
+.b32 svg { display: block; }
+
+/* iOS home screen */
+.walls { flex-direction: row; gap: 12px; }
+.wall { width: 182px; height: 236px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; }
+.wall.l { background: linear-gradient(160deg, #f4f4f7, #c9c9d1); }
+.wall.d { background: linear-gradient(160deg, #2c2c30, #050506); }
+.ios { width: 180px; height: 180px; border-radius: 22.37%; overflow: hidden; }
+.ios.blk { background: #000; }
+.ios svg { display: block; }
+.wall b { font: 600 13px/1 -apple-system, system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+
+/* Android maskable */
+.and { width: 144px; height: 144px; position: relative; }
+.and > div { position: absolute; inset: 0; }
+.and .full { opacity: .2; }
+.and .cut { clip-path: circle(40% at 50% 50%); }
+.and .ring { border: 1.5px dashed var(--pom); border-radius: 50%; inset: 10%; }
+.and svg { display: block; }
+
+/* Telegram chat list row */
+.tg { width: 148px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; font: 14px/1.2 -apple-system, system-ui, sans-serif; }
+.tg.l { background: #fff; border: 1px solid var(--line); color: #000; } .tg.d { background: #17212b; color: #fff; }
+.tg .av { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex: 0 0 40px; }
+.tg .av svg { display: block; }
+.tg b { font-weight: 600; display: block; }
+.tg small { font-size: 12px; } .tg.l small { color: #8e8e93; } .tg.d small { color: #7f91a4; }
+</style>
+</head>
+<body>
+<div class="mk">
+
+<h1>Фавикон и иконка приложения: шесть концепций</h1>
+<p class="lead"><b>Как сейчас.</b> Детское приложение показывает маскота
+(<code>frontend/public/icons/mascot.svg</code>, солнце с восемью лучами, глазами, бликами, щеками и ртом на голубом скруглённом квадрате):
+<code>frontend/index.html:11</code> — <code>link rel="icon"</code> на <code>/icons/mascot.svg</code>,
+<code>frontend/index.html:12</code> — <code>apple-touch-icon</code> на <code>/icons/icon-192.png</code>;
+манифест PWA в <code>frontend/vite.config.ts:53-55</code> — <code>icons/icon-192.png</code> и <code>icons/icon-512.png</code> (последний с <code>purpose: 'any maskable'</code>).
+Фавикона нет вовсе у сайта для родителей (<code>site/template.html</code>), бэк-офиса (<code>admin/app/templates/base.html</code>)
+и кабинета (<code>admin/app/templates/cabinet_base.html</code>) — там ни одного <code>link rel="icon"</code>, браузер показывает серый глобус.
+Беда маскота в 16px: лучи, глаза, щёки и рот сливаются в жёлтое пятно.</p>
+<p class="lead">Каждая концепция — один SVG <code>viewBox="0 0 120 120"</code>, цвета буквально из токенов (hex), без внешних картинок; исходник под «SVG-файл».
+Во всех местах ниже рисуется <b>тот же самый файл</b>, масштабированный до нужного размера: 16 и 32 px — настоящие 16 и 32 CSS-пикселя, без увеличения.
+Полосы вкладок, обои iOS и строки Telegram — рамка-контекст в цветах этих систем, а не продукта.</p>
+
+<h2>Концепции в местах показа</h2>
+<p class="lead">Одна строка — одна концепция. Android-иконка 512 px показана уменьшенной до 144 px: в большом размере ничего не теряется, вопрос только в том, что срежет маска.
+Бледное — полный квадрат файла, яркое — что остаётся в круглой маске, красный пунктир — гарантированная безопасная зона maskable (круг 80% стороны): всё, что за ней, может быть срезано.</p>
+
+<div class="scroll">
+<div class="grid" id="grid">
+  <div class="colh">Концепция</div>
+  <div class="colh">Вкладка 16 px · светлая / тёмная</div>
+  <div class="colh">32 px</div>
+  <div class="colh">iOS 180 px · светлые / тёмные обои</div>
+  <div class="colh">Android 512 maskable</div>
+  <div class="colh">Telegram 40 px</div>
+</div>
+</div>
+
+<!-- icon sources: each template is a ready icon file -->
+<template id="c1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="28" fill="#E4F1FF"/>
+  <g fill="#FFC531" stroke="#E0A300" stroke-width="3">
+    <path d="M60 8 L66 22 L54 22Z"/><path d="M60 112 L66 98 L54 98Z"/>
+    <path d="M8 60 L22 54 L22 66Z"/><path d="M112 60 L98 54 L98 66Z"/>
+    <path d="M23 23 L36 30 L30 36Z"/><path d="M97 97 L84 90 L90 84Z"/>
+    <path d="M97 23 L90 36 L84 30Z"/><path d="M23 97 L30 84 L36 90Z"/>
+    <circle cx="60" cy="60" r="34"/>
+  </g>
+  <circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/>
+  <circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/>
+  <circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/>
+  <path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/>
+</svg></template>
+
+<template id="c2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#E4F1FF"/>
+  <path d="M60 14L60 9M99.84 37L104.17 34.5M99.84 83L104.17 85.5M60 106L60 111M20.16 83L15.83 85.5M20.16 37L15.83 34.5" stroke="#E0A300" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="32" fill="#FFC531" stroke="#E0A300" stroke-width="4"/>
+  <circle cx="49.5" cy="54" r="6.5" fill="#2A1A48"/><circle cx="70.5" cy="54" r="6.5" fill="#2A1A48"/>
+  <path d="M46 67 Q60 81 74 67" fill="none" stroke="#2A1A48" stroke-width="7" stroke-linecap="round"/>
+</svg></template>
+
+<template id="c3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#E4F1FF"/>
+  <path d="M60 15L60 10M91.82 28.18L95.36 24.64M105 60L110 60M91.82 91.82L95.36 95.36M60 105L60 110M28.18 91.82L24.64 95.36M15 60L10 60M28.18 28.18L24.64 24.64" stroke="#E0A300" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="37" fill="#FFC531" stroke="#E0A300" stroke-width="3"/>
+  <text x="60" y="80" text-anchor="middle" font-family="'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif" font-weight="800" font-size="60" fill="#5B2E8C">მ</text>
+</svg></template>
+
+<template id="c4"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#E4F1FF"/>
+  <path d="M60 15L60 9M77.22 18.43L79.52 12.88M91.82 28.18L96.06 23.94M101.57 42.78L107.12 40.48M105 60L111 60M101.57 77.22L107.12 79.52M91.82 91.82L96.06 96.06M77.22 101.57L79.52 107.12M60 105L60 111M42.78 101.57L40.48 107.12M28.18 91.82L23.94 96.06M18.43 77.22L12.88 79.52M15 60L9 60M18.43 42.78L12.88 40.48M28.18 28.18L23.94 23.94M42.78 18.43L40.48 12.88" stroke="#E0A300" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="40" fill="#FFC531"/>
+  <text x="60" y="82" text-anchor="middle" font-family="'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif" font-weight="800" font-size="72" fill="#5B2E8C">ა</text>
+</svg></template>
+
+<template id="c5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#E4F1FF"/>
+  <path d="M60 36L60 29M79 41.09L82.5 35.03M41 41.09L37.5 35.03M92.91 55L98.97 51.5M27.09 55L21.03 51.5" stroke="#E0A300" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="60" cy="74" r="28" fill="#FFC531" stroke="#E0A300" stroke-width="3"/>
+  <path d="M0 80 C25 64 50 66 72 76 S108 80 120 70 V120 H0Z" fill="#A4DB86"/>
+  <path d="M0 98 C30 82 72 84 120 100 V120 H0Z" fill="#72C36B"/>
+</svg></template>
+
+<template id="c6"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#5B2E8C"/>
+  <g fill="#FFC531">
+    <circle cx="60" cy="13" r="4.5"/><circle cx="93.23" cy="26.77" r="4.5"/><circle cx="107" cy="60" r="4.5"/><circle cx="93.23" cy="93.23" r="4.5"/>
+    <circle cx="60" cy="107" r="4.5"/><circle cx="26.77" cy="93.23" r="4.5"/><circle cx="13" cy="60" r="4.5"/><circle cx="26.77" cy="26.77" r="4.5"/>
+  </g>
+  <text x="60" y="84" text-anchor="middle" font-family="'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif" font-weight="800" font-size="76" fill="#FFC531">მ</text>
+</svg></template>
+
+<h2>Решения в спорных местах</h2>
+<ul class="lead">
+  <li><b>Что уступает при нехватке места (16 px).</b> Первыми уходят лучи: это украшение, а не узнавание, и в круглой маске Android их всё равно срезает.
+    Вторыми — мелкие детали лица: блики в глазах и щёки (у маскота они к тому же не из токенов). Третьими — тонкие насечки варианта 4: в 16 px они становятся бледным ореолом, и это допустимо.
+    Остаются всегда: жёлтый диск <code>#FFC531</code> и одна крупная тёмная форма внутри него — лицо из двух точек и улыбки или буква.
+    Цвет важнее формы: жёлто-голубое пятно узнаётся как «наше» даже тогда, когда форму уже не видно.</li>
+  <li><b>Фон на весь квадрат, без скругления в файле.</b> Скругляет платформа: iOS — своей маской, Android — своей, Telegram — кругом.
+    Скругление внутри файла (как у маскота, <code>rx="28"</code>) даёт на iOS чёрные уголки: iOS заливает прозрачность чёрным, а радиус файла (23%) чуть больше радиуса маски iOS (≈22%). Во вкладке квадратный голубой фон читается как плитка — это нормально для фавикона.</li>
+  <li><b>Всё значимое — внутри круга 80%.</b> Диск, лицо и буква во всех новых вариантах лежат в безопасной зоне maskable; за неё выходят только лучи и насечки, их срез не меняет смысла.</li>
+  <li><b>Один файл на все размеры.</b> Отдельный рисунок под 16 px — вторая сущность, которую придётся держать в согласии с первой. Концепции 2–6 рассчитаны так, чтобы 16 px выжили из того же файла; если не выживут — тогда и заводить второй.</li>
+  <li><b>Цвет лица — <code>#2A1A48</code> (<code>--ink</code>) вместо коричневого <code>#3a2600</code>.</b> Коричневого и розового щёк (<code>#FF8E8E</code>) в токенах нет; ближайший существующий тёмный — <code>--ink</code>.</li>
+  <li><b>Одна иконка на обе темы.</b> У иконки PWA и домашнего экрана темы нет; на тёмных полосах и обоях светлый квадрат читается как плитка. Вариант 6 наоборот тёмный — его сильная сторона на светлых поверхностях.</li>
+  <li><b>Буква в файле — контуром, не шрифтом.</b> Файл фавикона не видит веб-шрифтов страницы. На макете буква нарисована Noto Sans Georgian 800 (так она будет выглядеть, если перевести глиф в контур); рамка «без веб-шрифта» показывает, что будет, если оставить в файле <code>&lt;text&gt;</code>.</li>
+  <li><b>Рекомендация — вариант 2, «упрощённый маскот».</b> Ребёнок уже знает это солнышко по главному экрану, и иконка не должна становиться чужой; в 16 px от него остаются жёлтый круг, две точки и улыбка — это читается как лицо на любом фоне, без зависимости от шрифта и без шага «перевести глиф в контур».
+    Вариант 3 («солнце и მ») — сильный второй: он лучше говорит, что приложение про грузинские буквы, и хорош для сайта родителям, но в 16 px буква читается хуже лица и требует контура в файле. Если нужна одна иконка на всё — 2; если хочется различать детское приложение и родительские страницы — 2 для приложения, 3 для сайта, кабинета и админки.</li>
+</ul>
+
+<h2>Чего нет на макете</h2>
+<ul class="lead">
+  <li><b>Имитации экрана 1x.</b> На ретина-экране 16 CSS px — это 32 физических пикселя, поэтому здесь 16 px выглядят чуть резче, чем на обычном мониторе Windows. Честная 1x-проверка — открыть макет на таком мониторе.</li>
+  <li><b>Тёмного варианта самой иконки</b> (SVG-фавикон с <code>prefers-color-scheme</code> внутри, «тонированные» иконки iOS 18). Не просили, и одна иконка на обе темы — проще.</li>
+  <li><b>Текущего аватара бота.</b> Он задаётся в BotFather и в репозитории не лежит; строка 1 показывает, как выглядел бы маскот в круге Telegram, а не то, что стоит сейчас.</li>
+  <li><b>PNG-выгрузок и разметки подключения</b> (<code>link rel="icon"</code> в шаблонах, пересборка <code>icon-192/512.png</code>). Это код после выбора варианта.</li>
+  <li><b>Лица на варианте 5</b> и буквы в нём: в 16 px их не видно, а в 180 px добавленное лицо спорило бы с холмами. Вариант 5 намеренно про место, а не про персонажа.</li>
+  <li><b>Окна Safari и Firefox.</b> Полоса вкладок показана в духе Chrome; размер фавикона там тот же, отличается только цвет полосы.</li>
+</ul>
+
+<h2>Замечено по дороге</h2>
+<ul class="lead">
+  <li>Не часть этой задачи — показано, чтобы не было сюрпризом: <code>icon-192.png</code> и <code>icon-512.png</code> — это маскот с прозрачными скруглёнными углами. <code>icon-192.png</code> стоит <code>apple-touch-icon</code>, и iOS заливает прозрачность чёрным (строка 1, iOS: тонкие чёрные уголки). <code>icon-512.png</code> объявлен <code>any maskable</code>, но лучи выходят за безопасный круг и срезаются (строка 1, Android).</li>
+</ul>
+
+</div>
+
+<script>
+const concepts = [
+  { id: 'c1', name: '1 · Как сейчас', tag: '<span class="tagbad">точка отсчёта</span>', blackIOS: true,
+    note: 'mascot.svg без изменений. В 16 px — жёлтое пятно с тёмной полосой, лица нет. На iOS — чёрные уголки из-за прозрачности, в круге Android срезаны кончики лучей.' },
+  { id: 'c2', name: '2 · Упрощённый маскот', tag: '<span class="tagrec">рекомендую</span>',
+    note: 'Шесть коротких лучей вместо восьми, лицо крупнее: два глаза по 13 и улыбка толщиной 7 из 120. Без бликов и щёк. В 16 px — жёлтый круг с лицом.' },
+  { id: 'c3', name: '3 · Солнце и მ', fb: true,
+    note: 'Диск несёт первую букву მზიკო, восемь коротких лучей. Буква --grape, Noto Sans Georgian 800.',
+    fbnote: 'Без шрифта буква рисуется системным: на macOS — близко к задуманному (рамка выше снята на Mac), на Windows — Sylfaen обычного веса, тоньше и в 16 px почти пропадает, где грузинского шрифта нет — пустой квадрат. В файл — контуром.' },
+  { id: 'c4', name: '4 · ა на солнце', fb: true,
+    note: 'Первая буква алфавита на жёлтом круге, 16 тонких насечек. В 16 px насечки — бледный ореол, буква держится за счёт размера.',
+    fbnote: 'Без шрифта: на Windows ა в Sylfaen — тонкая петля, в 16 px читается как «ɔ»; на Mac — почти как задумано. В файл — контуром.' },
+  { id: 'c5', name: '5 · Восход над холмами',
+    note: 'Полдиска над --hill1/--hill2 на --bg — те же холмы, что внизу детских экранов. Шрифта нет. В 16 px — жёлтый полукруг над зелёным, без персонажа.' },
+  { id: 'c6', name: '6 · Сияющая буква', fb: true,
+    note: 'Своя идея: буква светит, как солнце. მ цвета --sun на --grape — так грузинское слово выглядит в тёмной теме (--word-color). Восемь точек-лучей. Контрастнее всех на светлой полосе.',
+    fbnote: 'Без шрифта (Windows, Sylfaen): тонкая жёлтая буква на фиолетовом, в 16 px остаются точки и фиолетовый квадрат. В файл — контуром.' },
+];
+const TITLE = 'Мзико — грузинские буквы для ребёнка';
+const grid = document.getElementById('grid');
+const slot = (id, s) => `<span data-i="${id}" data-s="${s}"></span>`;
+for (const c of concepts) {
+  const fb = c.fb ? `<div class="fb">${slot(c.id, 16).replace('<span', '<span data-img')}${slot(c.id, 32).replace('<span', '<span data-img')}${slot(c.id, 64).replace('<span', '<span data-img')}<small>без веб-шрифта: 16 · 32 · 64</small></div><p>${c.fbnote}</p>` : '';
+  grid.insertAdjacentHTML('beforeend', `
+  <div class="cell meta"><h3>${c.name}</h3>${c.tag || ''}<p>${c.note}</p>${fb}
+    <details><summary>SVG-файл</summary><pre data-src="${c.id}"></pre></details></div>
+  <div class="cell">
+    <div class="tabbar l"><div class="tab"><i>${slot(c.id, 16)}</i><span>${TITLE}</span></div><div class="ghost"></div></div>
+    <div class="tabbar d"><div class="tab"><i>${slot(c.id, 16)}</i><span>${TITLE}</span></div><div class="ghost"></div></div>
+  </div>
+  <div class="cell"><div class="b32 l">${slot(c.id, 32)}</div><div class="b32 d">${slot(c.id, 32)}</div></div>
+  <div class="cell walls">
+    <div class="wall l"><div class="ios${c.blackIOS ? ' blk' : ''}">${slot(c.id, 180)}</div><b>Мзико</b></div>
+    <div class="wall d"><div class="ios${c.blackIOS ? ' blk' : ''}">${slot(c.id, 180)}</div><b>Мзико</b></div>
+  </div>
+  <div class="cell"><div class="and"><div class="full">${slot(c.id, 144)}</div><div class="cut">${slot(c.id, 144)}</div><div class="ring"></div></div>
+    <span class="sz">512 → 144 px, круг 80%</span></div>
+  <div class="cell">
+    <div class="tg l"><div class="av">${slot(c.id, 40)}</div><div><b>Мзико</b><small>бот</small></div></div>
+    <div class="tg d"><div class="av">${slot(c.id, 40)}</div><div><b>Мзико</b><small>бот</small></div></div>
+  </div>`);
+}
+const src = id => document.getElementById(id).innerHTML.trim();
+document.querySelectorAll('[data-i]').forEach(el => {
+  const s = el.dataset.s, svg = src(el.dataset.i);
+  if ('img' in el.dataset) {
+    el.innerHTML = `<img alt="" width="${s}" height="${s}" style="display:block" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
+  } else {
+    el.innerHTML = svg;
+    const n = el.firstElementChild; n.setAttribute('width', s); n.setAttribute('height', s);
+  }
+  el.style.display = 'block';
+});
+document.querySelectorAll('pre[data-src]').forEach(p => { p.textContent = src(p.dataset.src); });
+</script>
+</body>
+</html>
