@@ -70,7 +70,7 @@ def child_card(c: ChildOverviewCard) -> ChildCard:
                 title_ru=t.topic.title_ru,
                 learned=t.learned,
                 total=len(t.words),
-                started=any(w.id in c.introduced for w, _, _ in t.words),
+                started=any(w.id in c.introduced for w, _ in t.words),
             )
             for t in c.topics
         ],

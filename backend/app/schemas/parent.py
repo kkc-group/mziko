@@ -121,6 +121,10 @@ class WordProgressOut(BaseModel):
     stage: int
     # The last day the stage grew (Asia/Tbilisi); None until the first correct answer.
     last_correct_date: date | None = None
+    # Shown on a lesson at least once, and the Tbilisi day it first was: a word
+    # can be "in work" at stage 0 when the first-try answer was wrong.
+    introduced: bool = False
+    introduced_on: date | None = None
 
 
 class TopicProgressOut(BaseModel):
@@ -136,6 +140,8 @@ class TopicProgressOut(BaseModel):
 class ProgressOut(BaseModel):
     child: ChildInfo
     topics: list[TopicProgressOut]
+    # Lessons played to the end ("Ура, занятие готово!"), all time.
+    lessons_done: int = 0
 
 
 class ChildCodeOut(BaseModel):

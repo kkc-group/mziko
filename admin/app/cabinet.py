@@ -20,7 +20,7 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 
 from app.api import ApiError, ParentApi
 from app.config import ADMIN_DIR, get_settings
-from app.format import _plural, today_tbilisi
+from app.format import _plural, today_tbilisi, words_count
 from app.telegram import telegram_user_id
 
 COOKIE = "mziko_cabinet"
@@ -42,7 +42,7 @@ def cards_count(n: int) -> str:
     return f"{n} {_plural(n, 'карточки', 'карточек', 'карточек')}"
 
 
-templates.env.filters.update(cards_count=cards_count)
+templates.env.filters.update(cards_count=cards_count, words_count=words_count)
 
 
 # --- view model ------------------------------------------------------------------
@@ -53,6 +53,7 @@ class WordView:
     ka: str
     ru: str
     stage: int
+    introduced: bool  # met on a lesson; False words are faded, stage-0 met words say "показано"
 
 
 @dataclass
@@ -61,11 +62,17 @@ class TopicView:
     icon: str
     title: str
     learned: int
+    in_work: int  # met on a lesson, not learned yet
     total: int
-    pct: int
+    pct: int  # learned, of total
+    pct_started: int  # learned + in work, of total: the light part of the bar
     status: str  # "done" | "now" | ""
     idle_days: int | None
     words: list[WordView]
+
+    @property
+    def unseen(self) -> int:
+        return sum(1 for w in self.words if not w.introduced)
 
 
 @dataclass
@@ -73,22 +80,35 @@ class SectionView:
     key: str
     title: str
     learned: int
+    in_work: int
     total: int
     topics: list[TopicView]
 
 
+def _pct(part: int, total: int) -> int:
+    return round(100 * part / total) if total else 0
+
+
+def _day(value: str | None) -> date | None:
+    return date.fromisoformat(value) if value else None
+
+
 def topic_view(topic: dict[str, Any], today: date) -> TopicView:
-    words = [WordView(w["ka"], w["ru"], w["stage"]) for w in topic["words"]]
+    words = [
+        WordView(w["ka"], w["ru"], w["stage"], w.get("introduced", False)) for w in topic["words"]
+    ]
     learned, total = topic["learned"], topic["total"]
-    started = any(w.stage > 0 for w in words)
+    in_work = sum(1 for w in words if w.introduced and w.stage < LEARNED_STAGE)
+    started = any(w.introduced for w in words)
     done = total > 0 and learned >= total
     idle_days = None
     if started and not done:
-        last_days = [
-            date.fromisoformat(w["last_correct_date"])
-            for w in topic["words"]
-            if w.get("last_correct_date")
+        # The last day anything happened to the topic: a stage grew, or failing
+        # that a word was first shown (all-wrong first days have no correct date).
+        activity = [
+            _day(w.get("last_correct_date")) or _day(w.get("introduced_on")) for w in topic["words"]
         ]
+        last_days = [d for d in activity if d is not None]
         if last_days:
             idle = (today - max(last_days)).days
             idle_days = idle if idle >= IDLE_DAYS else None
@@ -97,8 +117,10 @@ def topic_view(topic: dict[str, Any], today: date) -> TopicView:
         icon=topic["icon"],
         title=topic["title_ru"],
         learned=learned,
+        in_work=in_work,
         total=total,
-        pct=round(100 * learned / total) if total else 0,
+        pct=_pct(learned, total),
+        pct_started=_pct(learned + in_work, total),
         status="done" if done else ("now" if started else ""),
         idle_days=idle_days,
         words=words,
@@ -116,6 +138,7 @@ def build_sections(topics: list[dict[str, Any]], today: date) -> list[SectionVie
                 key=key,
                 title=title,
                 learned=sum(v.learned for v in mine),
+                in_work=sum(v.in_work for v in mine),
                 total=sum(v.total for v in mine),
                 topics=mine,
             )
@@ -211,6 +234,9 @@ async def progress(request: Request, telegram_id: TelegramId, api: Api) -> HTMLR
     except ApiError as exc:
         return page(request, "cabinet_progress.html", tabs=TABS, error=str(exc))
     sections = build_sections(data["topics"], today_tbilisi())
+    learned = sum(s.learned for s in sections)
+    in_work = sum(s.in_work for s in sections)
+    total = sum(s.total for s in sections)
     return page(
         request,
         "cabinet_progress.html",
@@ -218,7 +244,11 @@ async def progress(request: Request, telegram_id: TelegramId, api: Api) -> HTMLR
         children=children,
         child=child,
         sections=sections,
-        learned=sum(s.learned for s in sections),
-        total=sum(s.total for s in sections),
+        learned=learned,
+        in_work=in_work,
+        total=total,
+        pct=_pct(learned, total),
+        pct_started=_pct(learned + in_work, total),
+        lessons_done=data.get("lessons_done", 0),
         started=any(t.status for s in sections for t in s.topics),
     )

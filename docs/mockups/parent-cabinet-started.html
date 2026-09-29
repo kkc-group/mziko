@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — кабинет родителя: сигнал «начато»</title>
+<style>
+/* ---------- tokens: verbatim from admin/app/static/cabinet.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+  }
+}
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px; line-height: 1.4;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+
+/* verbatim from cabinet.css */
+.chip { display: inline-block; padding: 0 8px; border-radius: 8px; font-size: 13px; font-weight: 800; line-height: 20px; font-variant-numeric: tabular-nums; }
+.chip.open { background: var(--line); }
+.tbar { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 5px; background: var(--mint); }
+.msgc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 20px; text-align: center; }
+.msgc b { font-size: 18px; font-weight: 900; }
+.msgc p { margin: 0; max-width: 460px; color: var(--muted); font-weight: 700; }
+.msgc code { font-size: 14px; color: var(--ink); font-weight: 800; }
+
+.app { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+.top { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 2px solid var(--line); }
+.kids { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 6px; scrollbar-width: none; }
+.kchip { flex: none; max-width: 210px; height: 38px; padding: 0 14px; border-radius: 19px; border: 2px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kchip.on { border-color: var(--word-color); background: var(--surface); color: var(--ink); }
+.tabs { display: flex; gap: 22px; overflow-x: auto; padding: 0 16px; height: 46px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+.tabs a, .tabs span { flex: none; display: flex; align-items: center; color: var(--muted); font-weight: 800; white-space: nowrap; }
+.tabs a.on { color: var(--ink); box-shadow: inset 0 -3px 0 var(--word-color); }
+
+.cbody { flex: 1; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+.sum { padding: 16px; }
+.sum .nm { font-size: 20px; font-weight: 900; line-height: 1.25; overflow-wrap: anywhere; }
+.sum .big { margin-top: 4px; font-weight: 700; color: var(--muted); }
+.sum .big b { color: var(--ink); font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; }
+.sum .tbar { margin-top: 10px; }
+.sum .key { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: var(--muted); }
+.sum .key span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+.sechd { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px 10px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.sechd b { color: var(--ink); font-weight: 900; font-size: 14px; }
+.sechd span { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.trow { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 12px; align-items: center; gap: 10px; min-height: 58px; padding: 10px 16px; border-top: 1px solid var(--line); text-align: left; }
+.trow .ic { font-size: 22px; line-height: 1; text-align: center; }
+.trow .tt, .trow .tbar, .trow .stale { display: block; }
+.trow .tt { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.trow .tbar { margin-top: 7px; height: 6px; }
+.trow .stale { margin-top: 7px; }
+.trow .stale .chip { font-size: 12px; color: var(--muted); }
+.tcnt { font-size: 14px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tcnt.now { color: var(--ink); font-weight: 800; }
+.tcnt.done { color: var(--mint-dark); font-weight: 800; }
+.tcnt.done::before { content: '✓ '; font-weight: 900; }
+[data-theme='dark'] .tcnt.done { color: var(--mint); }
+.chev { color: var(--muted); font-weight: 900; font-size: 18px; line-height: 1; }
+.trow.open .chev { transform: rotate(90deg); }
+
+.words { list-style: none; margin: 0; padding: 2px 16px 6px; background: var(--bg); border-top: 1px solid var(--line); }
+.w { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.w:last-child { border-bottom: 0; }
+.w .ka { font-size: 16px; color: var(--ink); }
+.w .ru { color: var(--muted); font-weight: 700; }
+.w.learned .ru { color: var(--ink); }
+.dots { display: inline-flex; gap: 3px; transform: translateY(-1px); }
+.dots i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.dots i.f { background: var(--mint); border-color: var(--mint); }
+.wfoot { padding: 8px 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* ---------- new pieces for the "started" signal (tokens only, no new colours) ---------- */
+/* layered bar: two segments from the left, the later <i> on top */
+.tbar.lay { position: relative; }
+.tbar.lay i { position: absolute; left: 0; top: 0; }
+.tbar.lay i.soft { opacity: .4; }            /* A: "в работе" — --mint at 40%, --mint-soft is invisible on the --line track */
+.tbar.lay i.dk { background: var(--mint-dark); } /* C: learned inside the started bar */
+/* second line under a topic counter */
+.tcnt { text-align: right; }
+.tcnt small { display: block; margin-top: 1px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.tcnt small.lr { color: var(--mint-dark); font-weight: 800; }
+[data-theme='dark'] .tcnt small.lr { color: var(--mint); }
+/* second line of the summary */
+.sum .big2 { margin-top: 2px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.sum .big2 b { color: var(--ink); font-weight: 900; font-variant-numeric: tabular-nums; }
+/* bar legend swatch in the summary key */
+.sw { width: 14px; height: 8px; border-radius: 4px; background: var(--mint); }
+.sw.soft { opacity: .4; }
+.sw.dk { background: var(--mint-dark); }
+/* words: shown-but-stage-0 gets a chip, never-shown words are faded */
+.w { grid-template-columns: 28px minmax(0, 1fr) auto; }
+.w .chip { font-size: 12px; color: var(--muted); }
+.w.new .dots i { border-color: var(--line); }
+.w.new .ka, .w.new .ru { color: var(--muted); opacity: .55; }
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1340px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk .rec { max-width: 1100px; font-weight: 700; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 16px 20px; margin-top: 12px; }
+.row { display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; max-width: 410px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; margin-top: 3px; }
+figcaption span.pro::before { content: 'за: '; font-weight: 900; color: var(--mint-dark); }
+figcaption span.con::before { content: 'против: '; font-weight: 900; color: var(--pom); }
+.phone { position: relative; width: 410px; min-height: 864px; border: 10px solid #0d0d12; border-radius: 48px; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.sbar { height: 47px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 7px; background: var(--surface); font-weight: 800; font-size: 15px; }
+.sbar i { font-style: normal; letter-spacing: 2px; font-size: 12px; }
+.tgh { height: 52px; flex: none; display: grid; grid-template-columns: 96px 1fr 96px; align-items: center; padding: 0 14px; background: var(--surface); border-bottom: 1px dashed var(--line); }
+.tgh .x { font-weight: 700; color: var(--ink); }
+.tgh .t { text-align: center; line-height: 1.15; }
+.tgh .t b { display: block; font-weight: 900; font-size: 16px; }
+.tgh .t small { color: var(--muted); font-weight: 700; font-size: 12px; }
+.tgh .m { justify-self: end; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--muted); line-height: 1; }
+.home { flex: none; height: 34px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; background: var(--bg); }
+.home i { width: 134px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; }
+.fold { position: absolute; left: 0; right: 0; top: 844px; border-top: 2px dashed var(--pom); pointer-events: none; z-index: 5; }
+.fold span { position: absolute; right: 8px; top: 2px; font-size: 11px; font-weight: 800; color: var(--pom); background: var(--bg); padding: 0 4px; border-radius: 4px; }
+/* mockup annotation: a field the API does not return yet */
+.ann { display: inline-block; margin-left: 4px; padding: 0 4px; border: 1.5px dashed var(--pom); border-radius: 4px; color: var(--pom); font-size: 10px; font-weight: 800; line-height: 14px; vertical-align: 1px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Кабинет родителя · Прогресс по темам · сигнал «начато»</h1>
+  <p class="lead">Тот же экран, что в <code>parent-cabinet-progress.html</code>: сетка, шапка, токены, строки тем не меняются. Меняются три вещи: чем заполняется полоска, что написано в счётчике темы и раздела, и что стоит второй строкой в сводке. Слово считается «начатым», если оно показано на уроке (<code>word_progress.introduced</code>, в ответ ручки добавляется полем <code>introduced</code>), даже если ступень осталась 0. Пунктирная красная метка <span class="ann">доп. поле</span> — данные, которых в ответе ручки нет и не будет от одного <code>introduced</code>.</p>
+  <p class="lead">Строки слов в раскрытой теме одинаковы во всех вариантах: слово, показанное, но не угаданное с первой попытки, получает серую метку «показано»; слова, которых ещё не было на уроках, бледные, их точки почти не видны, а внизу списка сказано, сколько их. Карточка «Занятий пока не было» исчезает, как только показано первое слово (в коде сейчас: как только у какого-то слова ступень &gt; 0).</p>
+
+  <h2>1 · Главный случай: Сандро, второй день, четыре урока</h2>
+  <p class="lead">«Буквы 1»: все 8 показаны, 5 на ●●○, 3 на ●○○. «Первые слова»: 6 из 12 показаны, 4 на ●○○, 2 на ступени 0 (ошиблись с первой попытки). «Цвета»: 3 показаны, все ●○○. Остальное не тронуто, выученных 0. Итого начато 17 карточек, набрано 20 точек-ступеней. Карточки «Занятий пока не было» нет ни в одном варианте — занятия были.</p>
+  <div class="row">
+    <figure><figcaption>A · Полоска из двух частей
+      <span>Счётчик «выучено из всего», под ним мелко «N в работе». В сводке вторая строка про работу и уроки. «В работе» стоит под счётчиком, а не рядом: рядом «0 из 12 · 6 в работе» съедает 130 px, и «Школьные предметы» переносятся в две строки.</span>
+      <span class="pro">главное число остаётся честным «выучено», как в боте и в наградах; светлая часть полоски сразу отвечает «что уже прошёл».</span>
+      <span class="con">в первые дни главное число везде 0, смысл несёт мелкая строка; две зелени в одной полоске надо объяснить легендой.</span>
+    </figcaption><div id="a2"></div></figure>
+    <figure><figcaption>B · Полоска по ступеням
+      <span>Полоска темы = сумма точек слов / (3 × слов). Сводка говорит «точками» — родитель их видит у каждого слова, это не новое слово в словаре.</span>
+      <span class="pro">полоска растёт каждый день, в котором был урок; никаких новых данных, кроме <code>introduced</code> для счётчика.</span>
+      <span class="con">«20 из 684» — число, которое ничего не говорит; слово на ступени 0 полоску не двигает, поэтому неудачный первый день снова пустой (см. ряд 2); выученное уходит во второй ряд мелким.</span>
+    </figcaption><div id="b2"></div></figure>
+    <figure><figcaption>C · Начатое первым числом
+      <span>Счётчик «начато N из всего», под ним «выучено N», когда появится. Полоска сплошная за начатое, выученное темнее внутри неё.</span>
+      <span class="pro">на второй день экран полный и понятный с первого взгляда: «начато 17 из 228».</span>
+      <span class="con">через неделю почти все начатые темы показывают «начато 8 из 8» и полную полоску — то же, что у выученной темы; главное число перестаёт расти, а растущее (выучено) стало мелким.</span>
+    </figcaption><div id="c2"></div></figure>
+  </div>
+
+  <h2>2 · Худший первый день: восемь букв показаны, ни одна не угадана с первой попытки</h2>
+  <p class="lead">Один урок, «Буквы 1», все 8 слов на ступени 0. Сейчас в проде это выглядит как «ничего не было» и держит карточку «Занятий пока не было». Во всех вариантах карточки нет — слова показаны. Раскрытых тем нет.</p>
+  <div class="row">
+    <figure><figcaption>A<span>Светлая полоса на всю тему, «8 в работе».</span></figcaption><div id="a1"></div></figure>
+    <figure><figcaption>B<span class="con">все ступени 0 — полоска пустая, «Набрано 0». Сигнал держится только на счётчике «8 из 8 начато».</span></figcaption><div id="b1"></div></figure>
+    <figure><figcaption>C<span>«начато 8 из 8», полоска полная — выглядит как готовая тема, хотя ни одного верного ответа.</span></figcaption><div id="c1"></div></figure>
+  </div>
+
+  <h2>3 · Через три недели: выученное появилось, одна тема стоит</h2>
+  <p class="lead">«Буквы 1» выучены целиком, в «Буквах 2», «Буквах 3», «Первых словах» есть и выученные, и начатые. «Буквы 4»: три буквы начаты, 12 дней ни одна ступень не росла — метка «12 дн. без продвижения» та же, что сейчас.</p>
+  <div class="row">
+    <figure><figcaption>A<span>Тёмная часть догоняет светлую; видно и сколько выучено, и сколько в работе.</span></figcaption><div id="a3"></div></figure>
+    <figure><figcaption>B<span>Выученные — зелёная «✓ N» под счётчиком начатого.</span><span class="con">счётчик «3 из 9 начато» шире прежнего, колонка названия сжимается, и метка «12 дн. без продвижения» ломается на две строки (в C так же).</span></figcaption><div id="b3"></div></figure>
+    <figure><figcaption>C<span class="con">у «Букв 2» и «Букв 3» одинаковое «начато 8 из 8» и одинаково полная полоска, разница только в тёмной части и мелкой строке.</span></figcaption><div id="c3"></div></figure>
+  </div>
+
+  <h2>4 · Вариант A: тёмная тема и ребёнок до первого урока</h2>
+  <p class="lead">Слева — главный случай в тёмной теме Telegram. Справа — ребёнок только добавлен, ни одного показанного слова: карточка «Занятий пока не было» на месте, текст её прежний; во всех трёх вариантах этот экран одинаков.</p>
+  <div class="row">
+    <figure><figcaption>A · тёмная тема · второй день</figcaption><div id="a2d"></div></figure>
+    <figure><figcaption>До первого урока · карточка на месте</figcaption><div id="a0"></div></figure>
+  </div>
+
+  <h2>Рекомендация</h2>
+  <p class="rec">Рекомендую <b>A</b>. Главное число остаётся тем, чем оно и должно быть — выученными словами, тем же, что считает бот в <code>/progress</code> и за что начисляются награды; при этом с первого урока у каждой начатой темы есть видимая светлая полоса и строка «N в работе», то есть жалоба «не видно, что Сандро уже прошёл» закрыта, а через месяц экран не превращается в ряд одинаковых «начато 8 из 8», как в C. B красивее в теории, но опирается на «точки из 684», которые родителю ничего не говорят, и пропускает ровно тот случай, из-за которого всё затевалось, — слово показано, но ступень 0. По данным A дёшев: нужно одно поле <code>introduced</code> в <code>WordProgressOut</code> (в базе оно уже есть), счётчики «в работе» считаются в кабинете из слов. Дорого в A только «пройдено уроков: 4» — это отдельный запрос по <code>sessions</code> в ручке прогресса, и строку можно выпустить без него: «В работе: 17» говорит главное и одна. Метку «без продвижения» стоит считать и по <code>introduced_on</code>: тема, где все показанные слова на ступени 0, сейчас её не получит никогда.</p>
+</main>
+<script>
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const pc = (n, d) => (d ? Math.round((100 * n) / d) : 0);
+
+/* ---------- content, from content/topics/*.yaml ---------- */
+const SECTIONS = [['letters', 'Буквы'], ['syllables', 'Слоги'], ['words', 'Слова']];
+const TOPICS = [
+  ['letters-1', 'letters', '🔤', 'Буквы 1', 8],
+  ['letters-2', 'letters', '✏️', 'Буквы 2', 8],
+  ['letters-3', 'letters', '📖', 'Буквы 3', 8],
+  ['letters-4', 'letters', '🎓', 'Буквы 4', 9],
+  ['syllables', 'syllables', '🧩', 'Слоги', 25],
+  ['basics', 'words', '🐶', 'Первые слова', 12],
+  ['colors', 'words', '🎨', 'Цвета', 10],
+  ['school-items', 'words', '📚', 'Школьные предметы', 8],
+  ['greetings', 'words', '👋', 'Приветствия', 10],
+  ['numbers', 'words', '🔢', 'Числа', 10],
+  ['family', 'words', '👨‍👩‍👧', 'Семья', 12],
+  ['school', 'words', '🎒', 'Школа', 11],
+  ['body', 'words', '🖐️', 'Тело', 12],
+  ['animals', 'words', '🐻', 'Животные', 14],
+  ['food', 'words', '🍽️', 'Еда', 18],
+  ['clothes', 'words', '👕', 'Одежда', 12],
+  ['home', 'words', '🛏️', 'Дом', 12],
+  ['nature', 'words', '🌦️', 'Природа и погода', 15],
+  ['actions', 'words', '🏃', 'Действия', 14],
+];
+const WORDS = {
+  basics: [['ძაღლი', 'собака'], ['კატა', 'кошка'], ['ვაშლი', 'яблоко'], ['მზე', 'солнце'], ['სახლი', 'дом'], ['პური', 'хлеб'], ['ბურთი', 'мяч'], ['ცხენი', 'лошадь'], ['თევზი', 'рыба'], ['ყვავილი', 'цветок'], ['მანქანა', 'машина'], ['წყალი', 'вода']],
+};
+const TOTAL = TOPICS.reduce((s, t) => s + t[4], 0); // 228
+
+/* ---------- pieces ---------- */
+const TABS = ['Прогресс', 'Неделя', 'Календарь', 'Выплаты', 'Код и устройства'];
+const tabs = () => `<nav class="tabs">${TABS.map((t, i) => (i === 0 ? `<a href="#" class="on" aria-current="page">${t}</a>` : `<span>${t} · скоро</span>`)).join('')}</nav>`;
+const dots = st => `<span class="dots" aria-label="ступень ${st} из 3">${[0, 1, 2].map(i => `<i${i < st ? ' class="f"' : ''}></i>`).join('')}</span>`;
+const kidsBar = (kids, sel) => (kids && kids.length > 1 ? `<div class="kids">${kids.map((k, i) => `<button type="button" class="kchip${i === sel ? ' on' : ''}">${esc(k)}</button>`).join('')}</div>` : '');
+
+// stats of one topic: stages array, null = never shown on a lesson (introduced = false)
+function stats(kid, t) {
+  const total = t[4];
+  const st = kid.st[t[0]] || [];
+  const shown = st.filter(x => x !== null && x !== undefined);
+  return {
+    total,
+    intro: shown.length,
+    learned: shown.filter(x => x === 3).length,
+    pts: shown.reduce((s, x) => s + x, 0),
+  };
+}
+const sumStats = list => list.reduce((a, s) => ({ total: a.total + s.total, intro: a.intro + s.intro, learned: a.learned + s.learned, pts: a.pts + s.pts }), { total: 0, intro: 0, learned: 0, pts: 0 });
+
+/* ---------- the three variants: bar, topic counter, section counter, summary ---------- */
+const V = {
+  A: {
+    bar: s => `<span class="tbar lay"><i class="soft" style="width:${pc(s.intro, s.total)}%"></i><i style="width:${pc(s.learned, s.total)}%"></i></span>`,
+    cnt(s) {
+      const work = s.intro - s.learned;
+      return [`${s.learned} из ${s.total}`, work > 0 && s.learned < s.total ? `<small>${work} в работе</small>` : ''];
+    },
+    sec: s => `${s.learned} из ${s.total}${s.intro - s.learned > 0 ? ` · ${s.intro - s.learned} в работе` : ''}`,
+    sum: (kid, s) => `
+      <div class="big">Выучено <b>${s.learned}</b> из ${TOTAL} ${plural(TOTAL, 'карточки', 'карточек', 'карточек')}</div>
+      <div class="big2">В работе: <b>${s.intro - s.learned}</b> · пройдено уроков: <b>${kid.lessons}</b><span class="ann">доп. поле</span></div>
+      <div class="tbar lay"><i class="soft" style="width:${(100 * s.intro) / TOTAL}%"></i><i style="width:${(100 * s.learned) / TOTAL}%"></i></div>
+      <div class="key"><span><i class="sw"></i> выучено</span><span><i class="sw soft"></i> в работе: слово уже было на уроке</span><span>${dots(3)} выучено: верно в три разных дня</span><span>${dots(1)} ступень растёт раз в день</span></div>`,
+  },
+  B: {
+    bar: s => `<span class="tbar"><i style="width:${pc(s.pts, 3 * s.total)}%"></i></span>`,
+    cnt(s) {
+      if (s.learned === s.total) return [`${s.total} из ${s.total}`, ''];
+      if (!s.intro) return [`0 из ${s.total}`, ''];
+      return [`${s.intro} из ${s.total} начато`, s.learned ? `<small class="lr">✓ ${s.learned} выучено</small>` : ''];
+    },
+    sec: s => (s.intro ? `${s.intro} из ${s.total} начато` : `0 из ${s.total}`),
+    sum: (kid, s) => `
+      <div class="big">Набрано <b>${s.pts}</b> из ${3 * TOTAL} ${plural(3 * TOTAL, 'точки', 'точек', 'точек')}</div>
+      <div class="big2">Начато <b>${s.intro}</b> ${plural(s.intro, 'карточка', 'карточки', 'карточек')} · выучено <b>${s.learned}</b></div>
+      <div class="tbar"><i style="width:${(100 * s.pts) / (3 * TOTAL)}%"></i></div>
+      <div class="key"><span>${dots(1)} точка в день за ответ с первой попытки</span><span>${dots(3)} три точки — слово выучено</span></div>`,
+  },
+  C: {
+    bar: s => `<span class="tbar lay"><i style="width:${pc(s.intro, s.total)}%"></i><i class="dk" style="width:${pc(s.learned, s.total)}%"></i></span>`,
+    cnt(s) {
+      if (s.learned === s.total) return [`${s.total} из ${s.total}`, ''];
+      if (!s.intro) return [`0 из ${s.total}`, ''];
+      return [`начато ${s.intro} из ${s.total}`, s.learned ? `<small class="lr">выучено ${s.learned}</small>` : ''];
+    },
+    sec: s => (s.intro ? `начато ${s.intro} из ${s.total}` : `0 из ${s.total}`),
+    sum: (kid, s) => `
+      <div class="big">Начато <b>${s.intro}</b> из ${TOTAL} ${plural(TOTAL, 'карточки', 'карточек', 'карточек')}, выучено <b>${s.learned}</b></div>
+      <div class="tbar lay"><i style="width:${(100 * s.intro) / TOTAL}%"></i><i class="dk" style="width:${(100 * s.learned) / TOTAL}%"></i></div>
+      <div class="key"><span><i class="sw"></i> начато</span><span><i class="sw dk"></i> выучено</span><span>${dots(3)} выучено: верно в три разных дня</span><span>${dots(1)} ступень растёт раз в день</span></div>`,
+  },
+};
+
+function wordsList(kid, slug) {
+  const st = kid.st[slug] || [];
+  let unseen = 0;
+  const rows = WORDS[slug].map(([ka, ru], i) => {
+    const s = st[i];
+    const isNew = s === null || s === undefined;
+    if (isNew) unseen++;
+    const cls = isNew ? ' new' : s === 3 ? ' learned' : '';
+    const chip = !isNew && s === 0 ? '<span class="chip open">показано</span>' : '<span></span>';
+    return `<li class="w${cls}">${dots(isNew ? 0 : s)}<span><span class="ka">${esc(ka)}</span> <span class="ru">· ${esc(ru)}</span></span>${chip}</li>`;
+  }).join('');
+  const foot = unseen ? `<li class="wfoot">Бледные ещё не были на уроках: ${unseen} ${plural(unseen, 'слово', 'слова', 'слов')}</li>` : '';
+  return `<ul class="words">${rows}${foot}</ul>`;
+}
+
+function topicRow(v, kid, t) {
+  const [slug, , icon, title] = t;
+  const s = stats(kid, t);
+  const cls = s.learned >= s.total ? 'done' : s.intro ? 'now' : '';
+  const open = kid.open === slug;
+  const stale = kid.stale && kid.stale[slug];
+  const [main, sub] = V[v].cnt(s);
+  let html = `<button type="button" class="trow${open ? ' open' : ''}" aria-expanded="${open}">
+    <span class="ic" aria-hidden="true">${icon}</span>
+    <span><span class="tt">${esc(title)}</span>${V[v].bar(s)}${stale ? `<span class="stale"><span class="chip open">${stale} дн. без продвижения</span></span>` : ''}</span>
+    <span class="tcnt ${cls}">${main}${sub}</span>
+    <span class="chev" aria-hidden="true">›</span>
+  </button>`;
+  if (open) html += wordsList(kid, slug);
+  return html;
+}
+
+function page(v, kid, kids) {
+  const all = sumStats(TOPICS.map(t => stats(kid, t)));
+  const sum = `<div class="card sum"><div class="nm">${esc(kid.name)}</div>${V[v].sum(kid, all)}</div>`;
+  const none = all.intro === 0
+    ? `<div class="card"><div class="msgc"><b>Занятий пока не было</b><p>Точки у слов появятся после первого урока. Код для входа ребёнка — в боте, команда <code>/code</code>.</p></div></div>`
+    : '';
+  const secs = SECTIONS.map(([key, title]) => {
+    const ts = TOPICS.filter(t => t[1] === key);
+    const s = sumStats(ts.map(t => stats(kid, t)));
+    return `<section class="card"><div class="sechd"><b>${title}</b><span>${V[v].sec(s)}</span></div>${ts.map(t => topicRow(v, kid, t)).join('')}</section>`;
+  }).join('');
+  return `<div class="top">${kidsBar(kids, 0)}${tabs()}</div><div class="cbody">${sum}${none}${secs}</div>`;
+}
+
+function phone(theme, inner) {
+  return `<div class="phone" data-theme="${theme}">
+    <div class="sbar"><span>9:41</span><i>▂▄▆ ◔ ▭</i></div>
+    <div class="tgh"><span class="x">Закрыть</span><span class="t"><b>Мзико</b><small>мини-приложение</small></span><span class="m">⋯</span></div>
+    <div class="app">${inner}</div>
+    <div class="home"><i></i></div>
+    <div class="fold"><span>край первого экрана · 844</span></div>
+  </div>`;
+}
+
+/* ---------- data (invented, plausible) ---------- */
+const KIDS = ['Сандро', 'Мариам'];
+const _ = null;
+// day 2: 8 + 6 + 3 = 17 shown, stages 13 + 4 + 3 = 20, learned 0
+const day2 = {
+  name: 'Сандро', lessons: 4, open: 'basics',
+  st: {
+    'letters-1': [2, 2, 2, 2, 2, 1, 1, 1],
+    basics: [1, 1, 0, 1, 0, 1, _, _, _, _, _, _],
+    colors: [1, 1, 1],
+  },
+};
+// day 1, the worst case: one lesson, every letter missed on the first try
+const day1 = { name: 'Сандро', lessons: 1, st: { 'letters-1': [0, 0, 0, 0, 0, 0, 0, 0] } };
+// three weeks in
+const week3 = {
+  name: 'Сандро', lessons: 31,
+  st: {
+    'letters-1': [3, 3, 3, 3, 3, 3, 3, 3],
+    'letters-2': [3, 3, 3, 3, 3, 2, 2, 1],
+    'letters-3': [3, 2, 2, 2, 1, 1, 1, 0],
+    'letters-4': [1, 1, 0],
+    syllables: [2, 2, 1, 1, 1, 0],
+    basics: [3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 0, 1],
+    colors: [2, 2, 2, 1, 1, 1, 1],
+  },
+  stale: { 'letters-4': 12 },
+};
+const liza = { name: 'Лиза', lessons: 0, st: {} };
+
+const put = (id, html) => { document.getElementById(id).innerHTML = html; };
+for (const v of ['A', 'B', 'C']) {
+  const k = v.toLowerCase();
+  put(`${k}2`, phone('light', page(v, day2, KIDS)));
+  put(`${k}1`, phone('light', page(v, day1, KIDS)));
+  put(`${k}3`, phone('light', page(v, week3, KIDS)));
+}
+put('a2d', phone('dark', page('A', day2, KIDS)));
+put('a0', phone('light', page('A', liza, null)));
+</script>
+</body>
+</html>
