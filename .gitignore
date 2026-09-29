@@ -30,3 +30,8 @@ pnpm-debug.log*
 .idea/
 .vscode/
 *.swp
+
+# Claude Code: local settings hold secrets, worktrees are checkouts
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/

@@ -38,7 +38,7 @@ export default defineConfig({
     mediaDevServer(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/mascot.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: ['icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
         name: 'Мзико — грузинские слова',
         short_name: 'Мзико',
