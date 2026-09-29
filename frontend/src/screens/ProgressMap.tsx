@@ -1,17 +1,16 @@
 import { wordsW } from '../fx'
-import type { LessonOut, Me } from '../types'
+import type { LessonOut, Me, WordOut } from '../types'
 import { Emoji } from '../components/Emoji'
 import { BackIcon, LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
-import { BusyLabel } from '../components/PlayButton'
 import { WordImage } from '../components/WordImage'
-import { isBusyFor, type Busy } from '../busy'
 import { textClass } from '../wordText'
 import { SECTIONS } from '../sections'
 
-/** Why a lesson's stickers do not open it today: another topic of its section was chosen
- *  (`topic`), or an earlier part of its topic is not finished yet (`part`). */
-export type MapLock = 'topic' | 'part'
+/** Why a lesson's header still shows as locked: another topic of its section was chosen
+ *  (`topic`), or an earlier part of its topic is not finished yet (`part`). Only drives the
+ *  dashed card and the timer text now — a locked lesson's stickers are simply not learned yet. */
+type MapLock = 'topic' | 'part'
 
 function lockOf(lesson: LessonOut): MapLock | null {
   if (lesson.status === 'locked') return 'part'
@@ -19,20 +18,18 @@ function lockOf(lesson: LessonOut): MapLock | null {
   return null
 }
 
-/** One lesson: its header (number, icon, title, progress) and its words as tappable stickers. */
+/** One lesson: its header (number, icon, title, progress) and its words as stickers — a learned
+ *  one opens its own word, a grey one cannot be tapped. */
 function LessonGroup({
   lesson,
   stickers,
-  busy,
-  onTap,
+  onOpen,
 }: {
   lesson: LessonOut
   stickers: Me['stickers']
-  busy: Busy
-  onTap: (lesson: LessonOut) => void
+  onOpen: (word: WordOut) => void
 }) {
   const lock = lockOf(lesson)
-  const mine = isBusyFor(busy, lesson)
   const done = lesson.status === 'done'
   const learned = stickers.filter((s) => s.learned).length
   const sub = done
@@ -42,7 +39,7 @@ function LessonGroup({
       : wordsW(lesson.total)
 
   return (
-    <div className={`mapl${lock ? ' lock' : ''}`} aria-busy={mine || undefined}>
+    <div className={`mapl${lock ? ' lock' : ''}`}>
       <div className="cur-h">
         <span className={`num${done ? ' ok' : ''}`}>{done ? '✓' : lesson.number}</span>
         <span className="ic">
@@ -55,11 +52,7 @@ function LessonGroup({
           </b>
           <small>{sub}</small>
         </div>
-        {mine ? (
-          <span className="mini-play busy">
-            <BusyLabel />
-          </span>
-        ) : lock ? (
+        {lock ? (
           <span className="tmr">
             <LockIcon />
             {lock === 'topic' ? 'завтра' : `после ${lesson.part - 1}`}
@@ -74,7 +67,8 @@ function LessonGroup({
             className={`stk${textClass(s.word)}${s.learned ? '' : ' lock'}`}
             title={s.word.ru}
             aria-label={s.word.ru}
-            onClick={() => onTap(lesson)}
+            disabled={!s.learned}
+            onClick={() => onOpen(s.word)}
           >
             <WordImage word={s.word} />
           </button>
@@ -85,37 +79,22 @@ function LessonGroup({
 }
 
 /** «Карта прогресса»: every word of the programme as a sticker (learned ones in colour), grouped
- *  by lesson under the same three sections as the «Уроки» screen. A sticker opens its lesson:
- *  a done lesson goes to the replay sheet, the current one starts, a locked one only explains. */
+ *  by lesson under the same three sections as the «Уроки» screen. A learned sticker opens its own
+ *  word on a new page; a grey (not yet learned) one is disabled and does nothing. */
 export function ProgressMap({
   me,
-  busy,
-  onPlay,
-  onReplay,
-  onLocked,
+  onOpen,
   onBack,
 }: {
   me: Me
-  busy: Busy
-  onPlay: (lesson: LessonOut) => void
-  onReplay: (lesson: LessonOut) => void
-  onLocked: (lock: MapLock) => void
+  onOpen: (word: WordOut) => void
   onBack: () => void
 }) {
   const learnedTotal = me.stickers.filter((s) => s.learned).length
   const sectionOf = new Map(me.topics.map((t) => [t.slug, t.section]))
 
-  const tap = (lesson: LessonOut) => {
-    const lock = lockOf(lesson)
-    if (lock) onLocked(lock)
-    else if (lesson.status === 'done') onReplay(lesson)
-    else onPlay(lesson)
-  }
-
   return (
     <main className="wrap">
-      {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
-      {busy && <div className="scrim" aria-hidden="true" />}
       <div className="topbar">
         <button type="button" className="x" aria-label="На главную" onClick={onBack}>
           <BackIcon />
@@ -127,7 +106,11 @@ export function ProgressMap({
         <Mascot size={64} />
         <div className="bubble">
           Наклейки: {learnedTotal} из {me.stickers.length}
-          <small>Нажми на наклейку — откроется её урок</small>
+          <small>
+            {learnedTotal > 0
+              ? 'Нажми на цветную наклейку — услышишь слово'
+              : 'Выучи слово — наклейка станет цветной'}
+          </small>
         </div>
       </div>
 
@@ -146,8 +129,7 @@ export function ProgressMap({
                   key={lesson.number}
                   lesson={lesson}
                   stickers={me.stickers.filter((s) => s.lesson === lesson.number)}
-                  busy={busy}
-                  onTap={tap}
+                  onOpen={onOpen}
                 />
               ))}
             </div>

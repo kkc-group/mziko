@@ -415,6 +415,16 @@ button:disabled { cursor: default; }
 .mapl.lock .cur-t { color: var(--muted); }
 .mapl .stickers { justify-content: flex-start; margin-top: 0; }
 
+/* --- sticker page (screens/StickerCard.tsx): a layer over the map, like .lesson, so the map
+   keeps its scroll position underneath. Built from the lesson intro pieces above (.pic, .word,
+   .anchor, .speak); .stkp is its own column, shrinking one unbreakable Georgian word to fit like
+   .pic.txt already does. */
+.sticker { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow-y: auto; }
+.stkp { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 560px; padding-top: 8px; text-align: center; }
+.stkp .word { width: 100%; container-type: inline-size; }
+.stkp .word .ka { font-size: min(54px, calc(100cqi / (var(--len, 8) * 0.72))); }
+.stkp .ru { margin: -6px 0 0; font-size: 20px; font-weight: 800; line-height: 1.25; color: var(--ink); }
+
 /* --- replay sheet: docs/mockups/lesson-restart.html ---
    The same .sheet as the menu, docked to the bottom edge instead of the right one; rows are the
    menu's .mi.on, the header reuses .cur-h / .cur-t. .mi:disabled mirrors .play:disabled. */

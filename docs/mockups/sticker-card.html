@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Страница наклейки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c;
+  --pom: #e23b55; --pom-dark: #b8243d; --pom-soft: #ffe3e8;
+  --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee;
+  --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
+.wrap {
+  position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) 170px calc(var(--safe-left) + 16px);
+}
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.blob {
+  display: inline-block; width: var(--s, 64px); height: var(--s, 64px); background: var(--c);
+  border: 3px solid var(--blob-edge); border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
+  box-shadow: inset -6px -8px 0 rgba(0, 0, 0, 0.08);
+}
+.mascot { flex: none; }
+.bubble { background: var(--surface); border: 2px solid var(--line); border-radius: 22px 22px 22px 6px; padding: 12px 16px; margin-bottom: 26px; }
+.bubble small { color: var(--muted); font-size: 14px; }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.part { color: var(--muted); white-space: nowrap; }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.stk { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--line); --s: 28px; }
+.stk .blob { border-width: 2px; }
+.stk.lock { filter: grayscale(1); opacity: 0.35; }
+.stk.txt { width: auto; min-width: 48px; padding: 0 12px; }
+.stk .glyph.w { font-size: 18px; line-height: 1; white-space: nowrap; }
+.stk .glyph.l { line-height: 1; }
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.x { width: 56px; height: 56px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); font-size: 20px; font-weight: 900; color: var(--muted); }
+.x svg { width: 24px; height: 24px; }
+.lock-i { flex: none; width: 24px; height: 24px; color: var(--muted); }
+.tmr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--muted); font-size: 13px; font-weight: 800; line-height: 1; }
+.topbar { position: sticky; z-index: 6; top: var(--safe-top); display: flex; align-items: center; gap: 12px; height: 72px; margin: -16px -16px 0; padding: 8px 16px; background: var(--bg); }
+.topbar .x { display: grid; place-items: center; flex: none; }
+.topbar h1 { margin: 0; font-size: 30px; font-weight: 900; line-height: 1; }
+.lhello { display: flex; align-items: flex-end; gap: 8px; margin: 4px 0 6px; }
+.lhello .bubble { margin-bottom: 14px; font-weight: 800; font-size: 16px; line-height: 1.25; }
+.lhello .bubble small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; }
+.rows { display: flex; flex-direction: column; gap: 10px; }
+.mapl { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); }
+.mapl .cur-h { gap: 10px; }
+.mapl .ic { flex: none; display: flex; --s: 34px; }
+.mapl .cur-t b { font-size: 20px; }
+.mapl .cur-t small { margin-top: 2px; font-size: 14px; }
+.mapl .num { font-size: 16px; border: 2px solid var(--line); }
+.mapl.lock { background: transparent; border-style: dashed; }
+.mapl.lock .num { border-style: dashed; color: var(--muted); }
+.mapl.lock .ic { filter: grayscale(1); opacity: 0.35; }
+.mapl.lock .cur-t { color: var(--muted); }
+.mapl .stickers { justify-content: flex-start; margin-top: 0; }
+/* lesson intro pieces, verbatim */
+.pic { width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; --s: 96px; flex: none; }
+.pic .blob { --s: 118px; }
+.pic.txt { width: 100%; max-width: 360px; border-radius: 26px; padding: 0 16px; container-type: inline-size; }
+.pic.txt .glyph.w { font-size: min(54px, 15cqi, calc(100cqi / (var(--len, 8) * 0.72))); line-height: 1.2; text-wrap: balance; }
+.word { text-align: center; }
+.word .ka { font-size: 54px; line-height: 1.2; color: var(--word-color); display: block; }
+.word .tr { font-size: 18px; color: var(--muted); font-weight: 700; }
+.anchor {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 auto;
+  padding: 8px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); --s: 34px;
+}
+.anchor .ka { font-size: 28px; line-height: 1.2; color: var(--ink); }
+.anchor .ka b { color: var(--word-color); font-weight: 800; }
+.anchor small { color: var(--muted); font-weight: 700; font-size: 16px; }
+.speak { width: 84px; height: 84px; margin: 0 auto; border-radius: 50%; background: var(--sun); box-shadow: 0 5px 0 var(--sun-dark); display: grid; place-items: center; flex: none; }
+.speak svg { width: 40px; height: 40px; }
+.speak.playing { animation: pulse 0.5s ease 2; }
+@keyframes pulse { 50% { transform: scale(1.12); } }
+
+/* press law, verbatim: sticker is a flat button, grey ones never press (:not(:disabled)) */
+.x, button.stk, .speak { transition: transform 120ms ease-out, box-shadow 120ms ease-out, background-color 120ms ease-out; }
+:is(.x, button.stk):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
+.speak:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--sun-dark); }
+
+/* ---------- new: sticker page (screens/StickerCard) — built from the intro pieces above ---------- */
+.stkp { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 560px; padding-top: 8px; text-align: center; }
+/* one unbreakable Georgian word must fit the width: the .pic.txt rule, applied to .word */
+.stkp .word { width: 100%; container-type: inline-size; }
+.stkp .word .ka { font-size: min(54px, calc(100cqi / (var(--len, 8) * 0.72))); }
+.stkp .ru { margin: -6px 0 0; font-size: 20px; font-weight: 800; line-height: 1.25; color: var(--ink); }
+
+/* ---------- mockup-only: frozen pressed / playing looks, context blocks ---------- */
+.stk.is-press { transform: scale(0.96); background: var(--line); }
+.speak.is-play { transform: scale(1.12); }
+.speak.demo { animation: pulse 0.5s ease infinite; }
+.ctx { background: var(--line); opacity: .55; border-radius: 16px; min-height: 48px;
+       display: grid; place-items: center; color: var(--muted); font-size: 13px; font-weight: 800; text-align: center; padding: 6px 10px; }
+.tap { outline: 3px dashed var(--pom); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- mockup chrome (not product) — verbatim from docs/mockups/home-menu.html ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, 328px); gap: 24px; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 64px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); }
+.scr { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; transform-origin: 0 0; }
+.fw { width: 328px; height: 691px; }
+.fw .phone { transform: scale(0.8); }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: 47px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; background: var(--bg); }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Страница наклейки: цветная наклейка на карте открывает своё слово</h1>
+  <p class="lead">Как сейчас: на «Карте прогресса» любая наклейка, цветная или серая, открывает урок, а не слово (<code>frontend/src/screens/ProgressMap.tsx:108-113</code>, кнопка <code>.stk</code> — <code>:71-80</code>); подсказка в облачке — «Нажми на наклейку — откроется её урок» (<code>:130</code>). Станет: нажимается только цветная наклейка, серые — <code>:disabled</code>; нажатие открывает новый экран с этим словом, стрелка «назад» возвращает на карту к тем же наклейкам. Страница наклейки — новый экран, нарисован целиком; на карте нарисованы только облачко и карточка урока, остальное — блоки «как сейчас». Слова — из <code>content/topics/*.yaml</code>, урок «Семья · 1» — 14-й по порядку (<code>backend/app/services/lessons.py</code>, до 10 слов в уроке).</p>
+
+  <h2>1 · Карта: цветные наклейки нажимаются, серые — нет</h2>
+  <p class="lead">Карточка урока «Семья · 1»: выучены «мама», «папа» и «брат» (ძმა — наклейка-текст), остальные три серые. Цветная «папа» показана в нажатом положении по закону плоских кнопок: сжатие до 96% и заливка <code>--line</code>, 80 мс. Серые выглядят ровно как сейчас (<code>.stk.lock</code>: серые, прозрачность 0,35), но стали <code>disabled</code>: под пальцем не сжимаются и не заливаются, ничего не открывают. Облачко говорит, что именно нажимать.</p>
+  <div class="cols" id="map1"></div>
+
+  <h2>2 · Карта: цветных ещё нет · урок закрыт</h2>
+  <p class="lead">Первый день: ни одной выученной наклейки, нажимать нечего — облачко не зовёт нажать, а объясняет, откуда берётся цвет. Закрытый урок (пунктир, замок «завтра») раньше по нажатию на наклейку показывал «Этот урок откроется завтра»; теперь все его наклейки серые и <code>disabled</code>, объяснение остаётся только в значке замка в шапке карточки.</p>
+  <div class="cols" id="map2"></div>
+
+  <h2>3 · Страница наклейки: слово с картинкой</h2>
+  <p class="lead">Сверху вниз то же, что в интро урока: круг с картинкой <code>.pic</code>, грузинское слово <code>.word .ka</code>, транслитерация <code>.tr</code> вторым слоем, затем перевод, затем «Послушать» <code>.speak</code>. Нет заставки «Новое слово!» и нет «Дальше» — страница ничего не просит, только показывает. Стрелка в шапке — <code>.topbar</code> + <code>.x</code> с <code>BackIcon</code>, как на карте — ведёт на карту, прокрученную к той же наклейке.</p>
+  <div class="cols" id="s1"></div>
+
+  <h2>4 · Буква с опорным словом</h2>
+  <p class="lead">У буквы картинки нет: в круге крупная буква (<code>.glyph.l</code>), под кругом повтор не нужен, остаются транслитерация и перевод «буква ч (твёрдая)» — самый длинный перевод в программе. Ниже плашка <code>.anchor</code>, как в уроке: «ჭ как в 🐜 ჭიანჭველა», первая буква выделена. ჭიანჭველა — самое длинное опорное слово, влезает в одну строку на 390–410 px. У «უ» опорное слово без эмодзи (უთო, утюг) — вместо картинки его перевод мелким, как в <code>Anchor</code> урока.</p>
+  <div class="cols" id="s2"></div>
+
+  <h2>5 · Слово без картинки</h2>
+  <p class="lead"><code>image.kind === 'text'</code>: слово рисуется крупным текстом в плашке <code>.pic.txt</code> вместо круга и под ней не повторяется. Взято самое длинное такое слово — დილა მშვიდობისა (доброе утро): уходит в две строки по пробелу, размер ужимается по <code>--len</code>, как в уроке.</p>
+  <div class="cols" id="s3"></div>
+
+  <h2>6 · Переполнение: самое длинное слово одним куском</h2>
+  <p class="lead">მასწავლებელი (учитель, 12 букв, без пробела) и ნარინჯისფერი (оранжевый, пятно цвета) не помещаются в 54 px на ширину телефона. Слово не переносится и не обрезается — уменьшается шрифт: то же правило <code>--len</code>, что уже работает у <code>.pic.txt</code>. Короткие слова остаются 54 px.</p>
+  <div class="cols" id="s4"></div>
+
+  <h2>7 · «Послушать» играет · транслитерация выключена</h2>
+  <p class="lead">Слева: нажата «Послушать» — кнопка вдавлена на 3 px, затем <code>.playing</code>, два пульса по 0,5 с (на макете пульс зациклен, чтобы его было видно; в продукте — ровно два, как в уроке). Справа: родитель выключил подсказку (<code>settings.show_hint = false</code>) — транслитерация пропадает, как в интро урока; перевод остаётся.</p>
+  <div class="cols" id="s5"></div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Недоступность серых наклеек — без изменения вида.</b> Они уже серые и прозрачные (0,35) — это и есть «ещё не твоя». Ещё сильнее бледнить нельзя: карта для того и нужна, чтобы видеть, что впереди, а на 0,2 серые наклейки на тёмной теме пропадают. Недоступность видна по отклику: цветная под пальцем сжимается и заливается, серая не шевелится вовсе (правило нажатия уже содержит <code>:not(:disabled)</code>). Замок или крестик на каждой из 228 наклеек превратил бы карту в поле запретов.</li>
+    <li><b>Что уступает при нехватке места.</b> Первым уступает размер грузинского слова: с 54 px оно уменьшается ровно до ширины, но не переносится и не режется — слово целиком важнее крупного шрифта. Слово с пробелом («доброе утро») переносится по пробелу. Круг с картинкой (170 px) и «Послушать» (84 px) не уменьшаются никогда: это то, что ребёнок узнаёт и нажимает. Перевод переносится на вторую строку, если длинный. Плашка опорного слова держит одну строку; на экране уже 375 px она ляжет впритык, и первой уступит её транслитерация — перенесётся под слово.</li>
+    <li><b>Заголовок шапки — «Наклейка», а не перевод слова.</b> Перевод бывает «буква п (с придыханием)», это две строки по 30 px в шапке высотой 72 px. Короткое постоянное слово держит шапку спокойной, а перевод стоит под грузинским словом, после транслитерации: сначала оригинал, потом подсказки.</li>
+    <li><b>Перевод показан, хотя в интро урока его нет.</b> В уроке перевод — это ответ викторины, его прятать правильно; на странице наклейки спрашивать нечего, а без перевода ребёнок не узнает, что за «ბავშვი» у него в коллекции. Перевод крупнее и темнее транслитерации: это смысл, а не подсказка к чтению.</li>
+    <li><b>Транслитерация подчиняется той же настройке, что и в уроке.</b> Родитель выключил подсказку — её нет и тут; иначе страница наклейки стала бы обходом этой настройки.</li>
+    <li><b>Страница собрана по вертикальному центру, без кнопок внизу.</b> Кнопок «Играть»/«Повторить» нет по задаче; единственное действие — «Послушать», поэтому она последняя в столбце, на уровне большого пальца, а не прибита к низу экрана.</li>
+    <li><b>Текст облачка.</b> «Нажми на цветную наклейку — услышишь слово»: говорит, какие нажимать (цветные), и что будет (глагол, на «ты»). Если цветных нет — «Выучи слово — наклейка станет цветной»: звать нажимать было бы неправдой.</li>
+  </ul>
+
+  <h2>Чего нет на макете</h2>
+  <ul class="lead">
+    <li><b>Загрузки и ошибки сети у страницы наклейки нет.</b> Всё, что она показывает, уже лежит в <code>me.stickers</code>, запроса при открытии нет. Звук — как в уроке: если файла нет или сеть пропала, кнопка «Послушать» пульсирует и молчит, отдельного сообщения нет.</li>
+    <li><b>Пустого состояния страницы нет:</b> открыть её можно только с цветной наклейки, то есть слово всегда есть.</li>
+    <li><b>Картинки-файла (<code>image.kind === 'file'</code>, школьные предметы) нет отдельным кадром:</b> она встаёт в тот же круг, что эмодзи, размером 96 px — ничего нового не показывает.</li>
+    <li><b>Системного «назад» (жест iOS, кнопка Android) нет:</b> приложение переключает экраны без истории браузера (<code>App.tsx</code>, <code>view</code>), и на карте сейчас так же. Возврат — только стрелкой в шапке.</li>
+    <li><b>Главного экрана нет:</b> наклейки там — не кнопки, и задача их не трогает.</li>
+    <li><b>Альбомной ориентации iPad нет:</b> это экран-просмотр, а не урок; столбец в 540 px центрируется так же, как карта.</li>
+  </ul>
+</main>
+<script>
+const em = e => `<span class="emoji" role="img" aria-hidden="true">${e}</span>`;
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+const HILLS = '<svg class="hills" viewBox="0 0 540 140" preserveAspectRatio="none" aria-hidden="true"><path d="M0 90 Q120 20 260 80 T540 60 V140 H0Z" fill="var(--hill1)"/><path d="M0 120 Q160 70 320 110 T540 100 V140 H0Z" fill="var(--hill2)"/></svg>';
+const BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const LOCK = '<svg class="lock-i" viewBox="0 0 24 24" aria-label="закрыто"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+const SPEAKER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#4a3200"/><path d="M16 8.5a5 5 0 010 7M18.5 6a8.5 8.5 0 010 12" stroke="#4a3200" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+
+/* ---- words: verbatim from content/topics/*.yaml ---- */
+const W = {
+  mom:     { ka: 'დედა', tr: 'деда', ru: 'мама', k: 'emoji', v: '👩' },
+  dad:     { ka: 'მამა', tr: 'мама', ru: 'папа', k: 'emoji', v: '👨' },
+  grandma: { ka: 'ბებია', tr: 'бебиа', ru: 'бабушка', k: 'emoji', v: '👵' },
+  grandpa: { ka: 'ბაბუა', tr: 'бабуа', ru: 'дедушка', k: 'emoji', v: '👴' },
+  brother: { ka: 'ძმა', tr: 'дзма', ru: 'брат', k: 'text', v: 'ძმა' },
+  sister:  { ka: 'და', tr: 'да', ru: 'сестра', k: 'text', v: 'და' },
+  child:   { ka: 'ბავშვი', tr: 'бавшви', ru: 'ребёнок', k: 'emoji', v: '👶' },
+  cha:     { ka: 'ჭ', tr: 'ча', ru: 'буква ч (твёрдая)', k: 'text', v: 'ჭ', anchor: { ka: 'ჭიანჭველა', tr: 'чианчвела', ru: 'муравей', emoji: '🐜' } },
+  un:      { ka: 'უ', tr: 'у', ru: 'буква у', k: 'text', v: 'უ', anchor: { ka: 'უთო', tr: 'уто', ru: 'утюг', emoji: null } },
+  morning: { ka: 'დილა მშვიდობისა', tr: 'дила мшвидобиса', ru: 'доброе утро', k: 'text', v: 'დილა მშვიდობისა' },
+  teacher: { ka: 'მასწავლებელი', tr: 'масцавлебели', ru: 'учитель', k: 'emoji', v: '🧑‍🏫' },
+  orange:  { ka: 'ნარინჯისფერი', tr: 'наринджисфери', ru: 'оранжевый', k: 'color', v: '#FF8A1F' },
+};
+const isText = w => w.k === 'text';
+const isLetter = w => isText(w) && [...w.v].length === 1;
+const txt = w => isText(w) && !isLetter(w) ? ' txt' : '';
+
+/* ---- WordImage ---- */
+function img(w) {
+  if (w.k === 'color') return `<span class="blob" style="--c:${w.v}" role="img" aria-label="${w.ru}"></span>`;
+  if (w.k === 'text') return `<span class="glyph ${isLetter(w) ? 'l' : 'w'} ka" style="--len:${[...w.v].length}" role="img" aria-label="${w.ru}">${w.v}</span>`;
+  return em(w.v);
+}
+
+/* ---- map: the sticker as a button; grey ones disabled ---- */
+function stk(w, learned, pressed) {
+  return `<button type="button" class="stk${txt(w)}${learned ? '' : ' lock'}${pressed ? ' is-press' : ''}" title="${w.ru}" aria-label="${w.ru}"${learned ? '' : ' disabled'}>${img(w)}</button>`;
+}
+function mapl({ number, title, part, parts, icon, sub, words, lock, press }) {
+  const t = parts > 1 ? `${title}<span class="part"> · ${part}</span>` : title;
+  const right = lock ? `<span class="tmr">${LOCK}завтра</span>` : '';
+  return `<div class="mapl${lock ? ' lock' : ''}"><div class="cur-h"><span class="num">${number}</span><span class="ic">${em(icon)}</span><div class="cur-t"><b>${t}</b><small>${sub}</small></div>${right}</div>
+    <div class="stickers">${words.map(([k, on]) => stk(W[k], on, k === press)).join('')}</div></div>`;
+}
+function mapScreen({ learned, total, hint, cards }) {
+  return `${HILLS}<div class="scr"><main class="wrap">
+    <div class="topbar"><div class="ctx" style="flex:1;min-height:56px">шапка «Карта прогресса» — как сейчас</div></div>
+    <div class="lhello">${MASCOT(64)}<div class="bubble">Наклейки: ${learned} из ${total}<small>${hint}</small></div></div>
+    <div class="ctx" style="min-height:44px;margin:8px 0 10px">заголовок раздела «Слова» — как сейчас</div>
+    <div class="rows">
+      <div class="ctx" style="min-height:120px">уроки 8–13 — как сейчас</div>
+      ${cards}
+      <div class="ctx" style="min-height:120px">уроки 15–31 — как сейчас</div>
+    </div>
+  </main></div>`;
+}
+const FAMILY = (press, learnedMap) => mapl({
+  number: 14, title: 'Семья', part: 1, parts: 2, icon: '👨‍👩‍👧', sub: 'показано 6 из 6', press,
+  words: [['mom', learnedMap.mom], ['dad', learnedMap.dad], ['grandma', learnedMap.grandma], ['grandpa', learnedMap.grandpa], ['brother', learnedMap.brother], ['sister', learnedMap.sister]],
+});
+const HINT_TAP = 'Нажми на цветную наклейку — услышишь слово';
+const HINT_NONE = 'Выучи слово — наклейка станет цветной';
+const MIX = { mom: true, dad: true, grandma: false, grandpa: false, brother: true, sister: false };
+const NONE = { mom: false, dad: false, grandma: false, grandpa: false, brother: false, sister: false };
+
+/* ---- sticker page ---- */
+function anchor(w, hint) {
+  const a = w.anchor, letter = w.v;
+  const rest = a.ka.startsWith(letter) ? a.ka.slice(letter.length) : a.ka;
+  return `<div class="anchor" aria-label="${a.ka} — ${a.ru}">${a.emoji ? em(a.emoji) : `<small>${a.ru}</small>`}<span class="ka"><b>${letter}</b>${rest}</span>${hint ? `<small>${a.tr}</small>` : ''}</div>`;
+}
+function page(key, { hint = true, speak = '' } = {}) {
+  const w = W[key];
+  const word = (!isText(w) || hint)
+    ? `<div class="word">${!isText(w) ? `<span class="ka" style="--len:${[...w.ka].length}">${w.ka}</span>` : ''}${hint ? `<span class="tr">${w.tr}</span>` : ''}</div>` : '';
+  return `${HILLS}<div class="scr"><main class="wrap">
+    <div class="topbar"><button type="button" class="x" aria-label="К карте прогресса">${BACK}</button><h1>Наклейка</h1></div>
+    <div class="stkp">
+      <div class="pic${txt(w)}">${img(w)}</div>
+      ${word}
+      <p class="ru">${w.ru}</p>
+      ${w.anchor ? anchor(w, hint) : ''}
+      <button type="button" class="speak${speak}" aria-label="Послушать">${SPEAKER}</button>
+    </div>
+  </main></div>`;
+}
+
+function phone(theme, body) {
+  return `<div class="fw"><div class="dev phone" data-theme="${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div></div>`;
+}
+const fig = (t, sub, frame) => `<figure><figcaption>${t}${sub ? `<span>${sub}</span>` : ''}</figcaption>${frame}</figure>`;
+const put = (id, figs) => { document.getElementById(id).innerHTML = figs.join(''); };
+
+const mapMix = () => mapScreen({ learned: 41, total: 228, hint: HINT_TAP, cards: FAMILY('dad', MIX) });
+put('map1', [
+  fig('1 · Смесь цветных и серых · светлая', '«папа» нажата (96%, заливка --line); серые — disabled, вид прежний', phone('light', mapMix())),
+  fig('1 · Смесь цветных и серых · тёмная', 'то же; серые на тёмном фоне всё ещё различимы', phone('dark', mapMix())),
+]);
+put('map2', [
+  fig('2 · Ни одной цветной', 'облачко не зовёт нажимать; все наклейки урока disabled', phone('light', mapScreen({ learned: 0, total: 228, hint: HINT_NONE, cards: FAMILY(null, NONE) }))),
+  fig('2б · Закрытый урок', 'пунктир и замок «завтра» — как сейчас; наклейки только серые и не нажимаются', phone('light', mapScreen({ learned: 41, total: 228, hint: HINT_TAP,
+    cards: FAMILY(null, MIX) + mapl({ number: 15, title: 'Семья', part: 2, parts: 2, icon: '👨‍👩‍👧', sub: '6 слов', lock: true, words: [['child', false], ['mom', false], ['dad', false], ['grandma', false], ['grandpa', false], ['sister', false]] }) }))),
+]);
+put('s1', [
+  fig('3 · დედა — мама · светлая', 'эмодзи в круге, слово 54 px, транслитерация, перевод, «Послушать»', phone('light', page('mom'))),
+  fig('3 · დედა — мама · тёмная', 'слово цвета --word-color (--sun в тёмной)', phone('dark', page('mom'))),
+]);
+put('s2', [
+  fig('4 · ჭ — буква с опорным словом', 'самый длинный перевод и самое длинное опорное слово ჭიანჭველა', phone('light', page('cha'))),
+  fig('4б · უ — опорное слово без эмодзи', 'вместо картинки в плашке — перевод «утюг» мелким', phone('light', page('un'))),
+]);
+put('s3', [
+  fig('5 · დილა მშვიდობისა — без картинки', 'плашка .pic.txt, две строки по пробелу; под ней только транслитерация', phone('light', page('morning'))),
+  fig('5 · то же · тёмная', '', phone('dark', page('morning'))),
+]);
+put('s4', [
+  fig('6 · მასწავლებელი — 12 букв', 'шрифт ужат по --len до ширины, без переноса', phone('light', page('teacher'))),
+  fig('6б · ნარინჯისფერი — пятно цвета', 'image.kind = color, пятно .blob 118 px в круге', phone('light', page('orange'))),
+]);
+put('s5', [
+  fig('7 · «Послушать» играет', '.playing — пульс 1,12; на макете зациклен', phone('light', page('child', { speak: ' demo' }))),
+  fig('7б · Подсказка выключена родителем', 'show_hint = false: нет транслитерации ни у слова, ни у опорного', phone('light', page('cha', { hint: false }))),
+]);
+</script>
+</body>
+</html>
