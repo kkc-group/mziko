@@ -121,7 +121,7 @@ async def test_replay_of_todays_lesson_quizzes_every_word_and_pays_no_coin_twice
     assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10
 
 
-async def test_one_topic_per_section_per_day_and_unknown_lesson_raises(
+async def test_a_new_topic_waits_for_the_one_before_and_for_tomorrow_and_unknown_lesson_raises(
     db: AsyncSession, child: Child
 ) -> None:
     path = await lessons.load_lessons(db)
@@ -133,23 +133,23 @@ async def test_one_topic_per_section_per_day_and_unknown_lesson_raises(
 
     colors = await skip_to(db, child, "colors")
     next_topic = path[colors].topic.slug  # the word topic that follows colors
+    with pytest.raises(LessonLocked):  # colors is not done yet
+        await learning.build_session(db, child, colors + 1, at(DAY1))
     for _ in range(4):
         await play_day(db, child, "colors", at(DAY1))
-    with pytest.raises(LessonLocked):  # another word topic: not today
+    with pytest.raises(LessonLocked):  # colors is done, but it was new today
         await learning.build_session(db, child, colors + 1, at(DAY1, 20))
     letters = await learning.build_session(db, child, 1, at(DAY1, 20), random.Random(23))
     assert letters is not None  # letters are a section of their own: still open today
-    with pytest.raises(LessonLocked):  # and now letters-2 waits for tomorrow
-        await learning.build_session(db, child, 2, at(DAY1, 21))
 
     tomorrow = await learning.build_session(db, child, colors + 1, at(DAY2), random.Random(23))
     assert tomorrow is not None
     assert [s.word.topic_slug for s in steps_of(tomorrow) if s.type == "intro"] == [next_topic] * 3
-    with pytest.raises(LessonLocked):  # yesterday's topic is locked once another one is chosen
-        await learning.build_session(db, child, colors, at(DAY2, 13))
+    # Yesterday's topic stays open for a replay the day another one is new.
+    assert await learning.build_session(db, child, colors, at(DAY2, 13)) is not None
 
 
-async def test_replay_of_an_old_topic_is_the_choice_of_the_day(
+async def test_replay_of_an_old_topic_leaves_the_day_to_a_new_one(
     db: AsyncSession, child: Child
 ) -> None:
     colors = await skip_to(db, child, "colors")
@@ -157,8 +157,8 @@ async def test_replay_of_an_old_topic_is_the_choice_of_the_day(
         await play_day(db, child, "colors", at(DAY1))
     replay = await learning.build_session(db, child, colors, at(DAY2), random.Random(24))
     assert replay is not None and not any(s.type == "intro" for s in steps_of(replay))
-    with pytest.raises(LessonLocked):  # colors took the word section for today
-        await learning.build_session(db, child, colors + 1, at(DAY2, 13))
+    after = await learning.build_session(db, child, colors + 1, at(DAY2, 13), random.Random(24))
+    assert after is not None and any(s.type == "intro" for s in steps_of(after))
 
 
 async def test_restart_of_a_topic_shows_its_words_again_and_keeps_stages_and_coins(
@@ -182,13 +182,21 @@ async def test_restart_of_a_topic_shows_its_words_again_and_keeps_stages_and_coi
     assert (await progress_of(db, child, "yellow")).introduced is False
 
     path = await lessons.load_lessons(db)
-    position = lessons.position(path, await lessons.load_progress(db, child.id), [])
+    progress = await lessons.load_progress(db, child.id)
+    first_days = await lessons.load_topic_first_days(db, child.id)
+    position = lessons.position(path, progress, [], first_days, DAY2)
     state = position.get(colors)
     assert state is not None and (state.status, state.introduced) == ("current", 3)
     assert (await coins.get_or_create_week(db, child.id, DAY1)).coins == 10  # week 1 untouched
 
-    with pytest.raises(LessonLocked):  # colors took the word section for today
+    with pytest.raises(LessonLocked):  # a topic not started yet is not reachable
         await learning.restart_topic(db, child, "food", at(DAY2, 13))
+
+    # The restart did not spend the day: colors done again, the next topic opens today.
+    for _ in range(3):
+        await play_day(db, child, "colors", at(DAY2, 14))
+    after = await learning.build_session(db, child, colors + 1, at(DAY2, 15), random.Random(26))
+    assert after is not None and any(s.type == "intro" for s in steps_of(after))
 
 
 async def test_text_cards_are_reviewed_with_listen_only_and_carry_anchor(

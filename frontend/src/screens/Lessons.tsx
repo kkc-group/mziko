@@ -5,7 +5,7 @@ import { BackIcon, LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { BusyLabel, PlayButton } from '../components/PlayButton'
 import { isBusyFor, type Busy } from '../busy'
-import { SECTIONS } from '../sections'
+import { lockedReason, SECTIONS } from '../sections'
 
 /** "Все буквы/слоги/слова пройдены" — the word varies by section. */
 const ALL_DONE_LABEL: Record<TopicOut['section'], string> = {
@@ -78,7 +78,7 @@ function OpenRow({
   )
 }
 
-function LockedRow({ topic, lessons }: { topic: TopicOut; lessons: LessonOut[] }) {
+function LockedRow({ topic, topics, lessons }: { topic: TopicOut; topics: TopicOut[]; lessons: LessonOut[] }) {
   return (
     <div className="lsn lock" aria-disabled="true">
       <IconWithCheck icon={topic.icon} done={topic.done} />
@@ -88,7 +88,7 @@ function LockedRow({ topic, lessons }: { topic: TopicOut; lessons: LessonOut[] }
       </span>
       <span className="tmr">
         <LockIcon />
-        завтра
+        {lockedReason(topics, topic)}
       </span>
     </div>
   )
@@ -230,7 +230,7 @@ export function Lessons({
 
       <div className="lhello">
         <Mascot size={64} />
-        <div className="bubble">Каждый день — одна тема из каждого раздела</div>
+        <div className="bubble">Каждый день — одна новая тема из каждого раздела</div>
       </div>
 
       {SECTIONS.map((section) => {
@@ -252,7 +252,7 @@ export function Lessons({
               {topics.map((topic) => {
                 const lessons = topicLessons(me, topic.slug)
                 if (topic.status === 'locked') {
-                  return <LockedRow key={topic.slug} topic={topic} lessons={lessons} />
+                  return <LockedRow key={topic.slug} topic={topic} topics={me.topics} lessons={lessons} />
                 }
                 if (topic.status === 'today') {
                   return (

@@ -11,6 +11,7 @@ from tests.conftest import CONTENT_DIR
 
 DAY1 = date(2026, 9, 22)
 DAY2 = DAY1 + timedelta(days=1)
+DAY3 = DAY1 + timedelta(days=2)
 
 
 def test_parts_are_equal_and_at_most_ten() -> None:
@@ -88,82 +89,130 @@ def test_sections_come_from_the_slug() -> None:
     assert lessons.section_of(topic("colors")) == "words"
 
 
-async def test_fresh_day_opens_every_topic_and_orders_lessons_within_it(
+async def test_fresh_day_opens_the_first_topic_of_each_section_and_orders_lessons_within_it(
     db: AsyncSession, seeded: None
 ) -> None:
     path = await lessons.load_lessons(db)
-    pos = lessons.position(path, {}, [])
+    pos = lessons.position(path, {}, [], {}, DAY1)
     assert [t.topic.slug for t in pos.topics] == [lsn.topic.slug for lsn in path if lsn.part == 1]
-    assert all(t.status == "open" and not t.done for t in pos.topics)
     assert [t.section for t in pos.topics[:6]] == ["letters"] * 4 + ["syllables", "words"]
+    assert not any(t.done for t in pos.topics)
+    firsts = {"letters-1", "syllables", "basics"}
+    assert all(t.status == ("open" if t.topic.slug in firsts else "locked") for t in pos.topics)
 
-    # Any topic's first lesson can start; later parts of a topic wait for the first one.
+    # Only the first topic's first lesson can start; later parts wait for the first one.
+    basics = [s for s in pos.lessons if s.lesson.topic.slug == "basics"]
+    assert [(s.status, s.playable) for s in basics] == [("current", True), ("locked", False)]
     food = [s for s in pos.lessons if s.lesson.topic.slug == "food"]
-    assert [(s.status, s.playable) for s in food] == [("current", True), ("locked", False)]
-    assert state(pos, 1).playable and state(pos, 2).playable  # letters-1 and letters-2 alike
+    assert [(s.status, s.playable) for s in food] == [("current", False), ("locked", False)]
+    assert state(pos, 1).playable and not state(pos, 2).playable  # letters-2 waits for letters-1
     assert pos.lesson_of_topic(food[0].lesson.topic.id) is food[0]
 
 
-async def test_one_topic_per_section_per_day(db: AsyncSession, seeded: None) -> None:
+async def test_next_topic_waits_for_the_one_before_and_for_tomorrow(
+    db: AsyncSession, seeded: None
+) -> None:
     path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+    basics = [lsn for lsn in path if lsn.topic.slug == "basics"]
     colors = next(lsn for lsn in path if lsn.topic.slug == "colors")
-    letters_2 = next(lsn for lsn in path if lsn.topic.slug == "letters-2")
 
-    # A colors session today locks the other word topics; letters and syllables stay open.
-    pos = lessons.position(path, {}, [colors.topic.id])
-    assert topic_state(pos, "colors").status == "today"
-    assert topic_state(pos, "greetings").status == "locked"
-    assert topic_state(pos, "letters-2").status == "open"
-    assert topic_state(pos, "syllables").status == "open"
+    # Half of basics shown on day 1: colors waits for the rest, whatever the day.
+    half = {
+        w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY1)
+        for w in basics[0].words
+    }
+    pos = lessons.position(path, half, [], {ids["basics"]: DAY1}, DAY2)
+    assert topic_state(pos, "basics").status == "open"
+    assert topic_state(pos, "colors").status == "locked"
+    assert state(pos, colors.number).playable is False
+
+    # All of basics done on the day it was started: colors waits for tomorrow.
+    done = introduced(path, "basics")
+    pos = lessons.position(path, done, [ids["basics"]], {ids["basics"]: DAY1}, DAY1)
+    assert topic_state(pos, "basics").status == "today"
+    assert topic_state(pos, "colors").status == "locked"
+    assert topic_state(pos, "letters-1").status == "open"  # another section: its own limit
+    assert state(pos, colors.number).playable is False
+
+    # Next day colors opens; the topic after it still waits for colors.
+    pos = lessons.position(path, done, [], {ids["basics"]: DAY1}, DAY2)
+    assert topic_state(pos, "colors").status == "open"
+    assert topic_state(pos, "school-items").status == "locked"
     assert state(pos, colors.number).playable is True
-    greetings = next(lsn for lsn in path if lsn.topic.slug == "greetings")
-    assert (state(pos, greetings.number).status, state(pos, greetings.number).playable) == (
-        "current",
-        False,
-    )
 
-    # Letters chosen as well: two topics of the day, one per section.
-    pos = lessons.position(path, {}, [colors.topic.id, letters_2.topic.id])
-    assert topic_state(pos, "letters-2").status == "today"
-    assert topic_state(pos, "letters-1").status == "locked"
+    # Colors started that day: basics, done, stays open for a replay.
+    first_days = {ids["basics"]: DAY1, ids["colors"]: DAY2}
+    pos = lessons.position(path, done, [ids["colors"]], first_days, DAY2)
     assert topic_state(pos, "colors").status == "today"
+    assert topic_state(pos, "basics").status == "open"
+    assert all(state(pos, lsn.number).playable for lsn in basics)
+    assert topic_state(pos, "school-items").status == "locked"
 
-    # Every colors word shown: the lesson is done yet replayable while colors is today's topic.
-    pos = lessons.position(path, introduced(path, "colors"), [colors.topic.id])
-    assert (state(pos, colors.number).status, state(pos, colors.number).playable) == ("done", True)
-    assert topic_state(pos, "colors").done is True
+    # Two sections may each start a new topic the same day.
+    first_days = {ids["basics"]: DAY1, ids["letters-1"]: DAY1}
+    pos = lessons.position(path, {}, [ids["basics"], ids["letters-1"]], first_days, DAY1)
+    assert topic_state(pos, "basics").status == "today"
+    assert topic_state(pos, "letters-1").status == "today"
+    assert topic_state(pos, "syllables").status == "open"
 
-    # Another day, nothing chosen: colors can be replayed, and so can anything else.
-    pos = lessons.position(path, introduced(path, "colors"), [])
-    assert (state(pos, colors.number).status, state(pos, colors.number).playable) == ("done", True)
-    assert state(pos, greetings.number).playable is True
-    assert pos.lesson_of_topic(colors.topic.id) is state(pos, colors.number)
 
-    # A replay of colors that day is the choice for words: greetings is locked again.
-    pos = lessons.position(path, introduced(path, "colors"), [colors.topic.id])
-    assert state(pos, greetings.number).playable is False
+async def test_replay_and_restart_of_an_old_topic_leave_the_day_to_a_new_one(
+    db: AsyncSession, seeded: None
+) -> None:
+    path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+    basics = next(lsn for lsn in path if lsn.topic.slug == "basics")
+    school_items = next(lsn for lsn in path if lsn.topic.slug == "school-items")
+    first_days = {ids["basics"]: DAY1, ids["colors"]: DAY2}
+    both_done = introduced(path, "basics", "colors")
+
+    # A replay of basics on day 3: basics is today's, school-items opens all the same.
+    pos = lessons.position(path, both_done, [ids["basics"]], first_days, DAY3)
+    assert topic_state(pos, "basics").status == "today"
+    assert state(pos, basics.number).playable is True
+    assert topic_state(pos, "school-items").status == "open"
+    assert state(pos, school_items.number).playable is True
+
+    # Basics started over the same day (its words forgotten): school-items still opens.
+    colors_done = introduced(path, "colors")
+    pos = lessons.position(path, colors_done, [ids["basics"]], first_days, DAY3)
+    assert (topic_state(pos, "basics").status, topic_state(pos, "basics").done) == ("today", False)
+    assert (state(pos, basics.number).status, state(pos, basics.number).playable) == (
+        "current",
+        True,
+    )
+    assert state(pos, school_items.number).playable is True
+
+    # A started topic is never locked, even the day another one is new.
+    first_days = {ids["basics"]: DAY1, ids["colors"]: DAY3}
+    pos = lessons.position(path, colors_done, [ids["colors"]], first_days, DAY3)
+    assert topic_state(pos, "basics").status == "open"
+    assert state(pos, basics.number).playable is True
 
 
 async def test_two_part_topic_opens_its_second_lesson_after_the_first(
     db: AsyncSession, seeded: None
 ) -> None:
     path = await lessons.load_lessons(db)
-    food = [lsn for lsn in path if lsn.topic.slug == "food"]
+    basics = [lsn for lsn in path if lsn.topic.slug == "basics"]
     first_done = {
-        w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY2) for w in food[0].words
+        w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY2)
+        for w in basics[0].words
     }
-    pos = lessons.position(path, first_done, [food[0].topic.id])
-    first, second = state(pos, food[0].number), state(pos, food[1].number)
+    topic_id = basics[0].topic.id
+    pos = lessons.position(path, first_done, [topic_id], {topic_id: DAY2}, DAY2)
+    first, second = state(pos, basics[0].number), state(pos, basics[1].number)
     assert (first.status, first.playable) == ("done", True)
-    assert (second.status, second.playable) == ("current", True)
-    assert pos.lesson_of_topic(food[0].topic.id) is state(pos, food[1].number)
-    assert topic_state(pos, "food").done is False
+    assert (second.status, second.playable) == ("current", True)  # the same day as the first
+    assert pos.lesson_of_topic(topic_id) is state(pos, basics[1].number)
+    assert topic_state(pos, "basics").done is False
 
 
 async def test_all_lessons_done(db: AsyncSession, seeded: None) -> None:
     path = await lessons.load_lessons(db)
     progress = introduced(path, *{lsn.topic.slug for lsn in path})
-    pos = lessons.position(path, progress, [])
+    pos = lessons.position(path, progress, [], {}, DAY1)
     assert pos.all_done
     assert all(t.done for t in pos.topics)
     assert all(s.status == "done" and s.playable for s in pos.lessons)  # every topic is a replay
