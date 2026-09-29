@@ -4,6 +4,9 @@
 {% macro dots(stage) -%}
 <span class="dots" aria-label="ступень {{ stage }} из 3">{% for i in range(3) %}<i{% if i < stage %} class="f"{% endif %}></i>{% endfor %}</span>
 {%- endmacro %}
+{% macro bar(pct_started, pct) -%}
+<span class="tbar lay"><i class="soft" style="width:{{ pct_started }}%"></i><i style="width:{{ pct }}%"></i></span>
+{%- endmacro %}
 <div class="top">
   {% if children and children|length > 1 %}
   <div class="kids">
@@ -30,8 +33,9 @@
   <div class="card sum">
     <div class="nm">{{ child.name }}</div>
     <div class="big">Выучено <b>{{ learned }}</b> из {{ total|cards_count }}</div>
-    <div class="tbar"><i style="width:{{ (100 * learned / total)|round|int if total else 0 }}%"></i></div>
-    <div class="key"><span>{{ dots(3) }} выучено: верно в три разных дня</span><span>{{ dots(1) }} ступень растёт раз в день</span></div>
+    <div class="big2">В работе: <b>{{ in_work }}</b> · пройдено уроков: <b>{{ lessons_done }}</b></div>
+    {{ bar(pct_started, pct) }}
+    <div class="key"><span><i class="sw"></i> выучено</span><span><i class="sw soft"></i> в работе: слово уже было на уроке</span><span>{{ dots(3) }} выучено: верно в три разных дня</span><span>{{ dots(1) }} ступень растёт раз в день</span></div>
   </div>
   {% if not started %}
   <div class="card"><div class="msgc">
@@ -41,19 +45,22 @@
   {% endif %}
   {% for section in sections %}
   <section class="card">
-    <div class="sechd"><b>{{ section.title }}</b><span>{{ section.learned }} из {{ section.total }}</span></div>
+    <div class="sechd"><b>{{ section.title }}</b><span>{{ section.learned }} из {{ section.total }}{% if section.in_work %} · {{ section.in_work }} в работе{% endif %}</span></div>
     {% for topic in section.topics %}
     <details class="topic">
       <summary class="trow">
         <span class="ic" aria-hidden="true">{{ topic.icon }}</span>
-        <span><span class="tt">{{ topic.title }}</span><span class="tbar"><i style="width:{{ topic.pct }}%"></i></span>{% if topic.idle_days %}<span class="stale"><span class="chip open">{{ topic.idle_days }} дн. без продвижения</span></span>{% endif %}</span>
-        <span class="tcnt {{ topic.status }}">{{ topic.learned }} из {{ topic.total }}</span>
+        <span><span class="tt">{{ topic.title }}</span>{{ bar(topic.pct_started, topic.pct) }}{% if topic.idle_days %}<span class="stale"><span class="chip open">{{ topic.idle_days }} дн. без продвижения</span></span>{% endif %}</span>
+        <span class="tcnt {{ topic.status }}">{{ topic.learned }} из {{ topic.total }}{% if topic.in_work %}<small>{{ topic.in_work }} в работе</small>{% endif %}</span>
         <span class="chev" aria-hidden="true">›</span>
       </summary>
       <ul class="words">
         {% for w in topic.words %}
-        <li class="w{{ ' learned' if w.stage >= 3 else '' }}">{{ dots(w.stage) }}<span><span class="ka">{{ w.ka }}</span> <span class="ru">· {{ w.ru }}</span></span></li>
+        <li class="w{{ ' learned' if w.stage >= 3 else (' new' if not w.introduced else '') }}">{{ dots(w.stage) }}<span><span class="ka">{{ w.ka }}</span> <span class="ru">· {{ w.ru }}</span></span>{% if w.introduced and w.stage == 0 %}<span class="chip open">показано</span>{% else %}<span></span>{% endif %}</li>
         {% endfor %}
+        {% if topic.unseen and topic.unseen < topic.words|length %}
+        <li class="wfoot">Бледные ещё не были на уроках: {{ topic.unseen|words_count }}</li>
+        {% endif %}
       </ul>
     </details>
     {% endfor %}

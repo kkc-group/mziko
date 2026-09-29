@@ -94,11 +94,11 @@ async def week_by_id(db: AsyncSession, week_id: int) -> Week | None:
 @dataclass
 class TopicProgress:
     topic: Topic
-    words: list[tuple[Word, int, date | None]]  # (word, stage, last correct day)
+    words: list[tuple[Word, WordProgress | None]]  # None: the child has never met the word
 
     @property
     def learned(self) -> int:
-        return sum(1 for _, stage, _ in self.words if stage >= LEARNED_STAGE)
+        return sum(1 for _, p in self.words if p is not None and p.stage >= LEARNED_STAGE)
 
 
 async def progress_by_topic(db: AsyncSession, child: Child) -> list[TopicProgress]:
@@ -110,11 +110,15 @@ async def progress_by_topic(db: AsyncSession, child: Child) -> list[TopicProgres
             await db.execute(select(WordProgress).where(WordProgress.child_id == child.id))
         ).scalars()
     }
-
-    def row(w: Word) -> tuple[Word, int, date | None]:
-        p = progress.get(w.id)
-        return (w, p.stage, p.last_correct_date) if p is not None else (w, 0, None)
-
     return [
-        TopicProgress(topic=t, words=[row(w) for w in words if w.topic_id == t.id]) for t in topics
+        TopicProgress(topic=t, words=[(w, progress.get(w.id)) for w in words if w.topic_id == t.id])
+        for t in topics
     ]
+
+
+async def lessons_done(db: AsyncSession, child: Child) -> int:
+    """Lessons the child played to the end, all time."""
+    stmt = select(func.count()).where(
+        Session.child_id == child.id, Session.finished_at.is_not(None)
+    )
+    return (await db.execute(stmt)).scalar_one()

@@ -138,13 +138,19 @@ async def test_progress_shows_learned_words_and_stays_within_the_parent_link(
 
     r = await client.get(f"/api/parent/children/{child.id}/progress", headers=bot_headers(parent))
     assert r.status_code == 200, r.text
-    topics = r.json()["topics"]
+    body = r.json()
+    assert body["lessons_done"] == 1
+    topics = body["topics"]
     colors = next(t for t in topics if t["slug"] == "colors")
     assert colors["learned"] == 0 and colors["section"] == "words"
     played = [w for w in colors["words"] if w["stage"] == 1]
     assert played and all(w["last_correct_date"] == str(DAY1) for w in played)
+    assert all(w["introduced"] and w["introduced_on"] == str(DAY1) for w in played)
     untouched = [w for w in colors["words"] if w["stage"] == 0]
-    assert all(w["last_correct_date"] is None for w in untouched)
+    assert untouched and all(
+        w["last_correct_date"] is None and not w["introduced"] and w["introduced_on"] is None
+        for w in untouched
+    )
     assert {t["section"] for t in topics if t["slug"].startswith("letters-")} == {"letters"}
     assert next(t["section"] for t in topics if t["slug"] == "syllables") == "syllables"
 

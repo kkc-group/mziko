@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import BotService, CurrentParent, Db, Now, TelegramId
 from app.core.config import get_settings
-from app.models import Child, Device, ImageKind, Parent, Week, Word
+from app.models import Child, Device, ImageKind, Parent, Week, Word, WordProgress
 from app.schemas.parent import (
     ChildAttach,
     ChildCodeOut,
@@ -81,10 +81,20 @@ def topic_progress_out(tp: TopicProgress) -> TopicProgressOut:
         title_ru=tp.topic.title_ru,
         learned=tp.learned,
         total=len(tp.words),
-        words=[
-            WordProgressOut(ka=w.ka, ru=w.ru, stage=stage, last_correct_date=last)
-            for w, stage, last in tp.words
-        ],
+        words=[word_progress_out(w, p) for w, p in tp.words],
+    )
+
+
+def word_progress_out(word: Word, p: WordProgress | None) -> WordProgressOut:
+    if p is None:
+        return WordProgressOut(ka=word.ka, ru=word.ru, stage=0)
+    return WordProgressOut(
+        ka=word.ka,
+        ru=word.ru,
+        stage=p.stage,
+        last_correct_date=p.last_correct_date,
+        introduced=p.introduced,
+        introduced_on=p.introduced_on,
     )
 
 
@@ -217,7 +227,11 @@ async def reset_progress(child_id: int, db: Db, parent: CurrentParent) -> ChildI
 async def progress(child_id: int, db: Db, parent: CurrentParent) -> ProgressOut:
     child = await own_child(db, parent, child_id)
     topics = await report.progress_by_topic(db, child)
-    return ProgressOut(child=child_info(child), topics=[topic_progress_out(t) for t in topics])
+    return ProgressOut(
+        child=child_info(child),
+        topics=[topic_progress_out(t) for t in topics],
+        lessons_done=await report.lessons_done(db, child),
+    )
 
 
 @router.patch("/children/{child_id}/settings", response_model=ChildInfo)

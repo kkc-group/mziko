@@ -52,12 +52,18 @@ def init_data(
     return urlencode(fields)
 
 
-def word(ka: str, ru: str, stage: int, last: date | None = None) -> dict[str, Any]:
+def word(
+    ka: str, ru: str, stage: int, last: date | None = None, shown: date | None = None
+) -> dict[str, Any]:
+    """A word as the API reports it; `shown` is the first lesson day of a stage-0 word."""
+    first = shown or last
     return {
         "ka": ka,
         "ru": ru,
         "stage": stage,
         "last_correct_date": last.isoformat() if last else None,
+        "introduced": first is not None,
+        "introduced_on": first.isoformat() if first else None,
     }
 
 
@@ -86,12 +92,19 @@ TOPICS = [
         "letters-2",
         "letters",
         "Буквы 2",
-        [word("ბ", "буква б", 1, LONG_AGO), word("გ", "буква г", 0)],
+        [word("ბ", "буква б", 1, LONG_AGO), word("გ", "буква г", 0, shown=LONG_AGO)],
         "✏️",
     ),
     topic("syllables", "syllables", "Слоги", [word("ბა", "ба", 0)], "🧩"),
-    topic("colors", "words", "Цвета", [word("წითელი", "красный", 2, TODAY)], "🎨"),
+    topic(
+        "colors",
+        "words",
+        "Цвета",
+        [word("წითელი", "красный", 2, TODAY), word("ლურჯი", "синий", 0)],
+        "🎨",
+    ),
 ]
+LESSONS_DONE = 4
 
 
 def fake_api(
@@ -110,7 +123,9 @@ def fake_api(
         if request.url.path == "/api/parent/children":
             return httpx.Response(200, json=children or [])
         assert request.url.path == "/api/parent/children/10/progress"
-        return httpx.Response(200, json={"child": CHILDREN[0], "topics": topics})
+        return httpx.Response(
+            200, json={"child": CHILDREN[0], "topics": topics, "lessons_done": LESSONS_DONE}
+        )
 
     return ParentApi(
         httpx.AsyncClient(
@@ -196,15 +211,23 @@ async def test_progress_page_shows_sections_topics_and_words(client: AsyncClient
     await enter(client)
     r = await client.get("/cabinet/")
     html = r.text
-    assert "Выучено <b>2</b> из 6 карточек" in html
+    assert "Выучено <b>2</b> из 7 карточек" in html
+    assert "В работе: <b>3</b> · пройдено уроков: <b>4</b>" in html
     for section in ("Буквы", "Слоги", "Слова"):
         assert f"<b>{section}</b>" in html
+    assert "<b>Буквы</b><span>2 из 4 · 2 в работе</span>" in html
+    assert "<b>Слоги</b><span>0 из 1</span>" in html
     assert "✓" not in html  # the check mark is CSS, the class carries it
-    assert 'class="tcnt done">2 из 2' in html
-    assert 'class="tcnt now">0 из 2' in html
-    assert 'class="tcnt ">0 из 1' in html
+    assert 'class="tcnt done">2 из 2<' in html
+    assert 'class="tcnt now">0 из 2<small>2 в работе</small>' in html
+    assert 'class="tcnt ">0 из 1<' in html
+    # The bar: light segment for words in work, solid for learned, both from the left.
+    assert '<i class="soft" style="width:100%"></i><i style="width:0%"></i>' in html
     assert "12 дн. без продвижения" in html
     assert "წითელი" in html and "· красный" in html
+    # A met word at stage 0 says so; a word the child never met is faded and counted.
+    assert '· буква г</span></span><span class="chip open">показано</span>' in html
+    assert 'class="w new"' in html and "Бледные ещё не были на уроках: 1 слово" in html
     assert "Занятий пока не было" not in html
 
 
@@ -224,6 +247,20 @@ async def test_fresh_child_shows_the_empty_notice(client: AsyncClient) -> None:
     r = await client.get("/cabinet/")
     assert "Занятий пока не было" in r.text and "Выучено <b>0</b> из 3 карточек" in r.text
     assert 'class="kids"' not in r.text  # one child: no switcher
+    assert "Бледные ещё не были" not in r.text  # nothing met yet: no point counting the rest
+
+
+async def test_all_wrong_first_day_still_counts_as_started(client: AsyncClient) -> None:
+    """Every word shown, none guessed on the first try: stages are 0, but the lesson happened."""
+    shown = [word("ა", "буква а", 0, shown=TODAY)] * 3
+    client.app.state.parent_api = fake_api(  # type: ignore[attr-defined]
+        CHILDREN[:1], [topic("letters-1", "letters", "Буквы 1", shown)]
+    )
+    await enter(client)
+    r = await client.get("/cabinet/")
+    assert "Занятий пока не было" not in r.text
+    assert "В работе: <b>3</b>" in r.text and 'class="tcnt now">0 из 3<small>3 в работе' in r.text
+    assert r.text.count("показано") == 3
 
 
 async def test_no_children_yet(client: AsyncClient) -> None:
@@ -257,4 +294,8 @@ def test_idle_mark_only_on_started_unfinished_topics() -> None:
     recent = build_sections(TOPICS, LONG_AGO + timedelta(days=IDLE_DAYS - 1))
     assert {t.idle_days for s in recent for t in s.topics} == {None}
     assert [s.key for s in sections] == ["letters", "syllables", "words"]
-    assert (sections[0].learned, sections[0].total) == (2, 4)
+    assert (sections[0].learned, sections[0].in_work, sections[0].total) == (2, 2, 4)
+    assert (by_slug["colors"].pct, by_slug["colors"].pct_started) == (0, 50)
+    # A topic met but never answered right: idle counts from the day it was shown.
+    all_wrong = [topic("greetings", "words", "Приветствия", [word("კი", "да", 0, shown=LONG_AGO)])]
+    assert build_sections(all_wrong, TODAY)[2].topics[0].idle_days == 12
