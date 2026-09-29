@@ -106,7 +106,7 @@ export default function App() {
         setToken(null)
         setScreen({ kind: 'login', code: null })
       } else if (e instanceof ApiError && e.status === 409) {
-        setNotice('Этот урок откроется завтра')
+        setNotice('Этот урок пока недоступен')
       } else {
         setNotice('Нет связи. Проверь интернет и попробуй ещё')
       }

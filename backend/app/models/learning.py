@@ -45,7 +45,7 @@ class WordProgress(Base):
     introduced: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
-    # Tbilisi day the word was first shown; "one new topic per day" is decided by it.
+    # Tbilisi day the word was first shown.
     introduced_on: Mapped[date | None] = mapped_column(Date)
     learned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
