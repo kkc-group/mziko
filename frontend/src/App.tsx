@@ -10,6 +10,7 @@ import { Lessons } from './screens/Lessons'
 import { Login } from './screens/Login'
 import { ProgressMap } from './screens/ProgressMap'
 import { StickerCard } from './screens/StickerCard'
+import { registerAppServiceWorker } from './sw'
 import type { LessonOut, Me, SessionOut, Step, TopicOut, WordOut } from './types'
 
 type Screen =
@@ -58,9 +59,9 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(null)
   const speaker = useMemo(() => new Speaker(), [])
 
-  const loadMe = useCallback(async () => {
+  const loadMe = useCallback(async (pending?: Promise<Me>) => {
     try {
-      setScreen({ kind: 'home', me: await api.me() })
+      setScreen({ kind: 'home', me: await (pending ?? api.me()) })
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         setToken(null)
@@ -71,12 +72,15 @@ export default function App() {
     }
   }, [])
 
-  const reload = useCallback(() => {
-    setScreen({ kind: 'loading' })
-    setView('home') // a fresh load always lands on the home screen
-    setSticker(null)
-    void loadMe()
-  }, [loadMe])
+  const reload = useCallback(
+    (pending?: Promise<Me>) => {
+      setScreen({ kind: 'loading' })
+      setView('home') // a fresh load always lands on the home screen
+      setSticker(null)
+      void loadMe(pending)
+    },
+    [loadMe],
+  )
 
   // Initial load for an already logged-in device (the "loading" initial state).
   // Syncing with the server is the one legitimate reason to set state from an effect.
@@ -84,6 +88,15 @@ export default function App() {
     // oxlint-disable-next-line react/set-state-in-effect
     if (getToken() && !loginCodeFromUrl()) void loadMe()
   }, [loadMe])
+
+  // The service worker is registered once the home (or error) screen is up, not
+  // at startup, so its precache doesn't compete with the login/me requests; the
+  // login screen still has those ahead of it. Idempotent: safe to call again on
+  // every later screen change.
+  useEffect(() => {
+    if (screen.kind !== 'home' && screen.kind !== 'error') return
+    registerAppServiceWorker()
+  }, [screen.kind])
 
   /** Ask the server for a session and open it; the replay sheet closes either way.
    *  `lesson` is the one whose button shows "Открываю…" meanwhile (null: review all). */
@@ -152,7 +165,7 @@ export default function App() {
         <main className="wrap center">
           <div className="card">
             <p className="muted">{screen.message}</p>
-            <button type="button" className="next" onClick={reload}>
+            <button type="button" className="next" onClick={() => reload()}>
               Повторить
             </button>
           </div>

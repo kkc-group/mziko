@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError, setToken } from '../api'
 import { Mascot } from '../components/Mascot'
+import type { Me } from '../types'
 
 function deviceName(): string {
   const ua = navigator.userAgent
@@ -218,7 +219,7 @@ function describeMsg(msg: MsgState): { title: string; subtitle: string; pipsLeft
   }
 }
 
-export function Login({ code, onLoggedIn }: { code: string | null; onLoggedIn: () => void }) {
+export function Login({ code, onLoggedIn }: { code: string | null; onLoggedIn: (pending: Promise<Me>) => void }) {
   const short = useShortScreen()
   const linkCode = useMemo(() => (code ? parseLinkCode(code) : null), [code])
 
@@ -274,10 +275,15 @@ export function Login({ code, onLoggedIn }: { code: string | null; onLoggedIn: (
     }
   }, [linkCode])
 
-  // Success: show the greeting, then hand off to the home screen.
+  // Success: fetch the child's data during the greeting instead of after it, so the
+  // home screen is ready the moment the 1200ms pause ends. The catch is a no-op here
+  // (just to silence an unhandled rejection during the wait) — the rejection itself
+  // still reaches App, which handles it the same way a fresh `api.me()` would.
   useEffect(() => {
     if (screen !== 'success') return
-    const id = setTimeout(onLoggedIn, 1200)
+    const me = api.me()
+    me.catch(() => {})
+    const id = setTimeout(() => onLoggedIn(me), 1200)
     return () => clearTimeout(id)
   }, [screen, onLoggedIn])
 
