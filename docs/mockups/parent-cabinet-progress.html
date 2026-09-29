@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — кабинет родителя: прогресс по темам</title>
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css / admin/app/static/admin.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+  }
+}
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px; line-height: 1.4;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+:is(button, a):focus-visible { outline: 3px solid var(--grape); outline-offset: 3px; }
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+
+/* verbatim from admin.css */
+.retry { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
+.chip { display: inline-block; padding: 0 8px; border-radius: 8px; font-size: 13px; font-weight: 800; line-height: 20px; font-variant-numeric: tabular-nums; }
+.chip.open { background: var(--line); }
+.tbar { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 5px; background: var(--mint); }
+.sk { display: block; height: 12px; border-radius: 6px; background: var(--line); animation: skp 1.2s ease-in-out infinite; }
+.sk + .sk { margin-top: 8px; }
+@keyframes skp { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+.msgc { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 20px; text-align: center; }
+.msgc b { font-size: 18px; font-weight: 900; }
+.msgc p { margin: 0; max-width: 460px; color: var(--muted); font-weight: 700; }
+.msgc code { font-size: 14px; color: var(--ink); font-weight: 800; }
+.deny { max-width: 420px; width: 100%; margin: 0 auto; padding: 24px; border-radius: 16px; background: var(--surface); border: 2px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.deny svg { width: 32px; height: 32px; color: var(--muted); }
+.deny b { font-size: 20px; font-weight: 900; }
+.deny b.err { color: var(--pom); }
+.deny p { margin: 0 0 8px; color: var(--muted); font-weight: 700; }
+
+/* ---------- cabinet: Mini App page (new, built from the tokens and pieces above) ---------- */
+.app { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+.top { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 2px solid var(--line); }
+.kids { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 6px; scrollbar-width: none; }
+.kids::-webkit-scrollbar { display: none; }
+.kchip { flex: none; max-width: 210px; height: 38px; padding: 0 14px; border-radius: 19px; border: 2px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kchip.on { border-color: var(--word-color); background: var(--surface); color: var(--ink); }
+.kchip.sk { width: 96px; height: 38px; border-radius: 19px; border: 0; animation: skp 1.2s ease-in-out infinite; }
+.tabs { display: flex; gap: 22px; overflow-x: auto; padding: 0 16px; height: 46px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; display: flex; align-items: center; color: var(--muted); font-weight: 800; white-space: nowrap; }
+.tabs a.on { color: var(--ink); box-shadow: inset 0 -3px 0 var(--word-color); }
+
+.cbody { flex: 1; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+.sum { padding: 16px; }
+.sum .nm { font-size: 20px; font-weight: 900; line-height: 1.25; overflow-wrap: anywhere; }
+.sum .big { margin-top: 4px; font-weight: 700; color: var(--muted); }
+.sum .big b { color: var(--ink); font-weight: 900; font-size: 17px; font-variant-numeric: tabular-nums; }
+.sum .tbar { margin-top: 10px; }
+.sum .key { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 13px; font-weight: 700; color: var(--muted); }
+.sum .key span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+.sechd { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px 10px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.sechd b { color: var(--ink); font-weight: 900; font-size: 14px; }
+.sechd span { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.trow { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 12px; align-items: center; gap: 10px; min-height: 58px; padding: 10px 16px; border-top: 1px solid var(--line); text-align: left; }
+.trow .ic { font-size: 22px; line-height: 1; text-align: center; }
+.trow .tt, .trow .tbar, .trow .stale { display: block; }
+.trow .tt { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.trow .tbar { margin-top: 7px; height: 6px; }
+.trow .stale { margin-top: 7px; }
+.trow .stale .chip { font-size: 12px; color: var(--muted); }
+.tcnt { font-size: 14px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tcnt.now { color: var(--ink); font-weight: 800; }
+.tcnt.done { color: var(--mint-dark); font-weight: 800; }
+.tcnt.done::before { content: '✓ '; font-weight: 900; }
+[data-theme='dark'] .tcnt.done { color: var(--mint); }
+.chev { color: var(--muted); font-weight: 900; font-size: 18px; line-height: 1; transition: transform .15s; }
+.trow.open .chev { transform: rotate(90deg); }
+.trow.open { background: var(--surface); }
+
+.words { list-style: none; margin: 0; padding: 2px 16px 6px; background: var(--bg); border-top: 1px solid var(--line); }
+.w { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.w:last-child { border-bottom: 0; }
+.w .ka { font-size: 16px; color: var(--ink); }
+.w .ru { color: var(--muted); font-weight: 700; }
+.w.learned .ru { color: var(--ink); }
+.dots { display: inline-flex; gap: 3px; transform: translateY(-1px); }
+.dots i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--muted); }
+.dots i.f { background: var(--mint); border-color: var(--mint); }
+.wfoot { padding: 8px 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+.cbody .deny { margin-top: 56px; }
+
+/* ---------- mockup chrome (not product): phone, status bar, Telegram's own header ---------- */
+.mk { max-width: 1320px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.row { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; max-width: 410px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.phone { position: relative; width: 410px; min-height: 864px; border: 10px solid #0d0d12; border-radius: 48px; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.sbar { height: 47px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 7px; background: var(--surface); font-weight: 800; font-size: 15px; }
+.sbar i { font-style: normal; letter-spacing: 2px; font-size: 12px; }
+.tgh { height: 52px; flex: none; display: grid; grid-template-columns: 96px 1fr 96px; align-items: center; padding: 0 14px; background: var(--surface); border-bottom: 1px dashed var(--line); }
+.tgh .x { font-weight: 700; color: var(--ink); }
+.tgh .t { text-align: center; line-height: 1.15; }
+.tgh .t b { display: block; font-weight: 900; font-size: 16px; }
+.tgh .t small { color: var(--muted); font-weight: 700; font-size: 12px; }
+.tgh .m { justify-self: end; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-weight: 900; color: var(--muted); line-height: 1; }
+.home { flex: none; height: 34px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; background: var(--bg); }
+.home i { width: 134px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; }
+.fold { position: absolute; left: 0; right: 0; top: 844px; border-top: 2px dashed var(--pom); pointer-events: none; z-index: 5; }
+.fold span { position: absolute; right: 8px; top: 2px; font-size: 11px; font-weight: 800; color: var(--pom); background: var(--bg); padding: 0 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Кабинет родителя · Прогресс по темам</h1>
+  <p class="lead">Mini App внутри Telegram, телефон 390 × 844. Верхняя полоса со «Закрыть» и «⋯» (пунктир снизу) принадлежит Telegram, наша страница начинается под ней: своего заголовка окна и кнопки «назад» у страницы нет. Красный пунктир — край первого экрана, ниже родитель прокручивает. Только чтение: никаких кнопок действий, кроме «Повторить» при ошибке. Все 19 тем и 228 карточек из <code>content/topics/*.yaml</code>, точки — ступени слова из <code>word_progress.stage</code>, как в <code>/progress</code> бота.</p>
+
+  <h2>1 · Обычное состояние: двое детей, тема «Еда» раскрыта</h2>
+  <p class="lead">Сандро выучил 47 из 228. Тема раскрывается тапом по строке; раскрыто может быть сколько угодно тем, не по одной. «Буквы 4» с отметкой «12 дн. без продвижения»: слова темы начаты, но ни одна ступень не выросла 12 дней (самый поздний <code>last_correct_date</code> среди начатых слов).</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="f-light"></div></figure>
+    <figure><figcaption>Тёмная тема<span>Telegram открыл Mini App в тёмной теме: те же токены, что у приложения ребёнка ночью; акцент вкладки и выбранного ребёнка — <code>--word-color</code> (жёлтый)</span></figcaption><div id="f-dark"></div></figure>
+  </div>
+
+  <h2>2 · Один ребёнок, только что добавлен</h2>
+  <p class="lead">Детей один — переключателя нет, имя только в сводке. Ни одного урока: честное сообщение над списком, сам список остаётся — родитель видит, что впереди.</p>
+  <div class="row">
+    <figure><figcaption>Пусто</figcaption><div id="f-empty"></div></figure>
+  </div>
+
+  <h2>3 · Загрузка · ошибка · сессия закончилась</h2>
+  <p class="lead">Вкладки рисуются сразу — это часть страницы, а не данные. Ошибка сервера и пропавшая связь в Telegram выглядят для родителя одинаково, поэтому это одна карточка. Сессия закончилась — вкладок нет: без входа кабинет не может показать ни один раздел, а залогинить сам не может, вход только по ссылке из бота.</p>
+  <div class="row">
+    <figure><figcaption>Загрузка</figcaption><div id="f-load"></div></figure>
+    <figure><figcaption>Ошибка сервера или нет связи</figcaption><div id="f-err"></div></figure>
+    <figure><figcaption>Сессия закончилась<span>в тёмной теме</span></figcaption><div id="f-exp"></div></figure>
+  </div>
+
+  <h2>4 · Переполнение</h2>
+  <p class="lead">Трое детей с длинными именами: в переключателе имя обрезается многоточием, третий ребёнок уходит за край и прокручивается вбок; полное имя переносится в сводке. Раскрыты две темы с самыми длинными строками программы: «Буквы 4» (<span class="ka">ქ</span> · буква к (с придыханием)) и «Приветствия» (<span class="ka">ღამე მშვიდობისა</span> · спокойной ночи). Вкладка «Код и устройства» тоже уходит за край — вкладки листаются вбок.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="f-over"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="f-over-dark"></div></figure>
+  </div>
+</main>
+<script>
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+/* ---------- content, from content/topics/*.yaml (order, icon, title_ru, words) ---------- */
+const SECTIONS = [['letters', 'Буквы'], ['syllables', 'Слоги'], ['words', 'Слова']];
+const TOPICS = [
+  ['letters-1', 'letters', '🔤', 'Буквы 1', 8],
+  ['letters-2', 'letters', '✏️', 'Буквы 2', 8],
+  ['letters-3', 'letters', '📖', 'Буквы 3', 8],
+  ['letters-4', 'letters', '🎓', 'Буквы 4', 9],
+  ['syllables', 'syllables', '🧩', 'Слоги', 25],
+  ['basics', 'words', '🐶', 'Первые слова', 12],
+  ['colors', 'words', '🎨', 'Цвета', 10],
+  ['school-items', 'words', '📚', 'Школьные предметы', 8],
+  ['greetings', 'words', '👋', 'Приветствия', 10],
+  ['numbers', 'words', '🔢', 'Числа', 10],
+  ['family', 'words', '👨‍👩‍👧', 'Семья', 12],
+  ['school', 'words', '🎒', 'Школа', 11],
+  ['body', 'words', '🖐️', 'Тело', 12],
+  ['animals', 'words', '🐻', 'Животные', 14],
+  ['food', 'words', '🍽️', 'Еда', 18],
+  ['clothes', 'words', '👕', 'Одежда', 12],
+  ['home', 'words', '🛏️', 'Дом', 12],
+  ['nature', 'words', '🌦️', 'Природа и погода', 15],
+  ['actions', 'words', '🏃', 'Действия', 14],
+];
+const WORDS = {
+  food: [['რძე', 'молоко'], ['ყველი', 'сыр'], ['კვერცხი', 'яйцо'], ['ხორცი', 'мясо'], ['სუპი', 'суп'], ['ფაფა', 'каша'], ['ბანანი', 'банан'], ['მსხალი', 'груша'], ['ყურძენი', 'виноград'], ['საზამთრო', 'арбуз'], ['პომიდორი', 'помидор'], ['კიტრი', 'огурец'], ['კარტოფილი', 'картошка'], ['სტაფილო', 'морковь'], ['კანფეტი', 'конфета'], ['ტორტი', 'торт'], ['ჩაი', 'чай'], ['წვენი', 'сок']],
+  'letters-4': [['ჟ', 'буква ж'], ['ც', 'буква ц'], ['ძ', 'буква дз'], ['ფ', 'буква п (с придыханием)'], ['ყ', 'буква къ'], ['ქ', 'буква к (с придыханием)'], ['ჯ', 'буква дж'], ['ჭ', 'буква ч (твёрдая)'], ['ჰ', 'буква х (лёгкая)']],
+  greetings: [['გამარჯობა', 'привет'], ['ნახვამდის', 'до свидания'], ['მადლობა', 'спасибо'], ['თუ შეიძლება', 'пожалуйста'], ['კი', 'да'], ['არა', 'нет'], ['დილა მშვიდობისა', 'доброе утро'], ['ღამე მშვიდობისა', 'спокойной ночи'], ['ბოდიში', 'извини'], ['როგორ ხარ', 'как дела']],
+};
+const TOTAL = TOPICS.reduce((s, t) => s + t[4], 0); // 228
+
+/* ---------- pieces ---------- */
+const TABS = ['Прогресс', 'Неделя', 'Календарь', 'Выплаты', 'Код и устройства'];
+const tabs = () => `<nav class="tabs">${TABS.map((t, i) => `<a href="#"${i === 0 ? ' class="on" aria-current="page"' : ''}>${t}</a>`).join('')}</nav>`;
+const dots = st => `<span class="dots" aria-label="ступень ${st} из 3">${[0, 1, 2].map(i => `<i${i < st ? ' class="f"' : ''}></i>`).join('')}</span>`;
+
+function kidsBar(kids, sel) {
+  if (!kids || kids.length < 2) return '';
+  return `<div class="kids" role="tablist">${kids.map((k, i) => `<button type="button" class="kchip${i === sel ? ' on' : ''}" role="tab" aria-selected="${i === sel}" title="${esc(k)}">${esc(k)}</button>`).join('')}</div>`;
+}
+
+function topicRow(t, kid) {
+  const [slug, , icon, title, total] = t;
+  const n = kid.learned[slug] || 0;
+  const pct = Math.round((n / total) * 100);
+  const cls = n >= total ? 'done' : n > 0 || kid.started?.includes(slug) ? 'now' : '';
+  const open = kid.open && kid.open[slug];
+  const stale = kid.stale && kid.stale[slug];
+  let html = `<button type="button" class="trow${open ? ' open' : ''}" aria-expanded="${!!open}">
+    <span class="ic" aria-hidden="true">${icon}</span>
+    <span><span class="tt">${esc(title)}</span><span class="tbar"><i style="width:${pct}%"></i></span>${stale ? `<span class="stale"><span class="chip open">${stale} дн. без продвижения</span></span>` : ''}</span>
+    <span class="tcnt ${cls}">${n} из ${total}</span>
+    <span class="chev" aria-hidden="true">›</span>
+  </button>`;
+  if (open) {
+    const rows = WORDS[slug].map(([ka, ru], i) => {
+      const st = open[i];
+      return `<li class="w${st === 3 ? ' learned' : ''}">${dots(st)}<span><span class="ka">${esc(ka)}</span> <span class="ru">· ${esc(ru)}</span></span></li>`;
+    }).join('');
+    html += `<ul class="words">${rows}</ul>`;
+  }
+  return html;
+}
+
+function summary(kid) {
+  const n = Object.values(kid.learned).reduce((s, x) => s + x, 0);
+  return `<div class="card sum">
+    <div class="nm">${esc(kid.name)}</div>
+    <div class="big">Выучено <b>${n}</b> из ${TOTAL} ${plural(TOTAL, 'слова', 'слов', 'слов')}</div>
+    <div class="tbar"><i style="width:${(n / TOTAL) * 100}%"></i></div>
+    <div class="key"><span>${dots(3)} выучено: верно в три разных дня</span><span>${dots(1)} ступень растёт раз в день</span></div>
+  </div>`;
+}
+
+function sections(kid) {
+  return SECTIONS.map(([key, title]) => {
+    const ts = TOPICS.filter(t => t[1] === key);
+    const tot = ts.reduce((s, t) => s + t[4], 0);
+    const got = ts.reduce((s, t) => s + (kid.learned[t[0]] || 0), 0);
+    return `<section class="card"><div class="sechd"><b>${title}</b><span>${got} из ${tot}</span></div>${ts.map(t => topicRow(t, kid)).join('')}</section>`;
+  }).join('');
+}
+
+function phone(theme, inner, { fold = true } = {}) {
+  return `<div class="phone" data-theme="${theme}">
+    <div class="sbar"><span>9:41</span><i>▂▄▆ ◔ ▭</i></div>
+    <div class="tgh"><span class="x">Закрыть</span><span class="t"><b>Мзико</b><small>мини-приложение</small></span><span class="m">⋯</span></div>
+    <div class="app">${inner}</div>
+    <div class="home"><i></i></div>
+    ${fold ? '<div class="fold"><span>край первого экрана · 844</span></div>' : ''}
+  </div>`;
+}
+
+const page = (kid, kids, sel, extra = '') =>
+  `<div class="top">${kidsBar(kids, sel)}${tabs()}</div><div class="cbody">${summary(kid)}${extra}${sections(kid)}</div>`;
+
+/* ---------- data (invented, plausible) ---------- */
+// Sandro: 8+8+6+2 letters, 9 syllables, 6+3+5 words = 47
+const sandro = {
+  name: 'Сандро',
+  learned: { 'letters-1': 8, 'letters-2': 8, 'letters-3': 6, 'letters-4': 2, syllables: 9, basics: 6, colors: 3, food: 5 },
+  started: ['greetings'],
+  stale: { 'letters-4': 12 },
+  open: { food: [3, 3, 2, 1, 3, 2, 3, 1, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0] },
+};
+const liza = { name: 'Лиза', learned: {} };
+// Anastasia: 8+8+8+7 letters, 25 syllables, 12+10+8+4 words = 90
+const nastya = {
+  name: 'Анастасия-Мариами Дадиани-Церетели',
+  learned: { 'letters-1': 8, 'letters-2': 8, 'letters-3': 8, 'letters-4': 7, syllables: 25, basics: 12, colors: 10, 'school-items': 8, greetings: 4 },
+  stale: { greetings: 9 },
+  open: {
+    'letters-4': [3, 3, 3, 2, 3, 1, 3, 3, 3],
+    greetings: [3, 3, 3, 2, 3, 2, 1, 0, 1, 0],
+  },
+};
+const LONG_KIDS = ['Анастасия-Мариами Дадиани-Церетели', 'Александр-Гурам', 'Елизавета-Тамта'];
+
+/* ---------- states ---------- */
+const normal = page(sandro, ['Сандро', 'Мариам'], 0);
+const empty = page(liza, null, 0, `<div class="card"><div class="msgc"><b>Занятий пока не было</b><p>Точки у слов появятся после первого урока. Код для входа ребёнка — в боте, команда <code>/code</code>.</p></div></div>`);
+const over = page(nastya, LONG_KIDS, 0);
+
+const skRow = w => `<div class="trow" style="cursor:default"><span class="sk" style="width:24px;height:24px;border-radius:7px"></span><span><span class="sk" style="width:${w}%"></span><span class="sk" style="width:100%;height:6px"></span></span><span class="sk" style="width:44px"></span><span></span></div>`;
+const load = `<div class="top"><div class="kids"><span class="kchip sk"></span><span class="kchip sk" style="width:84px"></span></div>${tabs()}</div>
+  <div class="cbody">
+    <div class="card sum"><span class="sk" style="width:120px;height:20px"></span><span class="sk" style="width:210px;margin-top:10px"></span><span class="sk" style="width:100%;height:8px;margin-top:12px"></span></div>
+    <section class="card"><div class="sechd"><span class="sk" style="width:60px"></span></div>${skRow(50)}${skRow(40)}${skRow(55)}${skRow(45)}</section>
+    <section class="card"><div class="sechd"><span class="sk" style="width:50px"></span></div>${skRow(35)}</section>
+  </div>`;
+
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+const err = `<div class="top">${tabs()}</div><div class="cbody"><div class="deny"><b class="err">Не получилось загрузить</b><p>Сервер не ответил или пропала связь. Прогресс ребёнка от этого не пропадает — попробуйте ещё раз.</p><button type="button" class="retry">Повторить</button></div></div>`;
+const exp = `<div class="cbody"><div class="deny">${LOCK}<b>Сессия закончилась</b><p>Кабинет открывается только из бота. Закройте это окно и откройте кабинет в @MyMzikoBot ещё раз.</p></div></div>`;
+
+const put = (id, html) => { document.getElementById(id).innerHTML = html; };
+put('f-light', phone('light', normal));
+put('f-dark', phone('dark', normal));
+put('f-empty', phone('light', empty));
+put('f-load', phone('light', load, { fold: false }));
+put('f-err', phone('light', err, { fold: false }));
+put('f-exp', phone('dark', exp, { fold: false }));
+put('f-over', phone('light', over));
+put('f-over-dark', phone('dark', over));
+</script>
+</body>
+</html>

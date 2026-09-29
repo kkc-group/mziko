@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     # Public address of the site; the Google redirect URI is PUBLIC_URL + /admin/login/callback.
     public_url: str = "http://localhost"
 
+    # The parents' cabinet (/cabinet) opens as a Telegram Mini App: the bot's token
+    # verifies what Telegram signed about the parent, and the shared BOT_API_TOKEN
+    # lets the cabinet call /api/parent/* for that parent, exactly like the bot.
+    bot_token: str = ""
+    bot_api_token: str = ""
+
     @property
     def redirect_uri(self) -> str:
         return f"{self.public_url.rstrip('/')}/admin/login/callback"

@@ -1,0 +1,64 @@
+{% extends "cabinet_base.html" %}
+{% block title %}{{ child.name if child else 'Мзико' }} · прогресс{% endblock %}
+{% block body %}
+{% macro dots(stage) -%}
+<span class="dots" aria-label="ступень {{ stage }} из 3">{% for i in range(3) %}<i{% if i < stage %} class="f"{% endif %}></i>{% endfor %}</span>
+{%- endmacro %}
+<div class="top">
+  {% if children and children|length > 1 %}
+  <div class="kids">
+    {% for c in children %}<a class="kchip{{ ' on' if c.id == child.id else '' }}" href="/cabinet/?child={{ c.id }}"{% if c.id == child.id %} aria-current="true"{% endif %} title="{{ c.name }}">{{ c.name }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  <nav class="tabs">
+    {% for tab in tabs %}{% if loop.first %}<a class="on" aria-current="page" href="/cabinet/">{{ tab }}</a>{% else %}<span>{{ tab }} · скоро</span>{% endif %}{% endfor %}
+  </nav>
+</div>
+<div class="cbody">
+  {% if error %}
+  <div class="deny">
+    <b class="err">Не получилось загрузить</b>
+    <p>Сервер не ответил или пропала связь. Прогресс ребёнка от этого не пропадает, попробуйте ещё раз.</p>
+    <a class="retry" href="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">Повторить</a>
+  </div>
+  {% elif not children %}
+  <div class="card"><div class="msgc">
+    <b>Детей пока нет</b>
+    <p>Добавьте ребёнка в боте: <code>/addchild Имя</code>, и здесь появится его прогресс.</p>
+  </div></div>
+  {% else %}
+  <div class="card sum">
+    <div class="nm">{{ child.name }}</div>
+    <div class="big">Выучено <b>{{ learned }}</b> из {{ total|cards_count }}</div>
+    <div class="tbar"><i style="width:{{ (100 * learned / total)|round|int if total else 0 }}%"></i></div>
+    <div class="key"><span>{{ dots(3) }} выучено: верно в три разных дня</span><span>{{ dots(1) }} ступень растёт раз в день</span></div>
+  </div>
+  {% if not started %}
+  <div class="card"><div class="msgc">
+    <b>Занятий пока не было</b>
+    <p>Точки у слов появятся после первого урока. Код для входа ребёнка — в боте, команда <code>/code</code>.</p>
+  </div></div>
+  {% endif %}
+  {% for section in sections %}
+  <section class="card">
+    <div class="sechd"><b>{{ section.title }}</b><span>{{ section.learned }} из {{ section.total }}</span></div>
+    {% for topic in section.topics %}
+    <details class="topic">
+      <summary class="trow">
+        <span class="ic" aria-hidden="true">{{ topic.icon }}</span>
+        <span><span class="tt">{{ topic.title }}</span><span class="tbar"><i style="width:{{ topic.pct }}%"></i></span>{% if topic.idle_days %}<span class="stale"><span class="chip open">{{ topic.idle_days }} дн. без продвижения</span></span>{% endif %}</span>
+        <span class="tcnt {{ topic.status }}">{{ topic.learned }} из {{ topic.total }}</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </summary>
+      <ul class="words">
+        {% for w in topic.words %}
+        <li class="w{{ ' learned' if w.stage >= 3 else '' }}">{{ dots(w.stage) }}<span><span class="ka">{{ w.ka }}</span> <span class="ru">· {{ w.ru }}</span></span></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endfor %}
+  </section>
+  {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}
