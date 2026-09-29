@@ -31,6 +31,10 @@ export class ApiError extends Error {
   }
 }
 
+// A hung request (dead wifi, sleeping backend) should fail like an offline one
+// instead of leaving the caller's busy state stuck forever.
+const REQUEST_TIMEOUT_MS = 15_000
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
@@ -38,17 +42,23 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
 
-  const response = await fetch(path, { ...init, headers })
-  if (!response.ok) {
-    let detail: unknown = response.statusText
-    try {
-      detail = (await response.json()).detail ?? detail
-    } catch {
-      /* non-JSON error body */
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    const response = await fetch(path, { ...init, headers, signal: controller.signal })
+    if (!response.ok) {
+      let detail: unknown = response.statusText
+      try {
+        detail = (await response.json()).detail ?? detail
+      } catch {
+        /* non-JSON error body */
+      }
+      throw new ApiError(response.status, detail)
     }
-    throw new ApiError(response.status, detail)
+    return (await response.json()) as T
+  } finally {
+    clearTimeout(timeout)
   }
-  return (await response.json()) as T
 }
 
 export interface AnswerBody {
