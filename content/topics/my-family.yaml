@@ -4,16 +4,6 @@ title_ka: ჩემი ოჯახი
 icon: "🏡"
 order: 77  # right after school-items (75), before greetings (80)
 words:
-  - slug: my-family
-    ka: ჩემი ოჯახი
-    tr: чеми оджахи
-    ru: моя семья
-    image: {kind: text, value: ჩემი ოჯახი}
-  - slug: my-home
-    ka: ჩემი სახლი
-    tr: чеми сахли
-    ru: мой дом
-    image: {kind: text, value: ჩემი სახლი}
   - slug: my
     ka: ჩემი
     tr: чеми

@@ -98,9 +98,10 @@ async def build_session(
     The lesson must be playable today (see services.lessons), else LessonLocked.
     The first session of a topic starts it (see services.lessons for the day's limit).
     Up to 3 of its words not yet shown are introduced (in order). The quiz then
-    reviews: first the lesson's own words not answered correctly today, then the
-    longest-waiting unlearned words of earlier lessons, 4 in all. Replaying a
-    finished lesson quizzes every word of it plus up to 4 older ones.
+    reviews up to 4 of the lesson's own words not answered correctly today; words
+    of other lessons never come in while a lesson is being learned. Replaying a
+    finished lesson quizzes every word of it plus up to 4 of the longest-waiting
+    unlearned words of other lessons.
     Returns None when there is nothing at all to do.
     """
     rng = rng or random.Random()
@@ -132,10 +133,10 @@ async def build_session(
 
     lesson_words: list[Word] = list(lesson.words) if lesson else []
     new_words = [w for w in lesson_words if not introduced(w)][:NEW_WORDS_PER_SESSION]
-    if new_words:
+    if new_words:  # a lesson being learned keeps to its own words
         own_reviews = [w for w in lesson_words if introduced(w) and not answered_today(w)]
         own_reviews = own_reviews[:REVIEW_WORDS_PER_SESSION]
-        older_limit = REVIEW_WORDS_PER_SESSION - len(own_reviews)
+        older_limit = 0
     else:  # a replay: the whole lesson, plus the usual share of older words
         own_reviews = lesson_words
         older_limit = REVIEW_WORDS_PER_SESSION
