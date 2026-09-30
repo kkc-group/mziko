@@ -1,7 +1,7 @@
 import { wordsW } from '../fx'
 import type { LessonOut, Me, WordOut } from '../types'
 import { Emoji } from '../components/Emoji'
-import { BackIcon, LockIcon } from '../components/Icons'
+import { LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { WordImage } from '../components/WordImage'
 import { textClass } from '../wordText'
@@ -87,22 +87,17 @@ function LessonGroup({
 export function ProgressMap({
   me,
   onOpen,
-  onBack,
 }: {
   me: Me
   onOpen: (word: WordOut) => void
-  onBack: () => void
 }) {
   const learnedTotal = me.stickers.filter((s) => s.learned).length
   const sectionOf = new Map(me.topics.map((t) => [t.slug, t.section]))
 
   return (
-    <main className="wrap">
+    <main className="wrap tabbed">
       <div className="topbar">
-        <button type="button" className="x" aria-label="На главную" onClick={onBack}>
-          <BackIcon />
-        </button>
-        <h1>Карта прогресса</h1>
+        <h1>Наклейки</h1>
       </div>
 
       <div className="lhello">

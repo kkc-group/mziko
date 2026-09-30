@@ -41,10 +41,10 @@ button:disabled { cursor: default; }
    the page rather than sliding. Flat buttons shrink 4% and take the --line fill. Press 80ms,
    release 120ms: the destination state's transition wins, so :active carries the 80ms.
    iOS Safari applies :active to a touch only when a touchstart listener exists (main.tsx). */
-.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk {
+.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk, .tab {
   transition: transform 120ms ease-out, box-shadow 120ms ease-out, background-color 120ms ease-out;
 }
-:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk):active:not(:disabled) {
+:is(.play, .mini-play, .next, .tile, .opt .ans, .speak, .key, .mi.on, .x, button.lsn, button.stk, .tab):active:not(:disabled) {
   transition-duration: 80ms;
 }
 .play:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
@@ -56,13 +56,16 @@ button:disabled { cursor: default; }
 .speak.sm:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--sun-dark); }
 .key:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
 .mi.on:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--pom-dark); }
-:is(.x, button.lsn, button.stk):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
+:is(.x, button.lsn, button.stk, .tab):active:not(:disabled) { transform: scale(0.96); background: var(--line); }
 
 .hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 140px; z-index: 0; pointer-events: none; }
 .wrap {
   position: relative; z-index: 1; max-width: 540px; margin: 0 auto;
   padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) 170px calc(var(--safe-left) + 16px);
 }
+/* Home, «Путь», «Наклейки»: room for the fixed .tabs bar below (~68px including its own border and
+   padding, safe-bottom is inside that) on top of the existing hills cushion, so content doesn't sit under it. */
+.wrap.tabbed { padding-bottom: calc(170px + 68px + 14px); }
 .wrap.center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding-bottom: 120px; }
 .card { background: var(--surface); border: 2px solid var(--line); border-radius: 24px; padding: 20px 22px; max-width: 420px; }
 .card h2 { margin: 6px 0; font-size: 24px; }
@@ -134,7 +137,6 @@ button:disabled { cursor: default; }
 .cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
 .cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
 .cur .prog { flex: none; }
-.soon { text-align: center; color: var(--muted); font-weight: 800; font-size: 15px; }
 .play {
   display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
   border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark);
@@ -148,7 +150,9 @@ button:disabled { cursor: default; }
 .stk .blob { border-width: 2px; }
 .stk.lock { filter: grayscale(1); opacity: 0.35; }
 .notice {
-  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 24px); transform: translateX(-50%); z-index: 30;
+  /* Cleared to sit above the fixed .tabs bar (~68px + a 14px gap) rather than the plain
+     safe-bottom + 24px it used before there was anything fixed at the bottom of the screen. */
+  position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 68px + 14px); transform: translateX(-50%); z-index: 30;
   background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; text-align: center;
   /* With left: 50% the box would shrink to fit the right half of the screen; max-content lets it take
      the text's own width, and 90vw is the real cap. */
@@ -318,8 +322,9 @@ button:disabled { cursor: default; }
 
 .play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
 /* Busy (docs/mockups/button-feedback.html): the tapped button stays pressed, spins and sits above
-   the screen's .scrim. The scrim lives inside .wrap, which is its own stacking context (z 1), so
-   inside it: scrim 20, busy button 21, the burger's 2 stays under. */
+   the screen's .scrim. The scrim lives inside .wrap, which is its own stacking context (z 1), so it
+   can only cover siblings painted inside that same context — scrim 20, busy button 21 there, but
+   never the .tabs bar mounted outside .wrap in App.tsx: that one dims itself instead (see .tabs). */
 .play.busy { position: relative; z-index: 21; pointer-events: none; transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
 .mini-play.busy { position: relative; z-index: 21; pointer-events: none; display: flex; align-items: center; gap: 6px; transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
 .mini-play .spin { width: 14px; height: 14px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
@@ -355,15 +360,15 @@ button:disabled { cursor: default; }
   .hi h1 { font-size: 30px; }
 }
 
-/* --- menu sheet + "Уроки" screen: docs/mockups/lessons-menu.html, docs/mockups/home-menu.html ---
-   Values are verbatim from the mockups, built only from the tokens above, with two adaptations
-   for the real app: .scrim/.sheet use `position: fixed` (the mockups sat inside a phone-frame
-   wrapper with `position: relative`; the real page has no such ancestor and scrolls, like .lesson
-   and .notice already do with `fixed`), and the emoji size variable (--s) is set on the row
-   container rather than on .emoji, because here <Emoji> can render either a Twemoji <img> or a
-   text fallback — the existing .ic/.stk/.cur .ic rules follow the same pattern. */
-.burger { position: absolute; z-index: 2; top: calc(var(--safe-top) + 10px); right: calc(var(--safe-right) + 16px); display: grid; place-items: center; }
-.burger svg, .x svg { width: 24px; height: 24px; }
+/* --- replay sheet (its base, docked-right form is gone with the burger menu) + "Уроки" screen:
+   docs/mockups/lessons-menu.html, docs/mockups/home-menu.html --- Values are verbatim from the
+   mockups, built only from the tokens above, with two adaptations for the real app: .scrim/.sheet
+   use `position: fixed` (the mockups sat inside a phone-frame wrapper with `position: relative`;
+   the real page has no such ancestor and scrolls, like .lesson and .notice already do with
+   `fixed`), and the emoji size variable (--s) is set on the row container rather than on .emoji,
+   because here <Emoji> can render either a Twemoji <img> or a text fallback — the existing
+   .ic/.stk/.cur .ic rules follow the same pattern. */
+.x svg { width: 24px; height: 24px; }
 .scrim { position: fixed; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
 .sheet {
   position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: 300px; display: flex; flex-direction: column; gap: 14px;
@@ -374,8 +379,6 @@ button:disabled { cursor: default; }
 .mi { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 72px; padding: 12px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font-size: 24px; font-weight: 900; line-height: 1.1; --s: 34px; }
 .mi .t { flex: 1; min-width: 0; }
 .mi.on { border: 3px solid var(--pom); box-shadow: 0 5px 0 var(--pom-dark); }
-.mi.off { background: transparent; border-style: dashed; color: var(--muted); }
-.mi.off .emoji, .mi.off .pic-img { filter: grayscale(1); opacity: 0.35; }
 .mi .t small { display: block; margin-top: 4px; font-size: 14px; font-weight: 800; color: var(--muted); }
 
 .topbar { position: sticky; z-index: 6; top: var(--safe-top); display: flex; align-items: center; gap: 12px; height: 72px; margin: -16px -16px 0; padding: 8px 16px; background: var(--bg); }
@@ -397,7 +400,6 @@ button:disabled { cursor: default; }
 .lsn.nowp { border: 2px solid var(--pom); }
 .allnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 16px; border-radius: 22px; background: var(--mint-soft); font-weight: 800; font-size: 17px; line-height: 1.25; }
 .allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
-.lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
 
 /* --- home «Сегодня» (screens/Home.tsx): docs/mockups/home-today.html, values verbatim. Two renames
    against the mockup, because its names are taken here: its .sec is .cur-sec (.sec is a section
@@ -435,8 +437,8 @@ button:disabled { cursor: default; }
 .stkp .ru { margin: -6px 0 0; font-size: 20px; font-weight: 800; line-height: 1.25; color: var(--ink); }
 
 /* --- replay sheet: docs/mockups/lesson-restart.html ---
-   The same .sheet as the menu, docked to the bottom edge instead of the right one; rows are the
-   menu's .mi.on, the header reuses .cur-h / .cur-t. .mi:disabled mirrors .play:disabled. */
+   The base .sheet above, docked to the bottom edge instead of the right one; rows use .mi.on, the
+   header reuses .cur-h / .cur-t. .mi:disabled mirrors .play:disabled. */
 .sheet.bottom {
   top: auto; left: 0; width: auto; gap: 12px;
   padding: 16px calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 16px) calc(var(--safe-left) + 16px);
@@ -448,3 +450,22 @@ button:disabled { cursor: default; }
 .sheet.bottom .mi.on { margin-bottom: 5px; }
 .mi:disabled { border-color: var(--muted); box-shadow: 0 5px 0 #4a4466; color: var(--muted); }
 .mi:disabled .emoji, .mi:disabled .pic-img { filter: grayscale(1); opacity: 0.35; }
+
+/* --- bottom tabs (components/Tabs.tsx): docs/mockups/home-today.html, "Нижние вкладки — вблизи".
+   Flat, no shadow — navigation, not an action, so it follows the .x / button.lsn press law (96% +
+   --line) instead of the shadow-button one. Mounted in App.tsx as a fixed sibling of .wrap, like
+   .hills, over the home/lessons/map screens only, so z-index only has to settle it against the
+   few other things that are also fixed siblings there: below .scrim/.sheet/.lesson/.sticker (all
+   20+, see the .play.busy comment above) so a replay sheet, the sticker page or a lesson opening
+   correctly sit above it; above .wrap (z-index: 1) and .hills (z-index: 0) so it isn't drawn under
+   the page content or the decorative hills it sits in front of. */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  padding: 6px calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 6px) calc(var(--safe-left) + 10px);
+  background: var(--surface); border-top: 2px solid var(--line);
+}
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border-radius: 16px; font-size: 13px; font-weight: 900; line-height: 1.1; color: var(--ink); --s: 26px; }
+.tab.on { background: var(--pom-soft); }
+/* Busy (a session opening): the panel can't rely on the in-.wrap .scrim to dim it (see the comment
+   above .play.busy), so it disables and dims itself instead. */
+.tab:disabled { opacity: 0.5; }

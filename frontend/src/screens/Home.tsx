@@ -2,7 +2,6 @@ import { fmtLari, plural } from '../fx'
 import type { LessonOut, Me, TopicOut } from '../types'
 import { Emoji } from '../components/Emoji'
 import { JarIcon, Mascot } from '../components/Mascot'
-import { Menu } from '../components/Menu'
 import { PlayButton } from '../components/PlayButton'
 import { SECTIONS } from '../sections'
 import type { Busy } from '../busy'
@@ -148,23 +147,10 @@ export function Home({
   me,
   busy,
   onPlay,
-  menuOpen,
-  onOpenMenu,
-  onCloseMenu,
-  onOpenLessons,
-  onOpenMap,
 }: {
   me: Me
   busy: Busy
   onPlay: (lesson: LessonOut | null) => void
-  /** Not used since the home screen stopped replaying done lessons (they live on «Уроки»);
-   *  kept so App.tsx needs no change in this step. */
-  onReplay: (lesson: LessonOut) => void
-  menuOpen: boolean
-  onOpenMenu: () => void
-  onCloseMenu: () => void
-  onOpenLessons: () => void
-  onOpenMap: () => void
 }) {
   const learnedTotal = me.stickers.filter((s) => s.learned).length
   const allDone = me.topics.length > 0 && me.topics.every((t) => t.done)
@@ -172,10 +158,9 @@ export function Home({
   const first = steps.find((s) => s.kind === 'play')
 
   return (
-    <main className="wrap">
+    <main className="wrap tabbed">
       {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
       {busy && <div className="scrim" aria-hidden="true" />}
-      <Menu open={menuOpen} onOpen={onOpenMenu} onClose={onCloseMenu} onLessons={onOpenLessons} onMap={onOpenMap} />
 
       <div className="hello">
         <Mascot />
@@ -261,13 +246,6 @@ export function Home({
                 <PlayButton lesson={null} busy={busy} small label="Повторить" onClick={() => onPlay(null)} />
               </div>
             )}
-            <button type="button" className="lsn nav" onClick={onOpenLessons}>
-              <span className="ic">
-                <Emoji value="📚" alt="" />
-              </span>
-              <span className="t">Другие уроки</span>
-              <span className="chev">▸</span>
-            </button>
           </>
         )}
       </div>
