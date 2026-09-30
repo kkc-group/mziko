@@ -207,7 +207,11 @@ async def test_unregistered_telegram_user_is_sent_to_start(client: AsyncClient) 
 # --- the progress page ---------------------------------------------------------------
 
 
-async def test_progress_page_shows_sections_topics_and_words(client: AsyncClient) -> None:
+async def test_progress_page_shows_sections_topics_and_words(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The fixtures are dated against TODAY, so the page must count idle days from it too.
+    monkeypatch.setattr("app.cabinet.today_tbilisi", lambda: TODAY)
     await enter(client)
     r = await client.get("/cabinet/")
     html = r.text
