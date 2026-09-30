@@ -1,7 +1,7 @@
-import { lessonsW, wordsW } from '../fx'
+import { lessonsW, plural } from '../fx'
 import type { LessonOut, Me, TopicOut } from '../types'
 import { Emoji } from '../components/Emoji'
-import { BackIcon, LockIcon } from '../components/Icons'
+import { LockIcon } from '../components/Icons'
 import { Mascot } from '../components/Mascot'
 import { BusyLabel, PlayButton } from '../components/PlayButton'
 import { isBusyFor, type Busy } from '../busy'
@@ -14,6 +14,13 @@ const ALL_DONE_LABEL: Record<TopicOut['section'], string> = {
   words: 'слова',
 }
 
+type Section = (typeof SECTIONS)[number]
+
+/** A count in the section's own unit — «8 букв», «9 слогов», «10 слов» — like Home.tsx's count(). */
+function count(section: Section, n: number): string {
+  return `${n} ${plural(n, ...section.unit)}`
+}
+
 function topicLessons(me: Me, slug: string): LessonOut[] {
   return me.lessons.filter((l) => l.topic_slug === slug)
 }
@@ -23,9 +30,9 @@ function topicLesson(lessons: LessonOut[]): LessonOut {
   return lessons.find((l) => l.status !== 'done') ?? lessons[lessons.length - 1]
 }
 
-function topicMeta(lessons: LessonOut[]): string {
-  const words = lessons.reduce((a, l) => a + l.total, 0)
-  return lessons.length > 1 ? `${lessonsW(lessons.length)} · ${wordsW(words)}` : wordsW(words)
+function topicMeta(section: Section, lessons: LessonOut[]): string {
+  const n = lessons.reduce((a, l) => a + l.total, 0)
+  return lessons.length > 1 ? `${lessonsW(lessons.length)} · ${count(section, n)}` : count(section, n)
 }
 
 function LessonTitle({ lesson }: { lesson: LessonOut }) {
@@ -49,12 +56,14 @@ function IconWithCheck({ icon, done }: { icon: string; done: boolean }) {
 }
 
 function OpenRow({
+  section,
   topic,
   lessons,
   busy,
   onPlay,
   onReplay,
 }: {
+  section: Section
   topic: TopicOut
   lessons: LessonOut[]
   busy: Busy
@@ -69,7 +78,7 @@ function OpenRow({
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
-        <small>{topicMeta(lessons)}</small>
+        <small>{topicMeta(section, lessons)}</small>
       </span>
       <span className={`mini-play${mine ? ' busy' : ''}`}>
         {mine ? <BusyLabel /> : topic.done ? 'Повторить' : 'Играть'}
@@ -78,13 +87,23 @@ function OpenRow({
   )
 }
 
-function LockedRow({ topic, topics, lessons }: { topic: TopicOut; topics: TopicOut[]; lessons: LessonOut[] }) {
+function LockedRow({
+  section,
+  topic,
+  topics,
+  lessons,
+}: {
+  section: Section
+  topic: TopicOut
+  topics: TopicOut[]
+  lessons: LessonOut[]
+}) {
   return (
     <div className="lsn lock" aria-disabled="true">
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
-        <small>{topicMeta(lessons)}</small>
+        <small>{topicMeta(section, lessons)}</small>
       </span>
       <span className="tmr">
         <LockIcon />
@@ -97,12 +116,14 @@ function LockedRow({ topic, topics, lessons }: { topic: TopicOut; topics: TopicO
 /** The topic-of-the-day card: one card for a single-lesson topic, or a header plus one row
  *  per lesson (done/current/locked) for a multi-lesson one. «Повторить» opens the replay sheet. */
 function TodayCard({
+  section,
   topic,
   lessons,
   busy,
   onPlay,
   onReplay,
 }: {
+  section: Section
   topic: TopicOut
   lessons: LessonOut[]
   busy: Busy
@@ -117,7 +138,7 @@ function TodayCard({
       ? `показано ${l.total} из ${l.total}`
       : shown
         ? `показано ${l.introduced} из ${l.total}`
-        : wordsW(l.total)
+        : count(section, l.total)
     const pct = finished ? 100 : Math.round((l.introduced / l.total) * 100)
     return (
       <div className="cur">
@@ -150,7 +171,7 @@ function TodayCard({
         <IconWithCheck icon={topic.icon} done={topic.done} />
         <div className="cur-t">
           <b>{topic.title_ru}</b>
-          <small>{topicMeta(lessons)}</small>
+          <small>{topicMeta(section, lessons)}</small>
         </div>
       </div>
       {lessons.map((l, i) => {
@@ -160,7 +181,7 @@ function TodayCard({
               <span className="num">{i + 1}</span>
               <span className="t">
                 <LessonTitle lesson={l} />
-                <small>{wordsW(l.total)}</small>
+                <small>{count(section, l.total)}</small>
               </span>
               <span className="tmr">
                 <LockIcon />
@@ -182,7 +203,7 @@ function TodayCard({
               <span className="num">✓</span>
               <span className="t">
                 <LessonTitle lesson={l} />
-                <small>{wordsW(l.total)}</small>
+                <small>{count(section, l.total)}</small>
               </span>
               <span className={`mini-play${mine ? ' busy' : ''}`}>{mine ? <BusyLabel /> : 'Повторить'}</span>
             </button>
@@ -194,7 +215,7 @@ function TodayCard({
             <span className="num now">{i + 1}</span>
             <span className="t">
               <LessonTitle lesson={l} />
-              <small>{shown ? `показано ${l.introduced} из ${l.total}` : wordsW(l.total)}</small>
+              <small>{shown ? `показано ${l.introduced} из ${l.total}` : count(section, l.total)}</small>
             </span>
           </div>
         )
@@ -209,23 +230,18 @@ export function Lessons({
   busy,
   onPlay,
   onReplay,
-  onBack,
 }: {
   me: Me
   busy: Busy
   onPlay: (lesson: LessonOut) => void
   onReplay: (lesson: LessonOut) => void
-  onBack: () => void
 }) {
   return (
-    <main className="wrap">
+    <main className="wrap tabbed">
       {/* While a session opens, every tap but the busy button's lands here (see PlayButton). */}
       {busy && <div className="scrim" aria-hidden="true" />}
       <div className="topbar">
-        <button type="button" className="x" aria-label="На главную" onClick={onBack}>
-          <BackIcon />
-        </button>
-        <h1>Уроки</h1>
+        <h1>Путь</h1>
       </div>
 
       <div className="lhello">
@@ -252,12 +268,15 @@ export function Lessons({
               {topics.map((topic) => {
                 const lessons = topicLessons(me, topic.slug)
                 if (topic.status === 'locked') {
-                  return <LockedRow key={topic.slug} topic={topic} topics={me.topics} lessons={lessons} />
+                  return (
+                    <LockedRow key={topic.slug} section={section} topic={topic} topics={me.topics} lessons={lessons} />
+                  )
                 }
                 if (topic.status === 'today') {
                   return (
                     <TodayCard
                       key={topic.slug}
+                      section={section}
                       topic={topic}
                       lessons={lessons}
                       busy={busy}
@@ -269,6 +288,7 @@ export function Lessons({
                 return (
                   <OpenRow
                     key={topic.slug}
+                    section={section}
                     topic={topic}
                     lessons={lessons}
                     busy={busy}

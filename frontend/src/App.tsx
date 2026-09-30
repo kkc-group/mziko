@@ -4,6 +4,7 @@ import { Speaker } from './audio'
 import type { Busy } from './busy'
 import { Hills } from './components/Mascot'
 import { ReplaySheet } from './components/ReplaySheet'
+import { Tabs } from './components/Tabs'
 import { Home } from './screens/Home'
 import { Lesson } from './screens/Lesson'
 import { Lessons } from './screens/Lessons'
@@ -19,8 +20,9 @@ type Screen =
   | { kind: 'error'; message: string }
   | { kind: 'home'; me: Me }
 
-/** Which of the screens under the "home" state is shown; the menu opens only over 'home'. */
-type View = 'home' | 'lessons' | 'map'
+/** Which of the screens under the "home" state is shown; the bottom tabs (<Tabs/>) switch between
+ *  them and are themselves visible only over these three. */
+export type View = 'home' | 'lessons' | 'map'
 
 interface ActiveLesson {
   sessionId: string
@@ -49,7 +51,6 @@ export default function App() {
     return getToken() ? { kind: 'loading' } : { kind: 'login', code: null }
   })
   const [view, setView] = useState<View>('home')
-  const [menuOpen, setMenuOpen] = useState(false)
   const [lesson, setLesson] = useState<ActiveLesson | null>(null)
   /** The done lesson whose «Повторить» was tapped: the replay sheet is open for it. */
   const [replay, setReplay] = useState<LessonOut | null>(null)
@@ -146,19 +147,10 @@ export default function App() {
       ? screen.me.topics.find((t) => t.slug === replay.topic_slug)
       : undefined
 
-  const openLessons = () => {
-    setMenuOpen(false)
-    setView('lessons')
-  }
-
-  const openMap = () => {
-    setMenuOpen(false)
-    setView('map')
-  }
-
   return (
     <>
       <Hills />
+      {screen.kind === 'home' && !lesson && <Tabs view={view} onSelect={setView} busy={busy !== null} />}
       {screen.kind === 'login' && <Login code={screen.code} onLoggedIn={reload} />}
       {screen.kind === 'loading' && <main className="wrap center"><p className="muted">Загружаю…</p></main>}
       {screen.kind === 'error' && (
@@ -172,26 +164,10 @@ export default function App() {
         </main>
       )}
       {screen.kind === 'home' && view === 'home' && (
-        <Home
-          me={screen.me}
-          busy={busy}
-          onPlay={startLesson}
-          onReplay={setReplay}
-          menuOpen={menuOpen}
-          onOpenMenu={() => setMenuOpen(true)}
-          onCloseMenu={() => setMenuOpen(false)}
-          onOpenLessons={openLessons}
-          onOpenMap={openMap}
-        />
+        <Home me={screen.me} busy={busy} onPlay={startLesson} />
       )}
       {screen.kind === 'home' && view === 'lessons' && (
-        <Lessons
-          me={screen.me}
-          busy={busy}
-          onPlay={startLesson}
-          onReplay={setReplay}
-          onBack={() => setView('home')}
-        />
+        <Lessons me={screen.me} busy={busy} onPlay={startLesson} onReplay={setReplay} />
       )}
       {screen.kind === 'home' && view === 'map' && (
         <ProgressMap
@@ -204,7 +180,6 @@ export default function App() {
             void speaker.play(word)
             setSticker(word)
           }}
-          onBack={() => setView('home')}
         />
       )}
       {replay && replayTopic && screen.kind === 'home' && !lesson && (

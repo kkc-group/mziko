@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — Главная «Сегодня»: карточки разделов и нижние вкладки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c;
+  --pom: #e23b55; --pom-dark: #b8243d; --pom-soft: #ffe3e8;
+  --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee;
+  --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+  --safe-top: 0px; --safe-bottom: 0px; --safe-left: 0px; --safe-right: 0px;
+}
+/* the same two sets, scoped to a frame wrapper, so light and dark frames sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+button:disabled { cursor: default; }
+code { font-size: 0.9em; }
+
+/* ---------- product classes: verbatim from styles.css ---------- */
+.wrap { position: relative; max-width: 540px; margin: 0 auto;
+  padding: calc(var(--safe-top) + 16px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 96px) calc(var(--safe-left) + 16px); }
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.path { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.part { color: var(--muted); white-space: nowrap; }
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.mini-play { flex: none; background: var(--pom); color: #fff; font-weight: 900; font-size: 14px; line-height: 1;
+  padding: 10px 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--pom-dark); }
+.cur { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 26px; background: var(--surface); border: 2px solid var(--line); }
+.cur-h { display: flex; align-items: center; gap: 12px; }
+.cur .ic { flex: none; display: flex; --s: 56px; }
+.cur .ic .emoji { font-size: 52px; }
+.cur-t { flex: 1; min-width: 0; }
+.cur-t b { display: block; font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur-t small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; font-weight: 800; }
+.play { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 18px;
+  border-radius: 22px; background: var(--pom); color: #fff; font-size: 26px; font-weight: 900; line-height: 1.1; box-shadow: 0 6px 0 var(--pom-dark); }
+.play:disabled { background: var(--muted); box-shadow: 0 6px 0 #4a4466; }
+.cur.all { align-items: center; text-align: center; }
+.cur.all b { font-size: 26px; font-weight: 900; line-height: 1.1; }
+.cur.all small { color: var(--muted); font-size: 15px; font-weight: 800; margin-top: -8px; }
+.prog { flex: none; height: 14px; border-radius: 10px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--mint); border-radius: 10px; }
+.notice { position: absolute; left: 50%; transform: translateX(-50%); z-index: 30; width: max-content; max-width: 90%;
+  background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; text-align: center;
+  bottom: calc(var(--safe-bottom) + 68px + 14px); }
+.scrim { position: absolute; inset: 0; z-index: 20; background: rgba(42, 26, 72, 0.45); }
+/* busy: verbatim from styles.css:319-326 */
+.play .spin { width: 24px; height: 24px; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+.play.busy { position: relative; z-index: 21; pointer-events: none; transform: translateY(4px); box-shadow: 0 2px 0 var(--pom-dark); }
+.mini-play.busy { position: relative; z-index: 21; pointer-events: none; display: flex; align-items: center; gap: 6px; transform: translateY(2px); box-shadow: 0 1px 0 var(--pom-dark); }
+.mini-play .spin { width: 14px; height: 14px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; animation: rot 0.8s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ---------- new on this screen ---------- */
+/* section name above the big card: which of the three tracks this step belongs to */
+.sec { display: flex; align-items: center; gap: 6px; margin-bottom: -6px; color: var(--muted); font-size: 14px; font-weight: 900; }
+.sec .emoji { font-size: 18px; }
+/* a section finished for today: mint, like «верно / прогресс»; not grey, it isn't disabled */
+.lsn.ok { background: var(--mint-soft); border-color: var(--mint); }
+.lsn.ok .t small { color: var(--ink); opacity: .75; }
+.chk { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--mint); color: #fff; font-size: 20px; font-weight: 900; line-height: 1; }
+/* bottom tabs: flat navigation, no shadow; pressed = 96% + --line, like .x / button.lsn */
+.tabs { position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  padding: 6px calc(var(--safe-right) + 10px) calc(var(--safe-bottom) + 6px) calc(var(--safe-left) + 10px);
+  background: var(--surface); border-top: 2px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border-radius: 16px;
+  font-size: 13px; font-weight: 900; line-height: 1.1; color: var(--ink); transition: transform 120ms, background 120ms; }
+.tab .emoji { font-size: 26px; }
+.tab.on { background: var(--pom-soft); }
+.tab:active, .tab.down { transform: scale(0.96); background: var(--line); transition-duration: 80ms; }
+
+/* ---------- context blocks (from the skill) ---------- */
+.ctx { background: var(--line); opacity: .55; border-radius: 16px; min-height: 48px;
+       display: grid; place-items: center; color: var(--muted); font-size: 13px; font-weight: 700; text-align: center; padding: 6px 12px; }
+.ctx + .ctx { margin-top: 14px; }
+.hdr { position: relative; }
+.gone { position: absolute; top: 6px; right: 6px; z-index: 2; max-width: 128px; padding: 6px 8px; border: 2px dashed var(--pom); border-radius: 14px;
+  background: var(--bg); color: var(--pom); font-size: 11px; font-weight: 900; line-height: 1.2; text-align: center; }
+.gone s { font-size: 18px; display: block; }
+
+/* ---------- mockup chrome (not product) — as in docs/mockups/home-menu.html ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.cols { display: grid; grid-template-columns: repeat(auto-fill, 328px); gap: 20px; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 64px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.dev { position: relative; overflow: hidden; border: 10px solid #0d0d12; background: var(--bg); color: var(--ink); transform-origin: 0 0; }
+.scr { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.phone { width: 410px; height: 864px; border-radius: 54px; --safe-top: 47px; --safe-bottom: 34px; }
+.se { width: 375px; height: 667px; border-radius: 36px; --safe-top: 20px; --safe-bottom: 0px; }
+.fw { width: 328px; height: 691px; }
+.fw .dev { transform: scale(0.8); }
+.fw.fse { width: 300px; height: 534px; }
+.sbar { position: absolute; top: 0; left: 0; right: 0; height: var(--safe-top); z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 0 34px; font-weight: 800; font-size: 16px; pointer-events: none; background: var(--bg); }
+.se .sbar { font-size: 12px; padding: 0 16px; }
+.island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #0d0d12; z-index: 31; }
+.hbar { position: absolute; bottom: 8px; left: 50%; width: 140px; height: 5px; margin-left: -70px; border-radius: 3px; background: var(--ink); z-index: 31; }
+.fold { position: absolute; left: 0; right: 0; z-index: 11; border-top: 2px dashed var(--pom); pointer-events: none; }
+.fold span { position: absolute; right: 8px; top: -22px; font-size: 12px; font-weight: 900; color: var(--pom); background: var(--bg); padding: 0 4px; }
+.navdemo { width: 390px; position: relative; height: 68px; background: var(--bg); border-radius: 12px; overflow: hidden; }
+.navdemo .tabs { position: absolute; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Главная «Сегодня»: по карточке на раздел и нижние вкладки</h1>
+  <p class="lead"><b>Как сейчас.</b> На главной одна карточка — тема, выбранная сегодня на экране «Уроки»: «показано 6 из 8», полоска, «Играть» (<code>frontend/src/screens/Home.tsx:26-89</code>, <code>TodayLessonCard</code>). Когда слова урока показаны, кнопка становится «Повторить» и появляется «Новый урок — завтра» (<code>Home.tsx:86</code>) — это неверно: следующий урок той же темы открывается в тот же день. Утром вместо карточки — «Выбери урок на сегодня» с подсказкой «Каждый день — одна новая тема из каждого раздела» и кнопкой «К урокам» (<code>Home.tsx:188-199</code>); под карточкой строка «Другие уроки» (<code>Home.tsx:163-171</code>); в конце курса — «Все уроки пройдены!» (<code>Home.tsx:173-187</code>). Уроки и карта прогресса открываются из бургера справа вверху (<code>Home.tsx:120</code>, <code>components/Menu.tsx</code>). Описание для родителей — <code>docs/general/parent-guide.md</code>, «Главный экран» и «Экран «Уроки»».</p>
+  <p class="lead"><b>Что меняется.</b> Блок под неделей — по карточке на каждый из трёх разделов (Буквы, Слоги, Слова) и отдельная «Тренировка»; внизу — вкладки «Сегодня · Путь · Наклейки», бургер уходит. Шапка (Мзико, приветствие, копилка, неделя) и холмы — серые блоки «как сейчас». Темы и число слов в уроках — из <code>content/topics/*.yaml</code>, нарезка на уроки — как в <code>backend/app/services/lessons.py:56-59</code> (не больше 10 слов, поровну).</p>
+
+  <h2>1 · Утро, ничего не начато</h2>
+  <p class="lead">Три раздела — три шага. Первый по порядку раздел, в котором сегодня есть что играть, — большая карточка (<code>.cur</code> + <code>.play</code>) всегда наверху блока; остальные — строки <code>.lsn</code> с компактной «Играть» в порядке Буквы → Слоги → Слова. Над большой карточкой — название раздела мелко, чтобы «Буквы 2» и «Цвета» читались как три дорожки, а не как список уроков. Номер урока (<code>.num</code>) убран: сквозной номер 21 из 30 ребёнку на «Сегодня» ничего не говорит. Счётчик нового урока — в единицах раздела: «8 букв», «9 слогов», «10 слов». Бургер помечен как убранный.</p>
+  <div class="cols" id="s1"></div>
+
+  <h2>2 · Раздел начат, урок не закончен</h2>
+  <p class="lead">Буквы 2 начаты: «показано 6 из 8» и полоска; кнопка та же — «Играть». Отличие от нового урока несёт полоска и счётчик, а не третий глагол. «Животные · 1» тоже начаты — в строке это видно по «показано 3 из 7» вместо «7 слов». Никакого «новый урок завтра».</p>
+  <div class="cols" id="s2"></div>
+
+  <h2>3 · Тема раздела на сегодня исчерпана</h2>
+  <p class="lead"><b>3а</b> — «Слоги · 2» только что закончены, а «Слоги · 3» можно сегодня же: карточка просто показывает следующий урок, «8 слогов», «Играть», без промежуточного «готово». <b>3б</b> — тема закончена, а новая тема раздела откроется завтра: строка мятная, ✓, «На сегодня готово», тихо — что будет завтра (та же логика, что подпись замка «завтра» на «Уроках»). Готовая строка не кнопка и ничего не открывает. <b>3в</b> — раздел пройден целиком: «Все буквы пройдены!», звезда вместо галочки; строка стоит в нижнем списке на месте своего раздела, раздел не исчезает. Готовые строки всегда под большой карточкой: в 3а и 3б сверху Слоги, а «Буквы ✓» — первой строкой под ними.</p>
+  <div class="cols" id="s3"></div>
+
+  <h2>4 · Есть что повторить</h2>
+  <p class="lead">«Тренировка» — отдельная строка последней, после разделов: невыученные буквы, слоги и слова вне конкретного урока, подпись «Повторим знакомое», кнопка «Повторить» (глагол, который в приложении уже значит «ещё раз по знакомому»). Без числа. Нечего повторять — строки нет совсем, а не серая.</p>
+  <div class="cols" id="s4"></div>
+
+  <h2>5 · Все три раздела на сегодня исчерпаны</h2>
+  <p class="lead">Единственное оставшееся действие — тренировка, поэтому по общему правилу она становится большой карточкой наверху: «На сегодня всё!» (из лимита дня) и «Новые задания — завтра. А пока можно повторить», с Мзико, как у нынешнего «Все уроки пройдены!». Три готовые строки — под ней в порядке Буквы → Слоги → Слова. <b>5б</b> — повторять нечего: подпись «Новые задания — завтра», кнопка настоящая <code>:disabled</code> «Всё закреплено!» — тот же вид и текст, что сейчас в <code>Home.tsx:179-185</code>.</p>
+  <div class="cols" id="s5"></div>
+
+  <h2>6 · Загрузка: нажали «Играть»</h2>
+  <p class="lead">Нажатая кнопка остаётся утопленной и цветной, показывает спиннер и «Открываю…» (через 3 с — «Ещё чуть-чуть…»), всё остальное, <b>включая вкладки</b>, под <code>.scrim</code>: во время запроса уйти на «Путь» нельзя. Слева — большая кнопка, справа (тёмная) — компактная в строке «Животные · 1», уже «Ещё чуть-чуть…».</p>
+  <div class="cols" id="s6"></div>
+
+  <h2>7 · Оффлайн</h2>
+  <p class="lead">Запрос упал: пелена снята, кнопка отжата, внизу существующий <code>.notice</code> «Нет связи. Проверь интернет и попробуй ещё». Новое только одно: тост поднят над вкладками, а не на <code>safe-bottom + 24px</code>, иначе он лёг бы на них.</p>
+  <div class="cols" id="s7"></div>
+
+  <h2>8 · Длинный текст</h2>
+  <p class="lead">«Природа и погода · 2» в большой карточке — заголовок в две строки, счётчик, полоска и кнопка на месте. «Школьные предметы» в строке (состояние 9) и «завтра «Школьные предметы»» в готовой строке (3б) — заголовок переносится, «Играть» не ужимается и не уезжает. Самая длинная подпись вкладки — «Наклейки», влезает в треть ширины с запасом.</p>
+  <div class="cols" id="s8"></div>
+
+  <h2>9 · Узкий телефон (375×667, без «чёлки»)</h2>
+  <p class="lead">Красная пунктирная линия — край первого экрана. Шапка не меняется и занимает ~300 px; под ней до вкладок остаётся ~290 px — ровно одна большая карточка с кнопкой. Строки остальных разделов и «Тренировка» уходят под сгиб и докручиваются. Это и есть порядок уступок (см. «Решения»).</p>
+  <div class="cols" id="s9"></div>
+
+  <h2>Нижние вкладки — вблизи</h2>
+  <p class="lead">Новый элемент, в скиле его нет. Плоский, без тени — это навигация, а не действие. Активная вкладка — заливка <code>--pom-soft</code> (цвет главного действия, приглушённый), текст <code>--ink</code>; нажатие — 96% и заливка <code>--line</code>, как у <code>.x</code> и <code>button.lsn</code>. Снизу отступ <code>safe-bottom</code>. Иконки: «Сегодня» — солнце, как Мзико; «Путь» — компас 🧭; «Наклейки» — 🗺️, как у пункта «Карта прогресса» в нынешнем меню.</p>
+  <div class="cols" id="nav" style="grid-template-columns: repeat(auto-fill, 390px);"></div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Порядок: большая активная карточка всегда первой, под ней строки Буквы → Слоги → Слова, «Тренировка» последней.</b> Большой становится первый по порядку раздел, где сегодня есть что играть (начатый и новый равны). Стабильность позиции уступает мгновенно видимому следующему действию: ребёнок открывает экран и сразу видит, во что играть, — без прокрутки мимо готовых строк. Внутри нижнего списка порядок стабилен и одинаков всегда, включая мятные готовые строки: Буквы ✓ стоят первыми, даже когда они готовы. Когда играть больше нечего, наверх по тому же правилу выходит тренировка — карточкой «На сегодня всё!».</li>
+    <li><b>Одна большая карточка, остальные компактные.</b> Три одинаковые карточки с кнопкой 64 px — это ~680 px, а под шапкой на обычном телефоне ~410 px, на узком ~290. Главный экран отвечает на один вопрос — во что играть сейчас, — и отвечает одной большой кнопкой; остальные шаги видны строками с «Играть» и доступны одним нажатием, без похода в «Путь».</li>
+    <li><b>Что уступает при нехватке высоты.</b> Под сгиб уходит нижний список — снизу вверх: сначала «Тренировка», потом строка Слов, Слогов, Букв. Большая карточка стоит сразу под неделей и не сжимается никогда: ни иконка, ни полоска, ни кнопка, — поэтому следующее действие видно на первом экране при любом числе готовых разделов (раньше две готовые строки сверху сдвигали её на ~160 px вниз). Порядок списка при этом не жертвует ничем важным: готовая мятная строка под сгибом ничего не отнимает, а строки с «Играть» докручиваются. Шапку задача не трогает, поэтому на узком телефоне на первом экране ровно одна большая карточка. Внутри строки уступает заголовок (переносится), кнопка — никогда.</li>
+    <li><b>«Играть» и для нового, и для начатого — «Продолжить» не вводим.</b> В приложении два глагола — «Играть» и «Повторить», у ребёнка это два разных действия; «продолжить» для него то же самое «играть», только длиннее (в <code>.mini-play</code> заметно шире) и третье слово на выучивание. Нажатый в середине урок и так видно: полоска и «показано 6 из 8» вместо «8 букв». Так же сейчас работает и <code>Home.tsx:83</code>.</li>
+    <li><b>Готово — мятный, а не серый.</b> Новое/начатое — белая плитка и красная кнопка с тенью (действие). Готово на сегодня — мятная плашка <code>--mint-soft</code> с зелёной галочкой, без кнопки: мятный в продукте значит «верно, прогресс». Серый остаётся только за настоящим <code>:disabled</code> («Всё закреплено!»).</li>
+    <li><b>«Тренировка» без числа, кнопка «Повторить».</b> Смысл счётчика не утверждён. Показывается, только когда есть что повторять; в конце дня становится большой карточкой. «Повторить» запускает тренировку сразу, без листа «Как повторим?»: лист про конкретный урок, а тренировка ни к какому уроку не привязана.</li>
+    <li><b>Следующий урок той же темы — без промежуточного «готово».</b> Когда «Слоги · 2» закончены, а «Слоги · 3» открыты, карточка сразу показывает «Слоги · 3». Строки «пройдено · Повторить» над карточкой (как сейчас в <code>Home.tsx:70-79</code>) нет: повтор пройденного урока живёт в «Пути».</li>
+    <li><b>Иконка «Путь» — 🧭.</b> 📚 уже занята темой «Школьные предметы», 🗺️ — у «Наклеек»; компас — «куда идти дальше», ровно смысл экрана с порядком тем.</li>
+    <li><b>Вкладки — новый элемент.</b> Плоские, 56 px, с safe-area. Пока открывается занятие, они под пеленой вместе со всем экраном. Холмы остаются и идут над вкладками (на макете — серой полосой в конце прокрутки).</li>
+    <li><b>Счётчик в единицах раздела</b> («8 букв», «9 слогов»), а не «8 слов», как сейчас у <code>wordsW</code> для букв. Мелочь, но это видимое изменение текста.</li>
+  </ul>
+
+  <h2>Чего нет на макете</h2>
+  <ul class="lead">
+    <li><b>Ростки 🌱/🌿/⭐</b>, экран-вступление перед занятием, праздник окончания всего курса, изменения внутри занятия — вне задачи.</li>
+    <li><b>Экраны «Путь» и «Наклейки»</b> — только вкладки, ведущие к ним.</li>
+    <li><b>Счётчик «Тренировки»</b> — смысл не утверждён.</li>
+    <li><b>Первая загрузка данных</b> экрана (до того как пришёл <code>/api/me</code>) — это не часть блока «Сегодня», её поведение не меняется.</li>
+    <li><b>«Пусто»</b> в смысле «разделов нет» невозможно: разделы заданы программой, у каждого всегда есть шаг, «готово» или «пройден». Пустым блок бывает только в конце курса — это праздник, которого здесь нет.</li>
+    <li><b>Шапка</b> (длинное имя «Александра-Мария» в приветствии) — не меняется, показана серым блоком.</li>
+  </ul>
+</main>
+<script>
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const em = (e, s) => `<span class="emoji" role="img" aria-hidden="true"${s ? ` style="font-size:${s}px"` : ''}>${e}</span>`;
+const MASCOT = s => `<svg class="mascot" style="width:${s}px;height:${s}px" viewBox="0 0 120 120" aria-label="Мзико"><g fill="var(--sun)" stroke="var(--sun-dark)" stroke-width="3"><path d="M60 4 L66 20 L54 20Z"/><path d="M60 116 L66 100 L54 100Z"/><path d="M4 60 L20 54 L20 66Z"/><path d="M116 60 L100 54 L100 66Z"/><path d="M20 20 L34 28 L28 34Z"/><path d="M100 100 L86 92 L92 86Z"/><path d="M100 20 L92 34 L86 28Z"/><path d="M20 100 L28 86 L34 92Z"/><circle cx="60" cy="60" r="36"/></g><circle cx="47" cy="55" r="5" fill="#3a2600"/><circle cx="73" cy="55" r="5" fill="#3a2600"/><circle cx="49" cy="53" r="1.6" fill="#fff"/><circle cx="75" cy="53" r="1.6" fill="#fff"/><circle cx="40" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><circle cx="80" cy="67" r="5" fill="#FF8E8E" opacity=".7"/><path d="M48 70 Q60 82 72 70" fill="none" stroke="#3a2600" stroke-width="4" stroke-linecap="round"/></svg>`;
+
+/* sections: frontend/src/sections.ts */
+const SEC = {
+  letters:   { name: 'Буквы', icon: '🔤', unit: ['буква', 'буквы', 'букв'], fin: 'Все буквы пройдены!', all: 33 },
+  syllables: { name: 'Слоги', icon: '🧩', unit: ['слог', 'слога', 'слогов'], fin: 'Все слоги пройдены!', all: 25 },
+  words:     { name: 'Слова', icon: '💬', unit: ['слово', 'слова', 'слов'] },
+};
+const cnt = (sec, n) => `${n} ${plural(n, ...SEC[sec].unit)}`;
+
+/* lessons: content/topics/*.yaml, cut by backend/app/services/lessons.py (≤10 words, equal parts) */
+const L = {
+  let2: { sec: 'letters', title: 'Буквы 2', icon: '✏️', total: 8 },
+  let3: { sec: 'letters', title: 'Буквы 3', icon: '📖', total: 8 },
+  let4: { sec: 'letters', title: 'Буквы 4', icon: '🎓', total: 9 },
+  syl1: { sec: 'syllables', title: 'Слоги', part: 1, icon: '🧩', total: 9 },
+  syl2: { sec: 'syllables', title: 'Слоги', part: 2, icon: '🧩', total: 8 },
+  syl3: { sec: 'syllables', title: 'Слоги', part: 3, icon: '🧩', total: 8 },
+  colors: { sec: 'words', title: 'Цвета', icon: '🎨', total: 10 },
+  school: { sec: 'words', title: 'Школьные предметы', icon: '📚', total: 8 },
+  anim1: { sec: 'words', title: 'Животные', part: 1, icon: '🐻', total: 7 },
+  anim2: { sec: 'words', title: 'Животные', part: 2, icon: '🐻', total: 7 },
+  food1: { sec: 'words', title: 'Еда', part: 1, icon: '🍽️', total: 9 },
+  nat2:  { sec: 'words', title: 'Природа и погода', part: 2, icon: '🌦️', total: 7 },
+};
+const title = l => l.part ? `${l.title}&nbsp;<span class="part">·&nbsp;${l.part}</span>` : l.title;
+const sub = (l, shown) => shown ? `показано ${shown} из ${l.total}` : cnt(l.sec, l.total);
+const busyLabel = slow => `<span class="spin"></span>${slow ? 'Ещё чуть-чуть…' : 'Открываю…'}`;
+
+/* a section step: { l, shown } to play · { done: sec, next: 'Буквы 3' } · { fin: sec } */
+function big(s) {
+  const l = s.l, sc = SEC[l.sec];
+  const pct = s.shown ? Math.round(s.shown / l.total * 100) : 0;
+  const btn = s.busy ? `<button type="button" class="play busy">${busyLabel(s.busy === 'slow')}</button>` : `<button type="button" class="play">Играть</button>`;
+  return `<div class="cur"><div class="sec">${em(sc.icon)}${sc.name}</div><div class="cur-h"><span class="ic">${em(l.icon)}</span><div class="cur-t"><b>${title(l)}</b><small>${sub(l, s.shown)}</small></div></div>${s.shown ? `<div class="prog"><i style="width:${pct}%"></i></div>` : ''}${btn}</div>`;
+}
+function row(s) {
+  if (s.done) return `<div class="lsn ok"><span class="chk">✓</span><span class="t">На сегодня готово<small>${SEC[s.done].name} · завтра «${s.next}»</small></span></div>`;
+  if (s.fin) return `<div class="lsn ok"><span class="chk">★</span><span class="t">${SEC[s.fin].fin}<small>${SEC[s.fin].name} · ${cnt(s.fin, SEC[s.fin].all)}</small></span></div>`;
+  const l = s.l;
+  const btn = s.busy ? `<button type="button" class="mini-play busy">${busyLabel(s.busy === 'slow')}</button>` : `<button type="button" class="mini-play">Играть</button>`;
+  return `<div class="lsn"><span class="ic">${em(l.icon)}</span><span class="t">${title(l)}<small>${SEC[l.sec].name} · ${sub(l, s.shown)}</small></span>${btn}</div>`;
+}
+const trainRow = () => `<div class="lsn"><span class="ic">${em('🔁')}</span><span class="t">Тренировка<small>Повторим знакомое</small></span><button type="button" class="mini-play">Повторить</button></div>`;
+const dayDone = review => `<div class="cur all">${MASCOT(88)}<b>На сегодня всё!</b><small>${review ? 'Новые задания — завтра. А пока можно повторить' : 'Новые задания — завтра'}</small>${review ? '<button type="button" class="play">Повторить</button>' : '<button type="button" class="play" disabled>Всё закреплено!</button>'}</div>`;
+
+/* the block: the first playable section (letters → syllables → words) is big and always on top;
+   the rest follow as rows in the fixed order letters → syllables → words, training last */
+function today(steps, training) {
+  const first = steps.findIndex(s => s.l);
+  if (first < 0) return dayDone(training) + steps.map(row).join('');
+  return big(steps[first]) + steps.filter((_, i) => i !== first).map(row).join('') + (training ? trainRow() : '');
+}
+
+const TABS = (pressed) => `<nav class="tabs" aria-label="Разделы"><button type="button" class="tab on" aria-current="page">${em('☀️')}Сегодня</button><button type="button" class="tab${pressed ? ' down' : ''}">${em('🧭')}Путь</button><button type="button" class="tab">${em('🗺️')}Наклейки</button></nav>`;
+
+function header(burgerNote) {
+  return `<div class="hdr"><div class="ctx" style="min-height:128px">Мзико и «Поиграем, {имя}?» — как сейчас</div>${burgerNote ? '<div class="gone"><s>☰</s>бургер убран — его заменяют вкладки</div>' : ''}</div>
+    <div class="ctx" style="min-height:96px">копилка — как сейчас</div>
+    <div class="ctx" style="min-height:42px">семь кружков недели — как сейчас</div>`;
+}
+
+function screen({ steps, training = false, busy = false, notice = '', burgerNote = false }) {
+  return `<div class="scr"><div class="wrap">${header(burgerNote)}
+    <div class="path">${today(steps, training)}</div>
+    <div class="ctx" style="margin-top:18px;min-height:56px">холмы — как сейчас, над вкладками</div>
+  </div></div>${TABS()}${busy ? '<div class="scrim" aria-hidden="true"></div>' : ''}${notice ? `<div class="notice" role="status">${notice}</div>` : ''}`;
+}
+
+function frame(theme, body, se = false) {
+  if (se) {
+    const fold = 667 - 20 - 68;
+    return `<div class="fw fse"><div class="dev se" data-theme="${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div>${body}<div class="fold" style="top:${fold}px"><span>край экрана · вкладки</span></div></div></div>`;
+  }
+  return `<div class="fw"><div class="dev phone" data-theme="${theme}"><div class="sbar"><span>9:41</span><span>100%</span></div><div class="island"></div>${body}<div class="hbar"></div></div></div>`;
+}
+const fig = (t, s, f) => `<figure><figcaption>${t}<span>${s}</span></figcaption>${f}</figure>`;
+function pair(id, items) {
+  document.getElementById(id).innerHTML = items.map(([t, s, opts, se]) =>
+    fig(t, `светлая · ${s}`, frame('light', screen(opts), se)) + fig(t, `тёмная · ${s}`, frame('dark', screen(opts), se))
+  ).join('');
+}
+
+/* ---- states ---- */
+const MORNING = { burgerNote: true, steps: [{ l: L.let2 }, { l: L.syl1 }, { l: L.colors }] };
+pair('s1', [['1 · Утро', 'Буквы 2 — большая, Слоги · 1 и Цвета — строки; бургер помечен как убранный', MORNING]]);
+
+const MID = { steps: [{ l: L.let2, shown: 6 }, { l: L.syl2 }, { l: L.anim1, shown: 3 }] };
+pair('s2', [['2 · Буквы в работе', '«показано 6 из 8», полоска, «Играть»; Животные · 1 начаты вчера', MID]]);
+
+pair('s3', [
+  ['3а · Следующий урок темы — сегодня же', 'Слоги · 2 пройдены → большая карточка сразу «Слоги · 3»; под ней «Буквы ✓» и Животные · 1', { steps: [{ done: 'letters', next: 'Буквы 3' }, { l: L.syl3 }, { l: L.anim1, shown: 3 }] }],
+  ['3б · Новая тема — только завтра', 'большая — Слоги · 2; Буквы и Слова готовы, в строках тихо — что завтра', { steps: [{ done: 'letters', next: 'Буквы 4' }, { l: L.syl2, shown: 3 }, { done: 'words', next: 'Школьные предметы' }] }],
+  ['3в · Раздел пройден целиком', 'все четыре «Буквы» позади: большая — Слоги, под ней ★ «Все буквы пройдены!», затем Животные · 2', { steps: [{ fin: 'letters' }, { l: L.syl1 }, { l: L.anim2 }] }],
+]);
+
+pair('s4', [['4 · Тренировка', 'большая — Слоги · 3; строки «Буквы ✓», Еда · 1; «Тренировка» последней, без числа', { training: true, steps: [{ done: 'letters', next: 'Буквы 4' }, { l: L.syl3, shown: 6 }, { l: L.food1 }] }]]);
+
+pair('s5', [
+  ['5 · День закончен', 'тренировка наверх, большой; три готовые строки ниже', { training: true, steps: [{ done: 'letters', next: 'Буквы 3' }, { fin: 'syllables' }, { done: 'words', next: 'Одежда' }] }],
+  ['5б · День закончен, повторять нечего', 'настоящий :disabled «Всё закреплено!»', { training: false, steps: [{ done: 'letters', next: 'Буквы 3' }, { fin: 'syllables' }, { done: 'words', next: 'Одежда' }] }],
+]);
+
+document.getElementById('s6').innerHTML =
+  fig('6 · Большая «Играть» нажата', 'светлая · «Открываю…», пелена поверх экрана и вкладок', frame('light', screen({ busy: true, steps: [{ l: L.let2, shown: 6, busy: 'open' }, { l: L.syl2 }, { l: L.anim1, shown: 3 }] }))) +
+  fig('6 · Строка «Играть» нажата', 'тёмная · через 3 с «Ещё чуть-чуть…» в компактной кнопке', frame('dark', screen({ busy: true, steps: [{ l: L.let2, shown: 6 }, { l: L.syl2 }, { l: L.anim1, shown: 3, busy: 'slow' }] })));
+
+pair('s7', [['7 · Нет связи', 'пелена снята, тост над вкладками', { ...MID, notice: 'Нет связи. Проверь интернет и попробуй ещё' }]]);
+
+pair('s8', [['8 · Длинные названия', '«Природа и погода · 2» в большой карточке наверху, под ней две ★-строки; длинная строка «Школьные предметы» — в 9, длинная подпись «завтра» — в 3б', { training: true, steps: [{ fin: 'letters' }, { fin: 'syllables' }, { l: L.nat2, shown: 3 }] }]]);
+
+pair('s9', [
+  ['9 · Узкий телефон', 'одна большая карточка на первом экране; «Школьные предметы» — под сгибом', [0], true],
+].map(([t, s, , se]) => [t, s, { training: true, steps: [{ l: L.let3, shown: 3 }, { l: L.syl2 }, { l: L.school }] }, se]));
+
+document.getElementById('nav').innerHTML = [
+  ['Покой · светлая', 'light', false], ['«Путь» нажат · светлая', 'light', true],
+  ['Покой · тёмная', 'dark', false], ['«Путь» нажат · тёмная', 'dark', true],
+].map(([t, th, p]) => `<figure><figcaption style="min-height:0">${t}</figcaption><div class="navdemo" data-theme="${th}">${TABS(p)}</div></figure>`).join('');
+</script>
+</body>
+</html>
