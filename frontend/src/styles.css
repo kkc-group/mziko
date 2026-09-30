@@ -230,6 +230,14 @@ button:disabled { cursor: default; }
   animation: checkPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .check svg { width: 28px; height: 28px; }
+/* The mirror pair of .check on a wrong answer: same spot and pop, red instead of green. */
+.cross {
+  position: absolute; top: -16px; right: -16px; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--pom); border: 4px solid var(--surface); box-shadow: 0 4px 0 var(--pom-dark);
+  display: grid; place-items: center; pointer-events: none;
+  animation: checkPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cross svg { width: 28px; height: 28px; }
 @keyframes checkPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 .ok { border-color: var(--mint) !important; background: var(--mint-soft) !important; box-shadow: 0 5px 0 var(--mint) !important; }
 .bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
@@ -238,7 +246,6 @@ button:disabled { cursor: default; }
 .next:disabled { opacity: 0.6; }
 .toast { max-width: 540px; width: 100%; margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; font-weight: 900; font-size: 20px; }
 .toast.good { color: var(--mint); }
-.toast.try { color: var(--pom); }
 .toast.offline { color: var(--muted); font-size: 17px; }
 .retry { padding: 8px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; color: var(--ink); min-height: 44px; }
 .coin {

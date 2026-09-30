@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { api, withRetry, type AnswerBody } from '../api'
-import type { Speaker } from '../audio'
+import { playSfx, type Speaker } from '../audio'
 import { flyCoins, fmtLari, uuid } from '../fx'
 import type { AnchorOut, SessionSummary, Step, WordOut } from '../types'
 import { Emoji } from '../components/Emoji'
@@ -9,7 +9,7 @@ import { SpeakButton } from '../components/SpeakButton'
 import { WordImage } from '../components/WordImage'
 import { isLetter, isText, textClass } from '../wordText'
 
-type Toast = { kind: 'good' | 'try' | 'offline'; text: string } | null
+type Toast = { kind: 'good' | 'offline'; text: string } | null
 
 export function Lesson({
   sessionId,
@@ -103,13 +103,12 @@ export function Lesson({
             onAnswer={async (chosen, attempt, el) => {
               const correct = chosen.slug === step.word.slug
               if (!correct) {
-                setToast({ kind: 'try', text: 'Почти! Попробуй ещё' })
-                // The child hears what they actually picked, then that it was wrong.
-                await speaker.playThrough(chosen)
-                await speaker.phrase('wrong')
+                speaker.stop()
+                playSfx('wrong')
                 return false
               }
-              void speaker.phrase('correct')
+              speaker.stop()
+              playSfx('coin')
               const body: AnswerBody = {
                 step_index: idx,
                 word_slug: chosen.slug,
@@ -237,7 +236,7 @@ function Quiz({
       } else {
         setWrong((w) => [...w, o.slug])
         setPicked({ word: o, verdict: 'bad' })
-        setTimeout(() => setPicked(null), 400) // the red card fades, the rest unlock
+        setTimeout(() => setPicked(null), 900) // long enough for the cross to be seen, then the rest unlock
       }
     } catch (e) {
       // Never leave the child on a frozen screen: surface the failure instead.
@@ -338,6 +337,13 @@ function Reveal({
           <span className="check">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 13l5 5L19 7" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        )}
+        {verdict === 'bad' && (
+          <span className="cross">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
         )}
