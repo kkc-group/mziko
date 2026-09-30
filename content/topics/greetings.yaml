@@ -8,49 +8,49 @@ words:
     ka: გამარჯობა
     tr: гамарджоба
     ru: привет
-    image: {kind: text, value: გამარჯობა}
+    image: {kind: file, value: /media/images/greetings/hello.png}
   - slug: goodbye
     ka: ნახვამდის
     tr: нахвамдис
     ru: до свидания
-    image: {kind: text, value: ნახვამდის}
+    image: {kind: file, value: /media/images/greetings/goodbye.png}
   - slug: thank-you
     ka: მადლობა
     tr: мадлоба
     ru: спасибо
-    image: {kind: text, value: მადლობა}
+    image: {kind: file, value: /media/images/greetings/thank-you.png}
   - slug: please
     ka: თუ შეიძლება
     tr: ту шеидзлеба
     ru: пожалуйста
-    image: {kind: text, value: თუ შეიძლება}
+    image: {kind: file, value: /media/images/greetings/please.png}
   - slug: "yes"
     ka: კი
     tr: ки
     ru: да
-    image: {kind: text, value: კი}
+    image: {kind: file, value: /media/images/greetings/yes.png}
   - slug: "no"
     ka: არა
     tr: ара
     ru: нет
-    image: {kind: text, value: არა}
+    image: {kind: file, value: /media/images/greetings/no.png}
   - slug: good-morning
     ka: დილა მშვიდობისა
     tr: дила мшвидобиса
     ru: доброе утро
-    image: {kind: text, value: დილა მშვიდობისა}
+    image: {kind: file, value: /media/images/greetings/good-morning.png}
   - slug: good-night
     ka: ღამე მშვიდობისა
     tr: гаме мшвидобиса
     ru: спокойной ночи
-    image: {kind: text, value: ღამე მშვიდობისა}
+    image: {kind: file, value: /media/images/greetings/good-night.png}
   - slug: sorry
     ka: ბოდიში
     tr: бодиши
     ru: извини
-    image: {kind: text, value: ბოდიში}
+    image: {kind: file, value: /media/images/greetings/sorry.png}
   - slug: how-are-you
     ka: როგორ ხარ
     tr: рогор хар
     ru: как дела
-    image: {kind: text, value: როგორ ხარ}
+    image: {kind: file, value: /media/images/greetings/how-are-you.png}
