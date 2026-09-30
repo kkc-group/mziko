@@ -399,6 +399,15 @@ button:disabled { cursor: default; }
 .allnote .num { background: var(--mint); color: #fff; font-size: 20px; }
 .lsn.nav .chev { flex: none; font-size: 22px; font-weight: 900; color: var(--muted); }
 
+/* --- home «Сегодня» (screens/Home.tsx): docs/mockups/home-today.html, values verbatim. Two renames
+   against the mockup, because its names are taken here: its .sec is .cur-sec (.sec is a section
+   of «Уроки»), its .lsn.ok is .lsn.ready (.ok is the quiz's correct answer, with !important). */
+.cur-sec { display: flex; align-items: center; gap: 6px; margin-bottom: -6px; color: var(--muted); font-size: 14px; font-weight: 900; --s: 18px; }
+/* a section finished for today: mint, like «верно / прогресс»; not grey, it isn't disabled */
+.lsn.ready { background: var(--mint-soft); border-color: var(--mint); }
+.lsn.ready .t small { color: var(--ink); opacity: 0.75; }
+.chk { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: #fff; font-size: 20px; font-weight: 900; line-height: 1; }
+
 /* --- progress map (screens/ProgressMap.tsx): one card per lesson, its words as sticker buttons.
    The header reuses .cur-h / .cur-t at the row size of .lsn; a locked lesson takes the dashed
    look of .lsn.lock. Stickers keep their .stk look (unlearned: grey) and press like flat buttons. */

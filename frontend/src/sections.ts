@@ -1,10 +1,18 @@
 import type { TopicOut } from './types'
 
-/** The three sections of the programme, in the order the «Уроки» and «Карта прогресса» screens show them. */
-export const SECTIONS: { key: TopicOut['section']; title: string; icon: string }[] = [
-  { key: 'letters', title: 'Буквы', icon: '🔤' },
-  { key: 'syllables', title: 'Слоги', icon: '🧩' },
-  { key: 'words', title: 'Слова', icon: '💬' },
+/** The three sections of the programme, in the order the «Уроки» and «Карта прогресса» screens show them.
+ *  `unit` is the section's counting word (1 буква, 2 буквы, 5 букв), `finished` the home row once
+ *  every topic of the section is done (docs/mockups/home-today.html). */
+export const SECTIONS: {
+  key: TopicOut['section']
+  title: string
+  icon: string
+  unit: [string, string, string]
+  finished: string
+}[] = [
+  { key: 'letters', title: 'Буквы', icon: '🔤', unit: ['буква', 'буквы', 'букв'], finished: 'Все буквы пройдены!' },
+  { key: 'syllables', title: 'Слоги', icon: '🧩', unit: ['слог', 'слога', 'слогов'], finished: 'Все слоги пройдены!' },
+  { key: 'words', title: 'Слова', icon: '💬', unit: ['слово', 'слова', 'слов'], finished: 'Все слова пройдены!' },
 ]
 
 /** Why a not-yet-started topic is locked: the previous topic of its section isn't done yet, or the
