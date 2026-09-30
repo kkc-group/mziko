@@ -24,11 +24,6 @@ words:
     tr: мзе
     ru: солнце
     image: {kind: emoji, value: "☀️"}
-  - slug: house
-    ka: სახლი
-    tr: сахли
-    ru: дом
-    image: {kind: emoji, value: "🏠"}
   - slug: bread
     ka: პური
     tr: пури

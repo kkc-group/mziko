@@ -1,0 +1,56 @@
+slug: my-family
+title_ru: Моя семья
+title_ka: ჩემი ოჯახი
+icon: "🏡"
+order: 77  # right after school-items (75), before greetings (80)
+words:
+  - slug: my-family
+    ka: ჩემი ოჯახი
+    tr: чеми оджахи
+    ru: моя семья
+    image: {kind: text, value: ჩემი ოჯახი}
+  - slug: my-home
+    ka: ჩემი სახლი
+    tr: чеми сахли
+    ru: мой дом
+    image: {kind: text, value: ჩემი სახლი}
+  - slug: my
+    ka: ჩემი
+    tr: чеми
+    ru: мой, моя, моё
+    image: {kind: file, value: /media/images/my-family/my.png}
+  - slug: family
+    ka: ოჯახი
+    tr: оджахи
+    ru: семья
+    image: {kind: file, value: /media/images/my-family/family.png}
+  - slug: house
+    ka: სახლი
+    tr: сахли
+    ru: дом
+    image: {kind: file, value: /media/images/my-family/house.png}
+  - slug: room
+    ka: ოთახი
+    tr: отахи
+    ru: комната
+    image: {kind: file, value: /media/images/my-family/room.png}
+  - slug: mom
+    ka: დედა
+    tr: деда
+    ru: мама
+    image: {kind: file, value: /media/images/my-family/mom.png}
+  - slug: dad
+    ka: მამა
+    tr: мама
+    ru: папа
+    image: {kind: file, value: /media/images/my-family/dad.png}
+  - slug: sister
+    ka: და
+    tr: да
+    ru: сестра
+    image: {kind: file, value: /media/images/my-family/sister.png}
+  - slug: brother
+    ka: ძმა
+    tr: дзма
+    ru: брат
+    image: {kind: file, value: /media/images/my-family/brother.png}
