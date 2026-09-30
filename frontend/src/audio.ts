@@ -145,3 +145,116 @@ function speak(word: WordOut): void {
     /* nothing to fall back to */
   }
 }
+
+/* ---------- answer sound effects, synthesized in code, no files on disk ---------- */
+
+/** Sample rate for generated sound effects (word recordings keep their own rate). */
+const SFX_RATE = 22050
+
+/** A soft triangle wave: brighter than sine, gentler than square, easy to synthesize by hand. */
+function triangleWave(freq: number, t: number): number {
+  const phase = (freq * t) % 1
+  return phase < 0.5 ? 4 * phase - 1 : 3 - 4 * phase
+}
+
+/** Linear fade at the edges of a tone, so back-to-back tones don't click. */
+function fadeEnvelope(t: number, dur: number, fade: number): number {
+  if (t < fade) return t / fade
+  if (t > dur - fade) return Math.max(0, (dur - t) / fade)
+  return 1
+}
+
+/**
+ * Renders one tone into `out` starting at sample `offset`. `decayTo` shapes the amplitude
+ * over the tone's length: 1 keeps it flat, below 1 decays exponentially to that fraction of
+ * `peak` (a coin's ring-out, a low blip fading). Returns the tone's length in samples.
+ */
+function renderTone(out: Float32Array, offset: number, freq: number, dur: number, peak: number, decayTo = 1): number {
+  const n = Math.round(dur * SFX_RATE)
+  const fade = Math.min(0.01, dur / 4)
+  for (let i = 0; i < n && offset + i < out.length; i++) {
+    const t = i / SFX_RATE
+    const decay = decayTo === 1 ? 1 : decayTo ** (t / dur)
+    out[offset + i] += triangleWave(freq, t) * peak * decay * fadeEnvelope(t, dur, fade)
+  }
+  return n
+}
+
+/** A coin dropping into the jar: two bright rising tones, B5 then E6, the second ringing out. */
+function synthCoin(): Float32Array {
+  const out = new Float32Array(Math.round(0.38 * SFX_RATE))
+  const n1 = renderTone(out, 0, 987.77, 0.08, 0.5)
+  renderTone(out, n1, 1318.51, 0.3, 0.55, 0.05)
+  return out
+}
+
+/** Wrong answer: a short, quiet, low "boo-boo" — two falling tones. */
+function synthWrong(): Float32Array {
+  const out = new Float32Array(Math.round(0.35 * SFX_RATE))
+  const n1 = renderTone(out, 0, 196, 0.15, 0.35, 0.6)
+  renderTone(out, n1, 147, 0.2, 0.3, 0.3)
+  return out
+}
+
+/** Packs mono float PCM samples into a 16-bit WAV Blob. */
+function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+  const dataSize = samples.length * 2
+  const buffer = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(buffer)
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i))
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + dataSize, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, 1, true) // mono
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true) // byte rate: sampleRate * blockAlign
+  view.setUint16(32, 2, true) // block align
+  view.setUint16(34, 16, true) // bits per sample
+  writeStr(36, 'data')
+  view.setUint32(40, dataSize, true)
+  let offset = 44
+  for (let i = 0; i < samples.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]))
+    view.setInt16(offset, Math.round(s * (s < 0 ? 0x8000 : 0x7fff)), true)
+  }
+  return new Blob([buffer], { type: 'audio/wav' })
+}
+
+export type Sfx = 'coin' | 'wrong'
+const sfxCache = new Map<Sfx, HTMLAudioElement>()
+
+/** Builds the Audio element for one effect, lazily, the first time it's needed. */
+function sfxAudio(name: Sfx): HTMLAudioElement | null {
+  const cached = sfxCache.get(name)
+  if (cached) return cached
+  try {
+    const samples = name === 'coin' ? synthCoin() : synthWrong()
+    const audio = new Audio(URL.createObjectURL(encodeWav(samples, SFX_RATE)))
+    audio.volume = 0.6
+    sfxCache.set(name, audio)
+    return audio
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Plays a short synthesized sound effect: 'coin' for a correct answer, 'wrong' for an
+ * incorrect one. A plain Audio element, not WebAudio: on iPhone WebAudio stays silent with
+ * the mute switch on, and words already play through Audio, so the sfx must behave the same.
+ */
+export function playSfx(name: Sfx): void {
+  try {
+    const audio = sfxAudio(name)
+    if (!audio) return
+    audio.currentTime = 0
+    audio.play().catch(() => {})
+  } catch {
+    /* no Audio in this environment (tests) */
+  }
+}

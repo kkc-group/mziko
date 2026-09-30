@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — красный крестик на карточке неверного ответа</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens: verbatim from frontend/src/styles.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c;
+  --pom: #e23b55; --pom-dark: #b8243d; --pom-soft: #ffe3e8;
+  --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee;
+  --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+} }
+/* the same two sets, scoped to a stage wrapper, so light and dark sit side by side */
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; line-height: 1.45;
+}
+.ka { font-family: 'Noto Sans Georgian', 'Sylfaen', 'DejaVu Sans', sans-serif; font-weight: 800; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+
+/* ---------- product classes: verbatim from frontend/src/styles.css:75,170-236 ---------- */
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.pic { width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); display: grid; place-items: center; --s: 96px; flex: none; }
+.glyph { color: var(--word-color); text-align: center; }
+.glyph.l { font-size: calc(var(--s, 64px) * 1.25); line-height: 1; }
+.pic.txt { width: 100%; max-width: 360px; border-radius: 26px; padding: 0 16px; container-type: inline-size; }
+.pic.txt .glyph.w { font-size: min(54px, 15cqi, calc(100cqi / (var(--len, 8) * 0.72))); line-height: 1.2; text-wrap: balance; }
+.anchor {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 auto;
+  padding: 8px 18px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); --s: 34px;
+}
+.anchor .ka { font-size: 28px; line-height: 1.2; color: var(--ink); }
+.anchor .ka b { color: var(--word-color); font-weight: 800; }
+.reveal { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.reveal .pic { position: relative; box-shadow: 0 10px 20px var(--blob-edge); }
+.pic.anc {
+  width: auto; min-width: 170px; max-width: 100%; height: auto; padding: 12px 22px 16px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pic.anc .glyph.l { line-height: 1.25; }
+.reveal .anchor { padding: 0; border: 0; border-radius: 0; background: none; white-space: nowrap; }
+.check {
+  position: absolute; top: -16px; right: -16px; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--mint); border: 4px solid var(--surface); box-shadow: 0 4px 0 var(--mint-dark);
+  display: grid; place-items: center; pointer-events: none;
+  animation: checkPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.check svg { width: 28px; height: 28px; }
+@keyframes checkPop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.ok { border-color: var(--mint) !important; background: var(--mint-soft) !important; box-shadow: 0 5px 0 var(--mint) !important; }
+.bad { border-color: var(--pom) !important; background: var(--pom-soft) !important; animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+/* ---------- NEW: the red cross, the mirror pair of .check ---------- */
+.cross {
+  position: absolute; top: -16px; right: -16px; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--pom); border: 4px solid var(--surface); box-shadow: 0 4px 0 var(--pom-dark);
+  display: grid; place-items: center; pointer-events: none;
+  animation: checkPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cross svg { width: 28px; height: 28px; }
+
+/* verbatim from styles.css:266 — the global kill switch covers .cross by itself */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+/* the same switch, forced by the checkbox in section 5 */
+.rm, .rm * { animation: none !important; transition: none !important; }
+
+/* ---------- mockup chrome ---------- */
+.mk { max-width: 1440px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.mk code { font-size: 14px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(390px, 390px)); gap: 24px; margin-top: 14px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; min-height: 44px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+/* a stage: the app's --bg at phone width (390 = 358 of content + 2×16 padding), room above for the badge */
+.st { width: 390px; padding: 40px 16px 32px; border-radius: 24px; background: var(--bg); border: 2px dashed var(--line); }
+.st .gw { position: relative; height: 230px; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 12px; }
+.tool { padding: 10px 18px; border-radius: 14px; background: var(--grape); color: #fff; font-weight: 900; }
+.tools label { font-weight: 800; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+</style>
+</head>
+<body>
+<div class="mk">
+
+<h1>Красный крестик на карточке неверного ответа</h1>
+<p class="lead">Как сейчас: в уроке нажатый вариант всплывает крупной карточкой поверх вариантов (компонент Reveal, <code>frontend/src/screens/Lesson.tsx:317-347</code>). Верный ответ получает зелёный кружок с галочкой в правом верхнем углу (<code>.check</code>, <code>frontend/src/styles.css:226-233</code>). Неверный — только красную рамку, розовый фон и тряску (<code>.bad</code>, <code>styles.css:235</code>) и надпись «Почти! Попробуй ещё» внизу. Надпись уходит, её место занимает крестик — зеркальная пара галочки. Рисуется только карточка; экран вокруг не меняется.</p>
+
+<h2>1 · Картинка-слово: неверно и, для сравнения, верно</h2>
+<p class="lead">Режим «Послушай и найди»: ребёнок нажал 🦊 (მელია, лиса) вместо другого зверя. Круг 170px с эмодзи 96px. Крестик — того же размера и в той же точке, что галочка: ребёнок учит одно место, где «ответ» появляется, а цвет и форма значка говорят, какой он.</p>
+<div class="cols">
+  <figure><figcaption>Неверно · светлая<span>.pic.bad + .cross</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic bad"><span class="emoji" role="img" aria-hidden="true">🦊</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Неверно · тёмная<span>.pic.bad + .cross</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic bad"><span class="emoji" role="img" aria-hidden="true">🦊</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Верно · светлая (как сейчас)<span>.pic.ok + .check</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic ok"><span class="emoji" role="img" aria-hidden="true">🦊</span><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l5 5L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Верно · тёмная (как сейчас)<span>.pic.ok + .check</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic ok"><span class="emoji" role="img" aria-hidden="true">🦊</span><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l5 5L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+</div>
+
+<h2>2 · Буква с якорем: неверно</h2>
+<p class="lead">Карточка <code>.pic.anc</code>: большая буква ჭ и под ней строка якоря 🐜 <b>ჭ</b>იანჭველა — самый длинный якорь в <code>content/topics/letters-4.yaml</code>, поэтому карточка здесь самая широкая из буквенных. Крестик стоит на скруглённом углу 26px, как галочка; буква и якорь центрированы и до угла не достают.</p>
+<div class="cols">
+  <figure><figcaption>Неверно · светлая<span>.pic.anc.bad + .cross, якорь ჭიანჭველა</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic anc bad"><span class="glyph l ka">ჭ</span><div class="anchor"><span class="emoji" role="img" aria-hidden="true">🐜</span><span class="ka"><b>ჭ</b>იანჭველა</span></div><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Неверно · тёмная<span>.pic.anc.bad + .cross, якорь ჭიანჭველა</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic anc bad"><span class="glyph l ka">ჭ</span><div class="anchor"><span class="emoji" role="img" aria-hidden="true">🐜</span><span class="ka"><b>ჭ</b>იანჭველა</span></div><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+</div>
+
+<h2>3 · Текстовая карточка «Как это по-грузински?»: неверно</h2>
+<p class="lead">Режим «Вспомни слово»: ребёнок выбрал დათვი (медведь) из вариантов. Карточка <code>.pic.txt</code> — прямоугольник во всю ширину контента (358px, не больше 360), высота 170px, слово <code>.glyph.w</code> по центру. Крестик сидит на углу, слово — в середине: между ними по вертикали остаётся около 40px.</p>
+<div class="cols">
+  <figure><figcaption>Неверно · светлая<span>.pic.txt.bad + .cross, --len: 5</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic txt bad" style="--len: 5"><span class="glyph w ka">დათვი</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Неверно · тёмная<span>.pic.txt.bad + .cross, --len: 5</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic txt bad" style="--len: 5"><span class="glyph w ka">დათვი</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+</div>
+
+<h2>4 · Длинное слово ჭიანჭველა: неверно</h2>
+<p class="lead">Проверка на наезд: слово из 9 букв ужимается по <code>--len</code> и занимает почти всю ширину карточки, но остаётся на средней линии высоты. Крестик выступает за угол на 16px и заходит внутрь на 40px — в пустой верхний правый угол, выше строки слова.</p>
+<div class="cols">
+  <figure><figcaption>Неверно · светлая<span>.pic.txt.bad + .cross, --len: 9</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic txt bad" style="--len: 9"><span class="glyph w ka">ჭიანჭველა</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Неверно · тёмная<span>.pic.txt.bad + .cross, --len: 9</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic txt bad" style="--len: 9"><span class="glyph w ka">ჭიანჭველა</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+</div>
+
+<h2>5 · Анимация появления</h2>
+<p class="lead">Карточка трясётся (<code>shake</code> 0.35s), крестик в это время выпрыгивает <code>checkPop</code> 260ms — той же пружиной, что галочка, и трясётся вместе с карточкой, потому что лежит внутри неё. При <code>prefers-reduced-motion</code> обе анимации глушатся общим правилом из <code>styles.css:266</code>; крестик тогда просто стоит на месте, потому что конечный кадр <code>checkPop</code> — обычный масштаб 1.</p>
+<div class="tools">
+  <button type="button" class="tool" id="replay">Проиграть ещё раз</button>
+  <label><input type="checkbox" id="rm"> как при prefers-reduced-motion</label>
+</div>
+<div class="cols" id="anim">
+  <figure><figcaption>Светлая<span>картинка-слово</span></figcaption>
+    <div class="st" data-theme="light"><div class="gw"><div class="reveal"><div class="pic bad"><span class="emoji" role="img" aria-hidden="true">🦊</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+  <figure><figcaption>Тёмная<span>текстовая карточка</span></figcaption>
+    <div class="st" data-theme="dark"><div class="gw"><div class="reveal"><div class="pic txt bad" style="--len: 5"><span class="glyph w ka">დათვი</span><span class="cross"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div></div></div></div></figure>
+</div>
+
+<h2>Решения в спорных местах</h2>
+<ul class="lead">
+  <li><b>Зеркало, а не новый значок.</b> Размер 56px, точка −16/−16, белая обводка 4px цвета <code>--surface</code>, псевдо-3D тень 4px и пружина <code>checkPop</code> — всё как у <code>.check</code>, меняются только цвет (<code>--pom</code> / <code>--pom-dark</code>) и рисунок. Новых токенов нет. В коде это может быть один класс-значок с модификатором цвета, но это решение для кода, не для макета.</li>
+  <li><b>Крестик меньше галочки на глаз.</b> Галочка занимает в сетке 24 примерно 14×11 единиц, крестик — 10×10 (<code>M7 7l10 10M17 7L7 17</code>). Крестик из двух диагоналей при том же размахе смотрится крупнее и «громче»; ошибка не должна кричать громче успеха.</li>
+  <li><b>Что уступает при нехватке места.</b> Значок не двигается и не уменьшается никогда: его место — угол карточки, снаружи на 16px. Уступает слово: на текстовой карточке оно ужимается по <code>--len</code> до ширины карточки, как сейчас, и остаётся на средней линии, а угол со значком остаётся пустым. Буквенная карточка растёт в ширину до 100% контента, и значок едет вместе с углом.</li>
+  <li><b>Тень карточки не тронута.</b> У <code>.ok</code> своя плотная тень <code>0 5px 0 var(--mint)</code>, у <code>.bad</code> её нет — карточка остаётся с размытой тенью <code>.reveal .pic</code>. Макет повторяет код как есть: задача — значок, а не карточка.</li>
+</ul>
+
+<h2>Чего нет на макете</h2>
+<ul class="lead">
+  <li><b>Звука.</b> Звук неверного ответа генерируется в коде, на макете его не показать.</li>
+  <li><b>Надписи «Почти! Попробуй ещё».</b> По задаче она уходит; её место под вариантами макет не рисует.</li>
+  <li><b>Экрана вокруг.</b> Вариантов ответа, шапки урока, кнопки «Послушать» — нет по просьбе: только карточка на фоне <code>--bg</code> шириной телефона.</li>
+  <li><b>Цветного пятна (<code>.blob</code>) и картинки-файла.</b> Круг ведёт себя одинаково для любого содержимого, значок от него не зависит.</li>
+</ul>
+
+</div>
+<script>
+document.getElementById('replay').addEventListener('click', () => {
+  document.querySelectorAll('#anim .pic, #anim .cross').forEach((el) => {
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+  });
+});
+document.getElementById('rm').addEventListener('change', (e) => {
+  document.getElementById('anim').classList.toggle('rm', e.target.checked);
+});
+</script>
+</body>
+</html>
