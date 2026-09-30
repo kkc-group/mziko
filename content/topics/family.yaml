@@ -4,16 +4,6 @@ title_ka: ოჯახი
 icon: "👨‍👩‍👧"
 order: 100
 words:
-  - slug: mom
-    ka: დედა
-    tr: деда
-    ru: мама
-    image: {kind: emoji, value: "👩"}
-  - slug: dad
-    ka: მამა
-    tr: мама
-    ru: папа
-    image: {kind: emoji, value: "👨"}
   - slug: grandma
     ka: ბებია
     tr: бебиа
@@ -24,26 +14,11 @@ words:
     tr: бабуа
     ru: дедушка
     image: {kind: emoji, value: "👴"}
-  - slug: brother
-    ka: ძმა
-    tr: дзма
-    ru: брат
-    image: {kind: text, value: ძმა}  # TODO picture
-  - slug: sister
-    ka: და
-    tr: да
-    ru: сестра
-    image: {kind: text, value: და}  # TODO picture
   - slug: baby
     ka: ბავშვი
     tr: бавшви
     ru: ребёнок
     image: {kind: emoji, value: "👶"}
-  - slug: family
-    ka: ოჯახი
-    tr: оджахи
-    ru: семья
-    image: {kind: emoji, value: "👨‍👩‍👧"}
   - slug: friend
     ka: მეგობარი
     tr: мегобари
