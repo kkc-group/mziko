@@ -34,6 +34,10 @@ BASE_URL = f"https://raw.githubusercontent.com/jdecked/twemoji/v{TWEMOJI_VERSION
 ZWJ = "‍"
 VS16 = "️"
 
+# Emoji hardcoded in the frontend UI (tabs, section icons, Тренировка row, ReplaySheet menu)
+# rather than read from content/topics/*.yaml — collect_emoji() would otherwise miss them.
+INTERFACE_EMOJI = {"☀️", "🧭", "🗺️", "🔤", "🧩", "💬", "🔁", "🎯", "🔄"}
+
 
 def file_stem(emoji: str) -> str:
     """Twemoji file name for an emoji: hex codepoints joined by '-'.
@@ -48,7 +52,7 @@ def file_stem(emoji: str) -> str:
 
 
 def collect_emoji() -> set[str]:
-    found: set[str] = set()
+    found: set[str] = set(INTERFACE_EMOJI)
     for topic_file in sorted(TOPICS_DIR.glob("*.yaml")):
         topic = yaml.safe_load(topic_file.read_text(encoding="utf-8"))
         if topic.get("icon"):
