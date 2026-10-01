@@ -29,7 +29,7 @@ from app.api import ParentApi  # noqa: E402
 from app.cabinet import IDLE_DAYS, build_sections  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.telegram import signature, telegram_user_id  # noqa: E402
+from app.telegram import signature, telegram_photo_url, telegram_user_id  # noqa: E402
 
 get_settings.cache_clear()
 
@@ -39,13 +39,19 @@ TODAY = date(2026, 9, 29)
 
 
 def init_data(
-    user_id: int = PARENT_TG, issued: datetime | None = None, token: str = BOT_TOKEN
+    user_id: int = PARENT_TG,
+    issued: datetime | None = None,
+    token: str = BOT_TOKEN,
+    photo_url: str | None = None,
 ) -> str:
     """What Telegram would hand the Mini App for this user, signed with the bot's token."""
     issued = issued or datetime.now(UTC)
+    user: dict[str, Any] = {"id": user_id, "first_name": "Нино", "language_code": "ru"}
+    if photo_url is not None:
+        user["photo_url"] = photo_url
     fields = {
         "query_id": "AAHdF6IQAAAAAN0XohDhrOrc",
-        "user": json.dumps({"id": user_id, "first_name": "Нино", "language_code": "ru"}),
+        "user": json.dumps(user),
         "auth_date": str(int(issued.timestamp())),
     }
     fields["hash"] = signature(fields, token)
@@ -112,6 +118,7 @@ def fake_api(
     topics: list[dict[str, Any]] = TOPICS,
     *,
     known: bool = True,
+    photos: list[str] | None = None,
 ) -> ParentApi:
     """An API that answers only with the shared token, only for the known parent."""
 
@@ -120,6 +127,11 @@ def fake_api(
             return httpx.Response(401, json={"detail": "bot token required"})
         if not known or request.headers.get("X-Telegram-Id") != str(PARENT_TG):
             return httpx.Response(403, json={"detail": "unknown parent"})
+        if request.url.path == "/api/parent/me/photo":
+            if photos is None:
+                return httpx.Response(500, json={"detail": "boom"})
+            photos.append(json.loads(request.content)["photo_url"])
+            return httpx.Response(204)
         if request.url.path == "/api/parent/children":
             return httpx.Response(200, json=children or [])
         assert request.url.path == "/api/parent/children/10/progress"
@@ -190,6 +202,29 @@ async def test_signed_parent_gets_a_session_and_their_children(client: AsyncClie
     assert "Сандро" in r.text and "Мариам" in r.text
     assert 'href="/cabinet/?child=11"' in r.text
     assert "Неделя · скоро" in r.text
+
+
+async def test_entry_reports_the_profile_photo_and_survives_a_failure(client: AsyncClient) -> None:
+    url = "https://t.me/i/userpic/320/abc.svg"
+    assert telegram_photo_url(init_data(photo_url=url)) == url
+    assert telegram_photo_url(init_data()) is None and telegram_photo_url("user=nope") is None
+
+    photos: list[str] = []
+    client.app.state.parent_api = fake_api(photos=photos)  # type: ignore[attr-defined]
+    r = await client.post("/cabinet/session", data={"init_data": init_data(photo_url=url)})
+    assert r.status_code == 303
+    # No photo in Telegram's data (hidden or absent) reports nothing: the saved link stays.
+    await enter(client)
+    # A refused entry reports nothing either.
+    bad = init_data(token="other", photo_url=url)
+    await client.post("/cabinet/session", data={"init_data": bad})
+    assert photos == [url]
+    # The default fake API fails the photo call (500): the entry still goes through,
+    # and the cabinet itself never shows the photo.
+    client.app.state.parent_api = fake_api()  # type: ignore[attr-defined]
+    r = await client.post("/cabinet/session", data={"init_data": init_data(photo_url=url)})
+    assert r.status_code == 303
+    assert url not in (await client.get("/cabinet/")).text
 
 
 async def test_stale_cookie_asks_telegram_again(client: AsyncClient) -> None:

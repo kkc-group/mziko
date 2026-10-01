@@ -22,6 +22,7 @@ class ParentRow(BaseModel):
     id: int
     telegram_id: int
     name: str | None
+    photo_url: str | None
     created_at: datetime
     # The most recent lesson among the children; None = nobody has played yet.
     last_study_date: date | None
@@ -75,5 +76,6 @@ class ParentCard(BaseModel):
     id: int
     telegram_id: int
     name: str | None
+    photo_url: str | None
     created_at: datetime
     children: list[ChildCard]

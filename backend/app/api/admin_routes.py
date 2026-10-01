@@ -39,6 +39,7 @@ def parent_row(p: ParentOverview) -> ParentRow:
         id=p.parent.id,
         telegram_id=p.parent.telegram_id,
         name=p.parent.name,
+        photo_url=p.parent.photo_url,
         created_at=p.parent.created_at,
         last_study_date=p.last_study_date,
         children=[child_summary(c) for c in p.children],
@@ -99,6 +100,7 @@ async def parent(parent_id: int, db: Db, now: Now, _: AdminService) -> ParentCar
         id=card.parent.id,
         telegram_id=card.parent.telegram_id,
         name=card.parent.name,
+        photo_url=card.parent.photo_url,
         created_at=card.parent.created_at,
         children=[child_card(c) for c in card.children],
     )

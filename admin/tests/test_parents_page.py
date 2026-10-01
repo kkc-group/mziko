@@ -57,6 +57,7 @@ async def test_parent_without_a_name_or_children() -> None:
             "id": 1,
             "telegram_id": 5902117648,
             "name": None,
+            "photo_url": None,
             "created_at": "2026-08-02T09:00:00",
             "last_study_date": None,
             "children": [],
@@ -69,6 +70,7 @@ async def test_parent_without_a_name_or_children() -> None:
     assert "— без имени" in r.text
     assert "5902117648" in r.text
     assert "детей нет" in r.text
+    assert '<span class="av"></span>' in r.text
 
 
 async def test_parent_with_two_children_and_a_cap() -> None:
@@ -77,6 +79,7 @@ async def test_parent_with_two_children_and_a_cap() -> None:
             "id": 2,
             "telegram_id": 318552904,
             "name": "Нино Беридзе",
+            "photo_url": "https://t.me/i/userpic/320/nino.svg",
             "created_at": "2026-08-12T09:00:00",
             "last_study_date": "2026-09-27",
             "children": [
@@ -124,6 +127,7 @@ async def test_parent_with_two_children_and_a_cap() -> None:
     await client.aclose()
     assert r.status_code == 200
     assert "Нино Беридзе" in r.text
+    assert '<span class="av"><img src="https://t.me/i/userpic/320/nino.svg"' in r.text
     assert "Сандро" in r.text and "Мариам" in r.text
     assert "потолок" in r.text
     assert "30,0 ₾" in r.text

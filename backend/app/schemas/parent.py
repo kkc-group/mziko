@@ -77,6 +77,22 @@ class PayOut(BaseModel):
     report: WeekReportOut
 
 
+PHOTO_URL_MAX = 500  # parents.photo_url is String(500)
+
+
+class ParentPhoto(BaseModel):
+    """The `photo_url` Telegram signs in a Mini App's `initData`."""
+
+    photo_url: str = Field(max_length=PHOTO_URL_MAX)
+
+    @field_validator("photo_url")
+    @classmethod
+    def https_only(cls, value: str) -> str:
+        if not value.startswith("https://"):
+            raise ValueError("photo_url must be an https link")
+        return value
+
+
 class ChildCreate(BaseModel):
     name: str = Field(max_length=NAME_MAX)
 

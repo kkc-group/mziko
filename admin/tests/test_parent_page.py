@@ -179,6 +179,7 @@ async def test_parent_with_two_children() -> None:
         "id": 2,
         "telegram_id": 318552904,
         "name": "Нино Церетели",
+        "photo_url": "https://t.me/i/userpic/320/nino.svg",
         "created_at": "2026-08-12T09:00:00",
         "children": [CHILD_A, CHILD_B],
     }
@@ -187,6 +188,7 @@ async def test_parent_with_two_children() -> None:
     await client.aclose()
     assert r.status_code == 200
     assert "Нино Церетели" in r.text
+    assert '<span class="av"><img src="https://t.me/i/userpic/320/nino.svg"' in r.text
     assert "PUMA-7205" in r.text
 
     assert "пройдена" in r.text  # Буквы 1: learned == total
@@ -212,6 +214,7 @@ async def test_parent_without_children() -> None:
         "id": 3,
         "telegram_id": 719045213,
         "name": "Заур Немсадзе",
+        "photo_url": None,
         "created_at": "2026-09-25T09:00:00",
         "children": [],
     }
@@ -220,6 +223,7 @@ async def test_parent_without_children() -> None:
     await client.aclose()
     assert r.status_code == 200
     assert "Детей пока нет" in r.text
+    assert '<span class="av"></span>' in r.text
     assert "/addchild" in r.text
 
 

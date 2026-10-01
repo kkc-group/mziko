@@ -397,3 +397,33 @@ async def test_me_and_register_drive_the_wizard(
         "/api/parent/children", json={"name": "y" * 101}, headers=bot_headers(parent)
     )
     assert too_long.status_code == 422
+
+
+async def test_photo_is_saved_and_replaced_but_never_cleared(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child
+) -> None:
+    headers = bot_headers(parent)
+    url = "https://t.me/i/userpic/320/abc.svg"
+    # Only a registered parent has a photo to keep.
+    stranger = bot_headers(900_000 + child.id)
+    refused = await client.put("/api/parent/me/photo", json={"photo_url": url}, headers=stranger)
+    assert refused.status_code == 403
+
+    for bad in ("http://t.me/a.jpg", "javascript:alert(1)", "https://t.me/" + "x" * 500):
+        r = await client.put("/api/parent/me/photo", json={"photo_url": bad}, headers=headers)
+        assert r.status_code == 422, bad
+
+    saved = await client.put("/api/parent/me/photo", json={"photo_url": url}, headers=headers)
+    assert saved.status_code == 204, saved.text
+    await db.refresh(parent)
+    assert parent.photo_url == url
+
+    newer = url.replace("abc", "def")
+    await client.put("/api/parent/me/photo", json={"photo_url": newer}, headers=headers)
+    await db.refresh(parent)
+    assert parent.photo_url == newer
+
+    cleared = await client.put("/api/parent/me/photo", json={"photo_url": None}, headers=headers)
+    assert cleared.status_code == 422
+    await db.refresh(parent)
+    assert parent.photo_url == newer
