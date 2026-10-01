@@ -44,3 +44,16 @@ def telegram_user_id(
     if now - issued > max_age:
         return None
     return user_id
+
+
+def telegram_photo_url(init_data: str) -> str | None:
+    """The user's profile photo link from `initData`; None when Telegram sent none.
+
+    Reads without checking the signature: call it only for data that
+    `telegram_user_id` has already accepted.
+    """
+    try:
+        photo_url = json.loads(dict(parse_qsl(init_data))["user"]).get("photo_url")
+    except (KeyError, ValueError, AttributeError):
+        return None
+    return photo_url if isinstance(photo_url, str) and photo_url else None

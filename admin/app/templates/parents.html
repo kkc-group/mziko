@@ -55,6 +55,7 @@
             data-week="{{ ns.week_total }}"
             data-reg="{{ row.created_at }}">
           <td class="c-p">
+            <span class="av">{% if row.photo_url %}<img src="{{ row.photo_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}</span>
             {% if row.name %}<div class="pn">{{ row.name }}</div>{% else %}<div class="pn none">— без имени</div>{% endif %}
             <div class="tg">{{ row.telegram_id }}</div>
           </td>

@@ -21,7 +21,7 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 from app.api import ApiError, ParentApi
 from app.config import ADMIN_DIR, get_settings
 from app.format import _plural, today_tbilisi, words_count
-from app.telegram import telegram_user_id
+from app.telegram import telegram_photo_url, telegram_user_id
 
 COOKIE = "mziko_cabinet"
 COOKIE_MAX_AGE = timedelta(days=30)
@@ -198,7 +198,7 @@ def entry(request: Request, state: str, status_code: int = 200) -> HTMLResponse:
 
 
 @router.post("/session")
-async def session(request: Request) -> Response:
+async def session(request: Request, api: Api) -> Response:
     # A plain urlencoded form with one field; parsed by hand to keep multipart support out.
     form = dict(parse_qsl((await request.body()).decode(errors="replace")))
     init_data = form.get("init_data", "")
@@ -207,6 +207,14 @@ async def session(request: Request) -> Response:
     )
     if telegram_id is None:
         return entry(request, "denied", status.HTTP_401_UNAUTHORIZED)
+    # The photo is for the back office only; failing to save it must not block the entry.
+    # No photo in Telegram's data keeps the saved one: a link is replaced, never cleared.
+    photo_url = telegram_photo_url(init_data)
+    if photo_url is not None:
+        try:
+            await api.set_photo(telegram_id, photo_url)
+        except ApiError:
+            pass
     # `in=1` tells the entry page not to try again if the cookie did not stick.
     response = RedirectResponse("/cabinet/?in=1", status.HTTP_303_SEE_OTHER)
     set_session(response, telegram_id)

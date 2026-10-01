@@ -68,7 +68,7 @@ def make_parent_client(api_url: str, bot_api_token: str) -> httpx.AsyncClient:
 
 
 class ParentApi:
-    """Reads on behalf of one parent per call; 403 means the API knows no such parent."""
+    """Calls on behalf of one parent each; 403 means the API knows no such parent."""
 
     def __init__(self, client: httpx.AsyncClient) -> None:
         self._client = client
@@ -78,6 +78,19 @@ class ParentApi:
             self._client, "/children", {"X-Telegram-Id": str(telegram_id)}
         )
         return rows
+
+    async def set_photo(self, telegram_id: int, photo_url: str) -> None:
+        """The cabinet's only write: the profile photo Telegram showed on entry."""
+        try:
+            response = await self._client.put(
+                "/me/photo",
+                json={"photo_url": photo_url},
+                headers={"X-Telegram-Id": str(telegram_id)},
+            )
+        except httpx.HTTPError as exc:
+            raise ApiError(0, str(exc)) from exc
+        if response.is_error:
+            raise ApiError(response.status_code, response.text)
 
     async def progress(self, telegram_id: int, child_id: int) -> dict[str, Any]:
         data: dict[str, Any] = await _get(

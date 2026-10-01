@@ -21,6 +21,8 @@ class Parent(Base):
     id: Mapped[IntPK]
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
     name: Mapped[str | None] = mapped_column(String(100))
+    # The Telegram profile photo, as the cabinet last saw one; None = never seen.
+    photo_url: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[CreatedAt]
 
     children: Mapped[list["Child"]] = relationship(

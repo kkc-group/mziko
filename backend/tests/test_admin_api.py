@@ -40,7 +40,7 @@ async def test_parents_overview_summarises_every_child(
     assert set(rows) >= {parent.telegram_id, childless.telegram_id}
 
     empty = rows[childless.telegram_id]
-    assert empty["name"] is None
+    assert empty["name"] is None and empty["photo_url"] is None
     assert empty["children"] == [] and empty["last_study_date"] is None
 
     row = rows[parent.telegram_id]

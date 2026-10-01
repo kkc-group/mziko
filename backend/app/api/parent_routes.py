@@ -15,6 +15,7 @@ from app.schemas.parent import (
     DeviceOut,
     DueReportOut,
     ParentOut,
+    ParentPhoto,
     ParentRegister,
     PayOut,
     ProgressOut,
@@ -186,6 +187,12 @@ async def me(db: Db, telegram_id: TelegramId) -> ParentOut:
 async def register(body: ParentRegister, db: Db, telegram_id: TelegramId) -> ParentOut:
     """Step one of the wizard: create the parent with a name, or rename them."""
     return await parent_out(db, await parents.register(db, telegram_id, body.name))
+
+
+@router.put("/me/photo", status_code=status.HTTP_204_NO_CONTENT)
+async def set_photo(body: ParentPhoto, db: Db, parent: CurrentParent) -> None:
+    """The cabinet reports the Telegram profile photo each time a parent opens it."""
+    await parents.set_photo(db, parent, body.photo_url)
 
 
 @router.get("/children", response_model=list[ChildInfo])

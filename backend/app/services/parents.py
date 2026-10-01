@@ -39,6 +39,12 @@ async def register(db: AsyncSession, telegram_id: int, name: str) -> Parent:
     return parent
 
 
+async def set_photo(db: AsyncSession, parent: Parent, photo_url: str) -> None:
+    """Remember the profile photo the cabinet saw on entry; a saved one is only ever replaced."""
+    parent.photo_url = photo_url
+    await db.flush()
+
+
 async def children_of(db: AsyncSession, parent: Parent) -> list[Child]:
     stmt = (
         select(Child)
