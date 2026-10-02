@@ -52,6 +52,8 @@ export interface TopicOut {
   section: 'letters' | 'syllables' | 'words'
   status: 'open' | 'today' | 'locked'
   done: boolean
+  /** Locked by a parent from the cabinet, whatever the progress. */
+  closed: boolean
 }
 
 export interface Me {

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Путь: тема, закрытая родителем</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Noto+Sans+Georgian:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* tokens: verbatim from frontend/src/styles.css; both themes are pinned per phone, not by the OS */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c;
+  --pom: #e23b55; --pom-dark: #b8243d; --pom-soft: #ffe3e8;
+  --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee;
+  --hill1: #a4db86; --hill2: #72c36b;
+  --blob-edge: rgba(42, 26, 72, 0.14);
+  --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --hill1: #27523a; --hill2: #1c4030;
+  --blob-edge: rgba(255, 255, 255, 0.22); --word-color: var(--sun);
+}
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --blob-edge: rgba(42, 26, 72, 0.14); --word-color: var(--grape);
+}
+
+/* gallery chrome */
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 17px; line-height: 1.45; color: #2a1a48; background: #f4f4f7; }
+.mk { max-width: 1440px; margin: 0 auto; padding: 24px; }
+.mk h1 { font-size: 30px; margin: 0 0 6px; }
+.mk h2 { font-size: 22px; margin: 44px 0 4px; }
+.lead { color: #5a5370; font-size: 15px; max-width: 900px; margin: 4px 0 14px; }
+ul.lead { padding-left: 20px; } ul.lead li { margin-bottom: 8px; }
+.lead code { background: #e6e3ee; border-radius: 4px; padding: 0 4px; font-size: 13px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+figure { margin: 0; }
+figcaption { font-size: 14px; font-weight: 800; margin-bottom: 8px; color: #2a1a48; }
+figcaption span { display: block; font-weight: 500; color: #5a5370; }
+.dev.phone { width: 410px; height: 864px; border: 10px solid #0d0d12; border-radius: 54px; overflow: hidden; position: relative; --safe-top: 47px; --safe-bottom: 34px; background: var(--bg); color: var(--ink); }
+.dev.phone.nr { width: 340px; }
+.fw { width: 328px; height: 691px; }      .fw .phone { transform: scale(0.8); transform-origin: top left; }
+.fw.nr { width: 272px; }
+.ctx { background: var(--line); opacity: .55; border-radius: 16px; min-height: 48px; display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 4px 8px; }
+
+/* app CSS reused as is (frontend/src/styles.css:104-118, 391-409) */
+.scr { position: absolute; inset: 0; padding: calc(var(--safe-top) + 16px) 16px 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.emoji { font-size: var(--s, 64px); line-height: 1; }
+.num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 16px; line-height: 1; }
+.lsn { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 16px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); text-align: left; font: inherit; color: var(--ink); }
+.lsn .ic { flex: none; display: flex; --s: 34px; }
+.lsn .ic .emoji { font-size: 30px; }
+.lsn .t { flex: 1; min-width: 0; font-size: 18px; font-weight: 800; line-height: 1.2; }
+.lsn.lock { background: transparent; border-style: dashed; }
+.lsn.lock .ic { filter: grayscale(1); opacity: 0.35; }
+.lsn.lock .t { color: var(--muted); }
+.lsn .t small { display: block; margin-top: 3px; color: var(--muted); font-size: 14px; font-weight: 800; }
+.icw { position: relative; flex: none; display: flex; }
+.ok-b { position: absolute; right: -8px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--mint); color: #fff; font-size: 13px; font-weight: 900; font-style: normal; line-height: 1; border: 2px solid var(--surface); }
+.lsn.lock .ok-b { border-color: var(--bg); }
+.tmr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; max-width: 92px; color: var(--muted); font-size: 13px; font-weight: 800; line-height: 1.15; text-align: center; }
+.lock-i { flex: none; width: 24px; height: 24px; color: var(--muted); }
+.mini-play { background: var(--pom); color: #fff; border-radius: 14px; padding: 8px 14px; font-weight: 900; font-size: 16px; box-shadow: 0 2px 0 var(--pom-dark); white-space: nowrap; }
+.mini-play .spin { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: 6px; border-radius: 50%; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; }
+.rows { display: flex; flex-direction: column; gap: 10px; }
+.notice { position: absolute; left: 50%; bottom: calc(var(--safe-bottom) + 68px + 14px); transform: translateX(-50%); z-index: 30; background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 16px; font-weight: 800; text-align: center; width: max-content; max-width: 90%; }
+.scrim { position: absolute; inset: 0; background: rgba(42, 26, 72, .45); z-index: 20; }
+.tabsctx { position: absolute; left: 0; right: 0; bottom: 0; height: calc(68px + var(--safe-bottom)); border-radius: 0; display: grid; place-items: start center; padding-top: 22px; }
+.mark { font-size: 12px; font-weight: 800; color: var(--muted); margin: 2px 4px -4px; }
+.mark.new { color: var(--pom-dark); }
+[data-theme='dark'] .mark.new { color: var(--pom); }
+</style>
+</head>
+<body>
+<div class="mk">
+
+<h1>«Путь»: тема, закрытая родителем</h1>
+<p class="lead"><b>Как сейчас.</b> Тема, которую ребёнку нельзя начать, рисуется строкой <code>LockedRow</code> (<code>frontend/src/screens/Lessons.tsx:90-114</code>): пунктирная рамка <code>.lsn.lock</code>, иконка серая и бледная, справа замок и подпись <code>.tmr</code> (<code>styles.css:115-118, 404</code>). Подпись даёт <code>lockedReason</code> (<code>frontend/src/sections.ts:25-30</code>): «после «{предыдущая тема}»», если предыдущая тема раздела не пройдена, иначе «завтра». Строка не кнопка (<code>div aria-disabled</code>), нажатие на неё ничего не делает. Меняется только эта строка и только текст подписи; шапка, подсказка маскота, заголовок раздела, соседние темы, холмы и вкладки остаются блоками «как сейчас». Экран не новый.</p>
+
+<h2>1 · Три замка рядом</h2>
+<p class="lead">Первые два рисуются кодом как есть; третий отличается только текстом подписи «закрыли родители». Рамка, иконка, замок, размер и цвет те же: ребёнку не нужно знать, чей это замок, ему нужно знать, что сейчас нельзя, и что дело не в нём.</p>
+<div class="cols" id="s1"></div>
+
+<h2>2 · Закрыта родителем: не начата · начата · пройдена</h2>
+<p class="lead">Замок один и тот же. У начатой темы пропадает всё, что говорило о пути (в строке-замке нет «показано 5 из 16» и нет кнопки), остаётся счёт «2 урока · 16 слов»: так LockedRow рисует любую тему. У пройденной остаётся зелёная отметка ✓ на иконке (<code>IconWithCheck</code> зависит от <code>topic.done</code>, а не от замка), строка при этом пунктирная, а «Повторить» исчезает.</p>
+<div class="cols" id="s2"></div>
+
+<h2>3 · Длинные названия и узкий экран 320px</h2>
+<p class="lead">«Домашние животные» и «Природа и погода» с новой подписью, у обоих два урока. На 410px всё помещается в две строки. На 320px подпись занимает свои 92px (в две строки текста под замком), а название и счёт делят оставшиеся ~100px и переносятся: строка вырастает по высоте. Подпись не обрезается и не сжимается, уступает текст темы.</p>
+<div class="cols" id="s3"></div>
+
+<h2>4 · Нажатие</h2>
+<p class="lead">Нажатие на строку-замок ничего не делает: это <code>div</code> без обработчика, тоста нет. Тост «Этот урок пока недоступен» (<code>.notice</code>, <code>App.tsx:123</code>, ответ сервера 409) появится только тогда, когда список на экране устарел: родитель закрыл тему, пока «Путь» был открыт, строка ещё «Играть», ребёнок нажал, сервер отказал. Список после этого сам не обновляется (в ветке 409 нет <code>loadMe</code>), строка остаётся «Играть», пока экран не откроют заново. Показано как есть, ничего нового.</p>
+<div class="cols" id="s4"></div>
+
+<h2>Решения в спорных местах</h2>
+<ul class="lead">
+  <li><b>Что уступает при нехватке места.</b> Название темы и счёт переносятся на вторую строку, строка растёт вниз. Подпись замка остаётся целой в тех же 92px (<code>max-width</code> у <code>.tmr</code>), замок над ней. Три слова в подписи в 92px дают две строки текста, итого замок + две строки: выше, чем у «завтра», но не выше самой строки с двухстрочным названием.</li>
+  <li><b>Подпись «закрыли родители» (на макете).</b> За: прямо говорит, что решили взрослые, и снимает вину с ребёнка; «родители» знакомо любому читающему ребёнку. Против: самая длинная из трёх (16 знаков, две строки под замком), и говорит «родители» даже тогда, когда тему закрыла бабушка или педагог.</li>
+  <li><b>Вариант «пока закрыта» (не нарисован).</b> За: короче всех, и «пока» оставляет надежду. Против: не говорит, кто закрыл, а ребёнок на «пока» из «завтра»-замка уже научился ждать до утра, и может прождать зря.</li>
+  <li><b>Вариант «спроси у взрослых» (не нарисован).</b> За: даёт ребёнку действие, а не только запрет. Против: три слова, на 320px это 3 строки; и приглашает просить, хотя родитель мог закрыть тему решением, которое не обсуждается.</li>
+  <li><b>Замок один, цвета нет.</b> Родительский замок не красный и не отдельной формы: красное в продукте означает ошибку, а тут ничего не сломано. Различает только подпись, как и у двух существующих.</li>
+  <li><b>Пройденная закрытая тема сохраняет ✓.</b> Это уже поведение кода, а не новое решение. Если нужна «чистая» иконка под замком, это правка <code>LockedRow</code>, и она отдельная.</li>
+</ul>
+
+<h2>Чего нет на макете</h2>
+<ul class="lead">
+  <li>Положений «По порядку» и «Открыта»: у ребёнка тема выглядит как обычная, рисовать нечего.</li>
+  <li>Крупной карточки темы дня (<code>.cur</code>): закрытая тема из неё превращается в строку-замок, строка «было» рядом не нарисована, прогресс из неё показывается только словами в подписи к состоянию 2.</li>
+  <li>Состояния загрузки и оффлайна у строки: у неё нет ни того, ни другого, замок статичен. Занятая кнопка и «Нет связи» принадлежат строке «Играть», которой эта задача не касается.</li>
+  <li>Экрана «Сегодня», вкладок, холмов, шапки, подсказки маскота и соседних тем.</li>
+</ul>
+</div>
+
+<script>
+const LOCK = '<svg class="lock-i" viewBox="0 0 24 24" aria-label="закрыто"><rect x="4" y="10" width="16" height="11" rx="3" fill="currentColor"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>';
+const T = {
+  nature:  { icon: '🌦️', title: 'Природа и погода', meta: '2 урока · 15 слов' },
+  school:  { icon: '🎒', title: 'Школа', meta: '2 урока · 11 слов' },
+  dom:     { icon: '🐄', title: 'Домашние животные', meta: '2 урока · 16 слов' },
+};
+const CLOSED = 'закрыли родители';
+const ic = (t, done) => `<span class="icw"><span class="ic"><span class="emoji" role="img" aria-hidden="true">${t.icon}</span></span>${done ? '<i class="ok-b">✓</i>' : ''}</span>`;
+const lock = (t, label, done) => `<div class="lsn lock" aria-disabled="true">${ic(t, done)}<span class="t">${t.title}<small>${t.meta}</small></span><span class="tmr">${LOCK}${label}</span></div>`;
+const open = (t) => `<button type="button" class="lsn" style="cursor:default">${ic(t, false)}<span class="t">${t.title}<small>${t.meta}</small></span><span class="mini-play">Играть</span></button>`;
+const mark = (s, n) => `<div class="mark${n ? ' new' : ''}">${s}</div>`;
+
+const head = '<div class="ctx" style="min-height:72px">шапка «Путь» — как сейчас</div><div class="ctx" style="min-height:64px">подсказка маскота — как сейчас</div><div class="ctx" style="min-height:44px">заголовок раздела «Слова» — как сейчас</div>';
+const tail = '<div class="ctx" style="min-height:48px">соседние темы — как сейчас</div>';
+const tabs = '<div class="ctx tabsctx">холмы и вкладки — как сейчас</div>';
+
+function phone(theme, body, nr, extra) {
+  return `<div class="fw${nr ? ' nr' : ''}"><div class="dev phone${nr ? ' nr' : ''}" data-theme="${theme}"><div class="scr">${head}<div class="rows">${body}</div>${tail}</div>${extra || ''}${tabs}</div></div>`;
+}
+function pair(id, caption, sub, body, nr, extra) {
+  const el = document.getElementById(id);
+  [['light', 'Светлая тема'], ['dark', 'Тёмная тема']].forEach(([th, name]) => {
+    el.insertAdjacentHTML('beforeend', `<figure><figcaption>${name}<span>${caption}${sub ? ' — ' + sub : ''}</span></figcaption>${phone(th, typeof body === 'function' ? body() : body, nr, extra)}</figure>`);
+  });
+}
+
+pair('s1', 'три замка', '«завтра» · «после «Семья»» · новая подпись',
+  mark('как сейчас: раздел уже взял тему сегодня') + lock(T.nature, 'завтра') +
+  mark('как сейчас: предыдущая тема не пройдена') + lock(T.school, 'после «Семья»') +
+  mark('новое: тему закрыл родитель', 1) + lock(T.dom, CLOSED));
+
+pair('s2', 'закрыта родителем', 'не начата · начата (было «Играть», 5 из 16) · пройдена (было «Повторить»)',
+  mark('не начата', 1) + lock(T.dom, CLOSED) +
+  mark('начата: было 5 из 16, в замке не видно', 1) + lock(T.dom, CLOSED) +
+  mark('пройдена целиком: ✓ остаётся', 1) + lock(T.dom, CLOSED, true));
+
+pair('s3', '410px', 'длинные названия',
+  lock(T.dom, CLOSED) + lock(T.nature, CLOSED) + lock(T.nature, CLOSED, true));
+pair('s3', '320px', 'то же, строка растёт вниз',
+  lock(T.dom, CLOSED) + lock(T.nature, CLOSED) + lock(T.nature, CLOSED, true), true);
+
+pair('s4', 'устаревший список', 'тема закрыта, пока экран был открыт: нажали «Играть», сервер ответил 409',
+  mark('строка так и осталась «Играть»') + open(T.dom) + mark('нажатие на настоящий замок: ничего не происходит') + lock(T.nature, CLOSED),
+  false, '<div class="notice">Этот урок пока недоступен</div>');
+</script>
+</body>
+</html>

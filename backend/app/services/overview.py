@@ -45,7 +45,8 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
     progress = await lessons.load_progress(db, child.id)
     today_topics = await lessons.load_today_topics(db, child.id, today)
     first_days = await lessons.load_topic_first_days(db, child.id)
-    position = lessons.position(path, progress, today_topics, first_days, today)
+    access = await lessons.load_topic_access(db, child.id)
+    position = lessons.position(path, progress, today_topics, first_days, today, access)
     today_lesson = position.lesson_of_topic(today_topics[-1]) if today_topics else None
 
     def learned(word: Word) -> bool:
@@ -82,6 +83,7 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
             section=t.section,
             status=t.status,
             done=t.done,
+            closed=t.closed,
         )
         for t in position.topics
     ]

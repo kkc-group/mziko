@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мзико — кабинет родителя: доступ к теме</title>
+<style>
+/* ---------- tokens: verbatim from admin/app/static/cabinet.css ---------- */
+:root {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --grape: #5b2e8c; --pom: #e23b55; --pom-dark: #b8243d; --sun: #ffc531; --sun-dark: #e0a300;
+  --mint: #1fb386; --mint-dark: #13875f; --mint-soft: #ddf7ee; --pom-soft: #ffe3e8;
+  --word-color: var(--grape);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+    --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+  }
+}
+[data-theme='light'] {
+  --bg: #e4f1ff; --surface: #ffffff; --ink: #2a1a48; --muted: #6a5e86; --line: #d3e2f4;
+  --mint-soft: #ddf7ee; --pom-soft: #ffe3e8; --word-color: var(--grape);
+}
+[data-theme='dark'] {
+  --bg: #131634; --surface: #1e2250; --ink: #f3efff; --muted: #aba5d3; --line: #2f3572;
+  --mint-soft: #113d35; --pom-soft: #44182a; --word-color: var(--sun);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px; line-height: 1.4;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
+:is(button, summary):focus-visible { outline: 3px solid var(--grape); outline-offset: 3px; }
+
+/* ---------- existing cabinet pieces, verbatim from cabinet.css ---------- */
+.chip { display: inline-block; padding: 0 8px; border-radius: 8px; font-size: 13px; font-weight: 800; line-height: 20px; font-variant-numeric: tabular-nums; }
+.chip.open { background: var(--line); }
+.tbar { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.tbar i { display: block; height: 100%; border-radius: 5px; background: var(--mint); }
+.tbar.lay { position: relative; }
+.tbar.lay i { position: absolute; left: 0; top: 0; }
+.tbar.lay i.soft { opacity: .4; }
+.cbody { flex: 1; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+.sechd { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px 10px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.sechd b { color: var(--ink); font-weight: 900; font-size: 14px; }
+.topic { border-top: 1px solid var(--line); }
+.trow { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 12px; align-items: center; gap: 10px; min-height: 58px; padding: 10px 16px; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; }
+.trow::-webkit-details-marker { display: none; }
+.trow .ic { font-size: 22px; line-height: 1; text-align: center; }
+.trow .tt, .trow .tbar, .trow .stale { display: block; }
+.trow .tt { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.trow .tbar { margin-top: 7px; height: 6px; }
+.trow .stale { margin-top: 7px; }
+.trow .stale .chip { font-size: 12px; color: var(--muted); }
+.tcnt { font-size: 14px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.tcnt small { display: block; margin-top: 1px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.tcnt.now { color: var(--ink); font-weight: 800; }
+.tcnt.done { color: var(--mint-dark); font-weight: 800; }
+.tcnt.done::before { content: '✓ '; font-weight: 900; }
+[data-theme='dark'] .tcnt.done { color: var(--mint); }
+.chev { color: var(--muted); font-weight: 900; font-size: 18px; line-height: 1; transition: transform .15s; }
+.topic[open] .chev { transform: rotate(90deg); }
+
+/* ---------- NEW: topic access ---------- */
+/* the line of marks under the bar: was one chip, now up to two, so it wraps */
+.trow .stale { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.trow .stale .chip.acc-on { background: var(--mint-soft); color: var(--ink); }
+.trow .stale .chip.acc-off { background: var(--pom-soft); color: var(--ink); }
+/* the switch inside the opened topic, above the word list */
+.acc { margin: 0; padding: 12px 16px 14px; background: var(--bg); border-top: 1px solid var(--line); }
+.acc-h { margin: 0 0 6px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 3px; border-radius: 14px; background: var(--line); }
+.seg button { min-height: 44px; padding: 0 2px; border-radius: 11px; border: 2px solid transparent; font-size: 14px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.seg button:active { background: var(--bg); }
+.seg button.on { background: var(--surface); border-color: var(--word-color); color: var(--ink); }
+.acc-note { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+.acc-err { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--pom-soft); font-size: 13px; font-weight: 700; color: var(--ink); }
+.acc-err b { font-weight: 900; }
+/* in cabinet.css this is @media (max-width: 359px); the mockup phone is not a viewport, so a class */
+.n320 .acc { padding-left: 12px; padding-right: 12px; }
+.n320 .seg { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr); gap: 2px; }
+.n320 .seg button { font-size: 13px; }
+
+/* ---------- context placeholder (not product) ---------- */
+.ctx { background: var(--line); opacity: .55; border-radius: 16px; min-height: 48px; display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; padding: 4px 10px; }
+.ctx.in { border-radius: 0; min-height: 40px; }
+.ctx.words { border-radius: 0; min-height: 72px; }
+.ctx.flat { border-radius: 0; }
+
+/* ---------- mockup chrome (not product) ---------- */
+.mk { max-width: 1320px; margin: 0 auto; padding: 28px 20px 80px; }
+.mk h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+.mk h2 { font-size: 22px; font-weight: 900; margin: 40px 0 4px; padding-top: 18px; border-top: 2px solid var(--line); }
+.mk .lead { color: var(--muted); font-weight: 700; margin: 0 0 8px; max-width: 1100px; }
+.mk ul.lead { padding-left: 20px; }
+.mk ul.lead li { margin-bottom: 6px; }
+.mk ul.lead b { color: var(--ink); }
+.row { display: flex; gap: 36px; flex-wrap: wrap; align-items: flex-start; margin-top: 18px; }
+figure { margin: 0; }
+figcaption { font-weight: 800; font-size: 15px; margin-bottom: 8px; max-width: 410px; }
+figcaption span { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+.phone { position: relative; width: 410px; border: 10px solid #0d0d12; border-radius: 48px; overflow: hidden; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.phone.n320 { width: 340px; }
+.sbar { height: 47px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 7px; background: var(--surface); font-weight: 800; font-size: 15px; }
+.sbar i { font-style: normal; letter-spacing: 2px; font-size: 12px; }
+.home { flex: none; height: 34px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; background: var(--bg); }
+.home i { width: 134px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; }
+</style>
+</head>
+<body>
+<main class="mk">
+  <h1>Кабинет родителя · Доступ к теме</h1>
+  <p class="lead">Как сейчас: кабинет только показывает прогресс. Строка темы — <code>&lt;details class="topic"&gt;</code> с <code>&lt;summary class="trow"&gt;</code> (<code>admin/app/templates/cabinet_progress.html:50-65</code>, стили <code>admin/app/static/cabinet.css:89-107</code>); под названием уже бывает одна метка «N дн. без продвижения» (<code>cabinet_progress.html:53</code>), а пройденная тема отмечается зелёным «✓ 16 из 16» справа (<code>cabinet.css:101-102</code>). Нарисована только строка темы и то, что в ней появляется; шапка Telegram, вкладки, сводка, слова темы и соседние темы — серые блоки «как сейчас».</p>
+
+  <h2>1 · Раскрытая тема: три положения переключателя</h2>
+  <p class="lead">Переключатель стоит первым внутри раскрытой темы, над списком слов: это обычная форма с тремя кнопками, нажатие сразу отправляет её, страница перезагружается и тема остаётся раскрытой. Выбранное положение — белая плитка с рамкой цвета активной вкладки. Под переключателем одна строка: что это значит для ребёнка сейчас. У темы, открытой или закрытой вручную, метка видна и в самой строке.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема<span>«Числа» — по порядку, «Домашние животные» — открыта, «Школа» — закрыта</span></figcaption><div id="s1-light"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="s1-dark"></div></figure>
+  </div>
+
+  <h2>2 · «По порядку»: три фактических состояния в пояснении</h2>
+  <p class="lead">Положение одно, а строка под ним говорит, что сейчас у ребёнка: тема уже доступна, ждёт предыдущую тему раздела или ждёт завтрашнего дня (раздел сегодня уже взял новую тему). Метки в строке у «По порядку» нет.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="s2-light"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="s2-dark"></div></figure>
+  </div>
+
+  <h2>3 · Свёрнутые строки: метка ручного доступа</h2>
+  <p class="lead">Метка встаёт в ту же строку меток под полоской прогресса, где уже живёт «N дн. без продвижения», и идёт первой. Сверху три простых случая: обычная, открытая вручную, закрытая вручную. Ниже — худшие: длинное название, пройденная тема с меткой «закрыта вручную», две метки сразу у открытой вручную; у закрытой вручную метка простоя не показывается.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="s3-light"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="s3-dark"></div></figure>
+  </div>
+
+  <h2>4 · Не сохранилось · закрыта при 100% · открыта при нуле</h2>
+  <p class="lead">«Домашние животные»: родитель нажал «Закрыта», сервер занятий не ответил — страница вернулась с сообщением у переключателя, положение осталось прежним, пояснение под ним тоже прежнее. «Природа и погода»: пройдена целиком и закрыта — счёт и полоска не меняются, меняется только доступ. «Школа»: открыта вручную, ни одного слова ещё не было на уроке — полоска пустая, метка есть.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="s4-light"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="s4-dark"></div></figure>
+  </div>
+
+  <h2>5 · Узкий телефон, 320 px</h2>
+  <p class="lead">Худший случай сразу: длинное название, счёт в две строки, раскрытая закрытая тема с ошибкой сохранения. Ниже — свёрнутая строка с двумя метками.</p>
+  <div class="row">
+    <figure><figcaption>Светлая тема</figcaption><div id="s5-light"></div></figure>
+    <figure><figcaption>Тёмная тема</figcaption><div id="s5-dark"></div></figure>
+  </div>
+
+  <h2>Решения в спорных местах</h2>
+  <ul class="lead">
+    <li><b>Что уступает при нехватке места.</b> Три кнопки переключателя всегда в одну строку, подписи целиком и не ниже 44 px — они не уступают ничему. Уступает сначала поле вокруг них (на экране уже 360 px отступ 16 → 12 px, кегль 14 → 13 px, а «По порядку» с самой длинной подписью становится шире двух других), потом пояснение: оно переносится на две-три строки. В свёрнутой строке счёт справа не переносится никогда; название переносится на вторую строку; метки переносятся одна под другую, а на 320 px и сама метка ломается на две строки, как уже ломается «9 дн. без продвижения»; строка от этого становится выше, но ничего не обрезается.</li>
+    <li><b>Метка в строке, а не значок.</b> Словами «открыта вручную» и «закрыта вручную», в ряду с существующей меткой. Замок-значок рядом с названием был бы короче, но у ребёнка замок означает и обычную очередь, а родителю важно отличить именно своё решение от порядка.</li>
+    <li><b>Цвет меток — мягкие плашки той же семантики.</b> «открыта вручную» на <code>--mint-soft</code>, «закрыта вручную» на <code>--pom-soft</code>, текст <code>--ink</code> в обеих темах. Новых цветов нет. Сам переключатель нейтральный: выбранное «Закрыта» не краснеет, это не ошибка.</li>
+    <li><b>Ошибка рядом с переключателем, не карточкой на весь экран.</b> Прогресс при этом загружен и показан; не сохранилось одно нажатие. Сообщение стоит над пояснением и называет, какое положение осталось.</li>
+    <li><b>«После темы «Семья»», а не «после «Семьи»».</b> В контенте у темы одно название в именительном падеже, склонять его нечем; слово «темы» перед кавычками позволяет не склонять.</li>
+    <li><b>У закрытой вручную темы нет метки простоя.</b> «N дн. без продвижения» подсказывает, что ребёнок застрял; у закрытой темы он и не мог продвинуться, поэтому остаётся только «закрыта вручную». Вернули «По порядку» или «Открыта» — метка простоя появляется снова.</li>
+    <li><b>После сохранения страница возвращается к той же теме.</b> Тема остаётся раскрытой, и страница встаёт на неё по якорю, а не наверх: родитель видит результат своего нажатия там же, где нажал.</li>
+    <li><b>Нажатие на уже выбранное положение</b> отправляет ту же форму с тем же значением — ничего не меняется. Отдельного «выключенного» вида у выбранной кнопки нет: серый в продукте значит «нажать нельзя».</li>
+  </ul>
+
+  <h2>Чего нет на макете</h2>
+  <ul class="lead">
+    <li><b>Загрузки.</b> Сохранение — обычная отправка формы и перезагрузка страницы; промежуточного состояния на нашей стороне нет, его показывает сам Telegram.</li>
+    <li><b>Оффлайна телефона.</b> Без связи форма не уходит, и вместо нашей страницы родитель видит экран ошибки Telegram; нарисовать можно только случай, когда кабинет ответил, а сервер занятий нет (раздел 4).</li>
+    <li><b>Экрана ребёнка</b> — подпись под замком закрытой темы рисуется второй волной.</li>
+    <li><b>Слов внутри темы, сводки, вкладок, переключателя детей</b> — не меняются.</li>
+  </ul>
+</main>
+<script>
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const ctx = (text, cls = '') => `<div class="ctx ${cls}">${text}</div>`;
+
+/* ---------- texts ---------- */
+const POS = [['auto', 'По порядку'], ['open', 'Открыта'], ['shut', 'Закрыта']];
+const NOTE = {
+  now: 'Тема идёт по порядку. Сейчас открыта.',
+  after: prev => `Тема идёт по порядку. Откроется после темы «${prev}».`,
+  tomorrow: 'Тема идёт по порядку. Откроется завтра: сегодня в этом разделе уже начата новая тема.',
+  open: 'Ребёнок может начать тему сразу, не дожидаясь очереди и завтрашнего дня.',
+  shut: 'У ребёнка на теме замок, «Повторить» тоже недоступно. Выученные слова и наклейки остаются.',
+};
+const ERR = { auto: 'По порядку', open: 'Открыта', shut: 'Закрыта' };
+const errText = pos => `<b>Не получилось сохранить.</b> Тема осталась «${ERR[pos]}», попробуйте ещё раз.`;
+
+/* ---------- the changed part: one topic row ---------- */
+// t: {icon, title, n, total, work, stale, pos, note, err, open}
+function topic(t) {
+  const pos = t.pos || 'auto';
+  const pct = Math.round((t.n / t.total) * 100);
+  const pctStarted = Math.round(((t.n + (t.work || 0)) / t.total) * 100);
+  const cls = t.n >= t.total ? 'done' : t.n > 0 || t.work ? 'now' : '';
+  const marks = [
+    pos === 'open' ? '<span class="chip acc-on">открыта вручную</span>' : '',
+    pos === 'shut' ? '<span class="chip acc-off">закрыта вручную</span>' : '',
+    t.stale && pos !== 'shut' ? `<span class="chip open">${t.stale} дн. без продвижения</span>` : '',
+  ].join('');
+  const body = !t.open ? '' : `
+    <form class="acc" method="post" onsubmit="return false">
+      <p class="acc-h">Доступ к теме</p>
+      <div class="seg" role="group" aria-label="Доступ к теме">${POS.map(([v, label]) =>
+        `<button type="submit" name="access" value="${v}"${v === pos ? ' class="on"' : ''} aria-pressed="${v === pos}">${label}</button>`).join('')}</div>
+      ${t.err ? `<p class="acc-err" role="alert">${errText(pos)}</p>` : ''}
+      <p class="acc-note">${t.note}</p>
+    </form>
+    ${ctx('слова темы — как сейчас', 'words')}`;
+  return `<details class="topic"${t.open ? ' open' : ''}>
+    <summary class="trow" onclick="return false">
+      <span class="ic" aria-hidden="true">${t.icon}</span>
+      <span><span class="tt">${esc(t.title)}</span><span class="tbar lay"><i class="soft" style="width:${pctStarted}%"></i><i style="width:${pct}%"></i></span>${marks ? `<span class="stale">${marks}</span>` : ''}</span>
+      <span class="tcnt ${cls}">${t.n} из ${t.total}${t.work ? `<small>${t.work} в работе</small>` : ''}</span>
+      <span class="chev" aria-hidden="true">›</span>
+    </summary>${body}
+  </details>`;
+}
+
+let uid = 0;
+const card = (title, topics, { before = true, after = true } = {}) =>
+  `<section class="card"><div class="sechd"><b>${title}</b><span></span></div>
+    ${before ? ctx('соседние темы — как сейчас', 'in') : ''}
+    ${topics.map(t => topic({ ...t, id: ++uid })).join('')}
+    ${after ? ctx('соседние темы — как сейчас', 'in') : ''}
+  </section>`;
+
+function phone(theme, inner, narrow) {
+  return `<div class="phone${narrow ? ' n320' : ''}" data-theme="${theme}">
+    <div class="sbar"><span>9:41</span><i>▂▄▆ ◔ ▭</i></div>
+    ${ctx('шапка Telegram — как сейчас', 'flat')}
+    <div class="cbody">
+      ${ctx('дети и вкладки · сводка — как сейчас')}
+      ${inner}
+    </div>
+    <div class="home"><i></i></div>
+  </div>`;
+}
+
+/* ---------- content from content/topics/*.yaml; progress invented ---------- */
+const T = {
+  letters3: { icon: '📖', title: 'Буквы 3', total: 8 },
+  numbers: { icon: '🔢', title: 'Числа', total: 10 },
+  family: { icon: '👨‍👩‍👧', title: 'Семья', total: 12 },
+  pets: { icon: '🐄', title: 'Домашние животные', total: 16 },
+  school: { icon: '🎒', title: 'Школа', total: 11 },
+  items: { icon: '📚', title: 'Школьные предметы', total: 8 },
+  nature: { icon: '🌦️', title: 'Природа и погода', total: 15 },
+};
+
+/* ---------- states ---------- */
+const s1 = card('Слова', [
+  { ...T.numbers, n: 4, work: 3, open: true, pos: 'auto', note: NOTE.now },
+  { ...T.pets, n: 0, open: true, pos: 'open', note: NOTE.open },
+  { ...T.school, n: 3, work: 2, open: true, pos: 'shut', note: NOTE.shut },
+]);
+
+const s2 = card('Буквы', [
+  { ...T.letters3, n: 5, work: 2, open: true, pos: 'auto', note: NOTE.now },
+]) + card('Слова', [
+  { ...T.family, n: 0, open: true, pos: 'auto', note: NOTE.tomorrow },
+  { ...T.pets, n: 0, open: true, pos: 'auto', note: NOTE.after('Семья') },
+]);
+
+const s3 = card('Слова', [
+  { ...T.family, n: 5, work: 3 },
+  { ...T.school, n: 0, pos: 'open' },
+  { ...T.numbers, n: 4, work: 3, pos: 'shut' },
+], { before: false, after: false }) + card('Слова · худшие случаи', [
+  { ...T.nature, n: 15, pos: 'shut' },
+  { ...T.pets, n: 6, work: 4, stale: 9, pos: 'shut' },
+  { ...T.items, n: 2, work: 5, stale: 9, pos: 'open' },
+  { ...T.pets, n: 6, work: 4, stale: 9 },
+], { before: false, after: false });
+
+const s4 = card('Слова', [
+  { ...T.pets, n: 6, work: 4, open: true, pos: 'auto', err: true, note: NOTE.now },
+  { ...T.nature, n: 15, open: true, pos: 'shut', note: NOTE.shut },
+  { ...T.school, n: 0, open: true, pos: 'open', note: NOTE.open },
+]);
+
+const s5 = card('Слова', [
+  { ...T.pets, n: 6, work: 4, stale: 9, open: true, pos: 'shut', err: true, note: NOTE.shut },
+  { ...T.items, n: 2, work: 5, stale: 9, pos: 'open' },
+  { ...T.family, n: 0, open: true, pos: 'auto', note: NOTE.tomorrow },
+], { before: false });
+
+const put = (id, html) => { document.getElementById(id).innerHTML = html; };
+[['s1', s1], ['s2', s2], ['s3', s3], ['s4', s4], ['s5', s5]].forEach(([id, html]) => {
+  put(`${id}-light`, phone('light', html, id === 's5'));
+  put(`${id}-dark`, phone('dark', html, id === 's5'));
+});
+</script>
+</body>
+</html>

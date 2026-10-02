@@ -80,11 +80,26 @@ class ParentApi:
         return rows
 
     async def set_photo(self, telegram_id: int, photo_url: str) -> None:
-        """The cabinet's only write: the profile photo Telegram showed on entry."""
+        """The profile photo Telegram showed on entry."""
         try:
             response = await self._client.put(
                 "/me/photo",
                 json={"photo_url": photo_url},
+                headers={"X-Telegram-Id": str(telegram_id)},
+            )
+        except httpx.HTTPError as exc:
+            raise ApiError(0, str(exc)) from exc
+        if response.is_error:
+            raise ApiError(response.status_code, response.text)
+
+    async def set_topic_access(
+        self, telegram_id: int, child_id: int, slug: str, access: str
+    ) -> None:
+        """Open or close a topic for the child, or put it back into the usual order ("auto")."""
+        try:
+            response = await self._client.put(
+                f"/children/{child_id}/topics/{slug}/access",
+                json={"access": access},
                 headers={"X-Telegram-Id": str(telegram_id)},
             )
         except httpx.HTTPError as exc:

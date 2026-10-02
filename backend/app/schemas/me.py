@@ -51,6 +51,7 @@ class TopicOut(BaseModel):
     section: Literal["letters", "syllables", "words"]
     status: Literal["open", "today", "locked"]
     done: bool  # every lesson of it is done
+    closed: bool = False  # locked by a parent from the cabinet
 
 
 class StickerOut(BaseModel):

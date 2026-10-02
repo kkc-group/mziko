@@ -121,6 +121,7 @@ export default function App() {
         setScreen({ kind: 'login', code: null })
       } else if (e instanceof ApiError && e.status === 409) {
         setNotice('Этот урок пока недоступен')
+        await loadMe() // the lock came while the list was open (a parent closed the topic): redraw it
       } else {
         setNotice('Нет связи. Проверь интернет и попробуй ещё')
       }
