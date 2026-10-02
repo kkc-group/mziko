@@ -3,16 +3,6 @@ title_ru: Первые слова
 title_ka: პირველი სიტყვები
 icon: "🐶"
 words:
-  - slug: dog
-    ka: ძაღლი
-    tr: дзагли
-    ru: собака
-    image: {kind: emoji, value: "🐶"}
-  - slug: cat
-    ka: კატა
-    tr: ката
-    ru: кошка
-    image: {kind: emoji, value: "🐱"}
   - slug: apple
     ka: ვაშლი
     tr: вашли
@@ -33,11 +23,6 @@ words:
     tr: бурти
     ru: мяч
     image: {kind: emoji, value: "⚽"}
-  - slug: horse
-    ka: ცხენი
-    tr: цхени
-    ru: лошадь
-    image: {kind: emoji, value: "🐴"}
   - slug: fish
     ka: თევზი
     tr: тевзи

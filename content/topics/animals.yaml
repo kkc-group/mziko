@@ -23,26 +23,6 @@ words:
     tr: курдгели
     ru: заяц
     image: {kind: emoji, value: "🐰"}
-  - slug: cow
-    ka: ძროხა
-    tr: дзроха
-    ru: корова
-    image: {kind: emoji, value: "🐄"}
-  - slug: pig
-    ka: ღორი
-    tr: гори
-    ru: свинья
-    image: {kind: emoji, value: "🐷"}
-  - slug: chicken
-    ka: ქათამი
-    tr: катами
-    ru: курица
-    image: {kind: emoji, value: "🐔"}
-  - slug: sheep
-    ka: ცხვარი
-    tr: цхвари
-    ru: овца
-    image: {kind: emoji, value: "🐑"}
   - slug: bird
     ka: ჩიტი
     tr: чити

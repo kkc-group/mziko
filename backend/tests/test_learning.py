@@ -62,7 +62,7 @@ async def test_first_session_introduces_three_topic_words_in_order(
 async def test_a_lesson_being_learned_keeps_to_its_own_words(
     db: AsyncSession, child: Child
 ) -> None:
-    await play_day(db, child, "basics", at(DAY1))  # dog, cat, apple introduced & stage 1
+    await play_day(db, child, "basics", at(DAY1))  # apple, sun, bread introduced & stage 1
 
     session = await build_for_topic(db, child, "colors", at(DAY2), random.Random(2))
     assert session is not None
@@ -74,7 +74,7 @@ async def test_a_lesson_being_learned_keeps_to_its_own_words(
 async def test_replay_brings_older_words_with_their_own_distractors(
     db: AsyncSession, child: Child
 ) -> None:
-    await play_day(db, child, "basics", at(DAY1))  # dog, cat, apple introduced & stage 1
+    await play_day(db, child, "basics", at(DAY1))  # apple, sun, bread introduced & stage 1
     for _ in range(4):  # 3 + 3 + 3 + 1 new words: the whole colors lesson in one day
         await play_day(db, child, "colors", at(DAY2))
 
@@ -83,7 +83,7 @@ async def test_replay_brings_older_words_with_their_own_distractors(
     steps = steps_of(replay)
     assert not any(s.type == "intro" for s in steps)
     review = [s for s in steps if s.word.topic_slug == "basics"]
-    assert {s.word.slug for s in review} == {"dog", "cat", "apple"}
+    assert {s.word.slug for s in review} == {"apple", "sun", "bread"}
     for s in review:
         assert s.type in ("listen", "recall")
         assert all(o.topic_slug == "basics" for o in s.options)
