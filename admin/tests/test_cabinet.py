@@ -204,27 +204,35 @@ async def test_signed_parent_gets_a_session_and_their_children(client: AsyncClie
     assert "Неделя · скоро" in r.text
 
 
-async def test_entry_reports_the_profile_photo_and_survives_a_failure(client: AsyncClient) -> None:
+async def test_every_open_reports_the_profile_photo(client: AsyncClient) -> None:
     url = "https://t.me/i/userpic/320/abc.svg"
     assert telegram_photo_url(init_data(photo_url=url)) == url
     assert telegram_photo_url(init_data()) is None and telegram_photo_url("user=nope") is None
 
     photos: list[str] = []
     client.app.state.parent_api = fake_api(photos=photos)  # type: ignore[attr-defined]
+    # The entry itself reports nothing: a parent with a month-long cookie never passes it.
     r = await client.post("/cabinet/session", data={"init_data": init_data(photo_url=url)})
-    assert r.status_code == 303
+    assert r.status_code == 303 and photos == []
+    # Every page carries the background report, and the cabinet itself never shows the photo.
+    page = (await client.get("/cabinet/")).text
+    assert "fetch('/cabinet/photo'" in page and url not in page
+
+    # The report needs no cookie, only Telegram's signature.
+    client.cookies.clear()
+    r = await client.post("/cabinet/photo", data={"init_data": init_data(photo_url=url)})
+    assert r.status_code == 204 and photos == [url]
     # No photo in Telegram's data (hidden or absent) reports nothing: the saved link stays.
-    await enter(client)
-    # A refused entry reports nothing either.
+    r = await client.post("/cabinet/photo", data={"init_data": init_data()})
+    assert r.status_code == 204
+    # A wrong signature reports nothing either, and is answered the same way.
     bad = init_data(token="other", photo_url=url)
-    await client.post("/cabinet/session", data={"init_data": bad})
-    assert photos == [url]
-    # The default fake API fails the photo call (500): the entry still goes through,
-    # and the cabinet itself never shows the photo.
+    r = await client.post("/cabinet/photo", data={"init_data": bad})
+    assert r.status_code == 204 and photos == [url]
+    # The default fake API fails the photo call (500): still 204.
     client.app.state.parent_api = fake_api()  # type: ignore[attr-defined]
-    r = await client.post("/cabinet/session", data={"init_data": init_data(photo_url=url)})
-    assert r.status_code == 303
-    assert url not in (await client.get("/cabinet/")).text
+    r = await client.post("/cabinet/photo", data={"init_data": init_data(photo_url=url)})
+    assert r.status_code == 204
 
 
 async def test_stale_cookie_asks_telegram_again(client: AsyncClient) -> None:

@@ -197,28 +197,45 @@ def entry(request: Request, state: str, status_code: int = 200) -> HTMLResponse:
 # --- routes ---------------------------------------------------------------------
 
 
-@router.post("/session")
-async def session(request: Request, api: Api) -> Response:
+async def posted_init_data(request: Request) -> tuple[str, int | None]:
+    """The `init_data` field of the posted form and the Telegram id it proves, if any."""
     # A plain urlencoded form with one field; parsed by hand to keep multipart support out.
     form = dict(parse_qsl((await request.body()).decode(errors="replace")))
     init_data = form.get("init_data", "")
     telegram_id = telegram_user_id(
         init_data, get_settings().bot_token, datetime.now(UTC), INIT_DATA_MAX_AGE
     )
+    return init_data, telegram_id
+
+
+@router.post("/session")
+async def session(request: Request) -> Response:
+    _, telegram_id = await posted_init_data(request)
     if telegram_id is None:
         return entry(request, "denied", status.HTTP_401_UNAUTHORIZED)
-    # The photo is for the back office only; failing to save it must not block the entry.
-    # No photo in Telegram's data keeps the saved one: a link is replaced, never cleared.
-    photo_url = telegram_photo_url(init_data)
-    if photo_url is not None:
-        try:
-            await api.set_photo(telegram_id, photo_url)
-        except ApiError:
-            pass
     # `in=1` tells the entry page not to try again if the cookie did not stick.
     response = RedirectResponse("/cabinet/?in=1", status.HTTP_303_SEE_OTHER)
     set_session(response, telegram_id)
     return response
+
+
+@router.post("/photo", status_code=status.HTTP_204_NO_CONTENT)
+async def photo(request: Request, api: Api) -> None:
+    """Every cabinet page posts Telegram's `initData` here in the background.
+
+    The session cookie lasts a month, so the entry alone would see the profile
+    photo once a month. The photo is for the back office only: the answer is
+    204 whatever happened, and nothing here can break a page. No photo in
+    Telegram's data keeps the saved one: a link is replaced, never cleared.
+    """
+    init_data, telegram_id = await posted_init_data(request)
+    photo_url = telegram_photo_url(init_data)
+    if telegram_id is None or photo_url is None:
+        return
+    try:
+        await api.set_photo(telegram_id, photo_url)
+    except ApiError:
+        pass
 
 
 @router.get("/", response_class=HTMLResponse)
