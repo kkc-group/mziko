@@ -3,10 +3,12 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
 
 from app.api.deps import BotService, CurrentParent, Db, Now, TelegramId
+from app.core.clock import local_date
 from app.core.config import get_settings
-from app.models import Child, Device, ImageKind, Parent, Week, Word, WordProgress
+from app.models import Child, Device, ImageKind, Parent, Topic, Week, Word, WordProgress
 from app.schemas.parent import (
     ChildAttach,
     ChildCodeOut,
@@ -20,6 +22,7 @@ from app.schemas.parent import (
     PayOut,
     ProgressOut,
     SettingsPatch,
+    TopicAccessIn,
     TopicProgressOut,
     WeekBrief,
     WeekReportOut,
@@ -74,8 +77,13 @@ def report_out(r: WeekReport) -> WeekReportOut:
     )
 
 
-def topic_progress_out(tp: TopicProgress) -> TopicProgressOut:
-    return TopicProgressOut(
+def topic_progress_out(
+    tp: TopicProgress,
+    position: lessons.Position | None = None,
+    access: dict[int, lessons.AccessMode] | None = None,
+) -> TopicProgressOut:
+    """Without a position (the bot's text needs none) the access fields keep their defaults."""
+    out = TopicProgressOut(
         slug=tp.topic.slug,
         section=lessons.section_of(tp.topic),
         icon=tp.topic.icon,
@@ -84,6 +92,15 @@ def topic_progress_out(tp: TopicProgress) -> TopicProgressOut:
         total=len(tp.words),
         words=[word_progress_out(w, p) for w, p in tp.words],
     )
+    if position is None:
+        return out
+    state = next(t for t in position.topics if t.topic.id == tp.topic.id)
+    locked_by_order = state.status == "locked" and not state.closed
+    waits_for = position.waits_for(tp.topic.id) if locked_by_order else None
+    out.access = (access or {}).get(tp.topic.id, "auto")
+    out.status = state.status
+    out.waits_for = waits_for.title_ru if waits_for else None
+    return out
 
 
 def word_progress_out(word: Word, p: WordProgress | None) -> WordProgressOut:
@@ -231,13 +248,36 @@ async def reset_progress(child_id: int, db: Db, parent: CurrentParent) -> ChildI
 
 
 @router.get("/children/{child_id}/progress", response_model=ProgressOut)
-async def progress(child_id: int, db: Db, parent: CurrentParent) -> ProgressOut:
+async def progress(child_id: int, db: Db, now: Now, parent: CurrentParent) -> ProgressOut:
     child = await own_child(db, parent, child_id)
     topics = await report.progress_by_topic(db, child)
+    today = local_date(now)
+    access = await lessons.load_topic_access(db, child.id)
+    position = lessons.position(
+        await lessons.load_lessons(db),
+        await lessons.load_progress(db, child.id),
+        await lessons.load_today_topics(db, child.id, today),
+        await lessons.load_topic_first_days(db, child.id),
+        today,
+        access,
+    )
     return ProgressOut(
         child=child_info(child),
-        topics=[topic_progress_out(t) for t in topics],
+        topics=[topic_progress_out(t, position, access) for t in topics],
         lessons_done=await report.lessons_done(db, child),
+    )
+
+
+@router.put("/children/{child_id}/topics/{slug}/access", status_code=status.HTTP_204_NO_CONTENT)
+async def set_topic_access(
+    child_id: int, slug: str, body: TopicAccessIn, db: Db, parent: CurrentParent
+) -> None:
+    child = await own_child(db, parent, child_id)
+    topic = (await db.execute(select(Topic).where(Topic.slug == slug))).scalar_one_or_none()
+    if topic is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such topic")
+    await lessons.set_topic_access(
+        db, child.id, topic.id, None if body.access == "auto" else body.access
     )
 
 

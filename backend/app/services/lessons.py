@@ -160,6 +160,21 @@ async def load_topic_access(db: AsyncSession, child_id: int) -> dict[int, Access
     }
 
 
+async def set_topic_access(
+    db: AsyncSession, child_id: int, topic_id: int, mode: AccessMode | None
+) -> None:
+    """The parent's say on one topic; None puts the topic back into the usual order."""
+    row = await db.get(TopicAccess, (child_id, topic_id))
+    if mode is None:
+        if row is not None:
+            await db.delete(row)
+    elif row is None:
+        db.add(TopicAccess(child_id=child_id, topic_id=topic_id, mode=mode))
+    else:
+        row.mode = mode
+    await db.flush()
+
+
 @dataclass(frozen=True)
 class TopicState:
     topic: Topic
@@ -191,6 +206,18 @@ class Position:
         if not mine:
             return None
         return next((s for s in mine if s.status != "done"), mine[-1])
+
+    def waits_for(self, topic_id: int) -> Topic | None:
+        """The topic this one's turn depends on, while that one is not done: the one before it
+        in its section, closed topics skipped. None with a locked topic means "tomorrow"."""
+        mine = next(t for t in self.topics if t.topic.id == topic_id)
+        before: TopicState | None = None
+        for t in self.topics:
+            if t.topic.id == topic_id:
+                break
+            if t.section == mine.section and not t.closed:
+                before = t
+        return before.topic if before is not None and not before.done else None
 
     @property
     def all_done(self) -> bool:

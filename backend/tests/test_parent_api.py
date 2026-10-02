@@ -10,6 +10,7 @@ from app.models import Child, CoinReason, Parent
 from app.services import coins
 from tests.conftest import BOT_API_TOKEN, DAY1, Clock
 from tests.helpers import at, play_day
+from tests.test_api import pair
 
 
 def bot_headers(parent: Parent | int) -> dict[str, str]:
@@ -427,3 +428,61 @@ async def test_photo_is_saved_and_replaced_but_never_cleared(
     assert cleared.status_code == 422
     await db.refresh(parent)
     assert parent.photo_url == newer
+
+
+async def test_parent_opens_and_closes_topics_for_the_own_child_only(
+    db: AsyncSession, client: AsyncClient, parent: Parent, child: Child, clock: Clock
+) -> None:
+    clock.moment = at(DAY1, 18)
+    headers = bot_headers(parent)
+    progress_url = f"/api/parent/children/{child.id}/progress"
+
+    async def topics() -> dict[str, dict[str, object]]:
+        body = (await client.get(progress_url, headers=headers)).json()
+        return {t["slug"]: t for t in body["topics"]}
+
+    def brief(topic: dict[str, object]) -> tuple[object, object, object]:
+        return topic["access"], topic["status"], topic["waits_for"]
+
+    # Nothing set: the usual order, and a locked topic names the one it waits for.
+    before = await topics()
+    assert brief(before["basics"]) == ("auto", "open", None)
+    assert brief(before["colors"]) == ("auto", "locked", "Первые слова")
+
+    async def put(slug: str, access: str, child_id: int = child.id) -> int:
+        url = f"/api/parent/children/{child_id}/topics/{slug}/access"
+        return (await client.put(url, json={"access": access}, headers=headers)).status_code
+
+    assert await put("food", "open") == 204
+    assert await put("basics", "closed") == 204
+    after = await topics()
+    assert brief(after["food"]) == ("open", "open", None)
+    assert brief(after["basics"]) == ("closed", "locked", None)
+    assert brief(after["colors"]) == ("auto", "open", None)  # the closed topic left the queue
+    assert brief(after["school-items"]) == ("auto", "locked", "Цвета")
+
+    # The child sees the same: the closed topic is locked and says who locked it.
+    await play_day(db, child, "food", at(DAY1, 18))
+    me = (await client.get("/api/me", headers=await pair(db, client, parent, child, clock))).json()
+    mine = {t["slug"]: t for t in me["topics"]}
+    assert (mine["basics"]["status"], mine["basics"]["closed"]) == ("locked", True)
+    assert (mine["food"]["status"], mine["food"]["closed"]) == ("today", False)
+    assert (await topics())["colors"]["waits_for"] is None  # food was today's new topic: tomorrow
+
+    # Back to the usual order, twice: the second time there is nothing to remove.
+    assert await put("basics", "auto") == 204
+    assert await put("basics", "auto") == 204
+    assert await put("food", "closed") == 204  # an opened topic can be closed straight away
+    last = await topics()
+    assert brief(last["basics"])[0] == "auto" and last["food"]["access"] == "closed"
+
+    assert await put("no-such-topic", "open") == 404
+    assert await put("food", "sideways") == 422
+    assert await put("food", "open", child_id=child.id + 1000) == 404
+    stranger = Parent(telegram_id=555_300 + child.id)
+    db.add(stranger)
+    await db.flush()
+    url = f"/api/parent/children/{child.id}/topics/food/access"
+    refused = await client.put(url, json={"access": "open"}, headers=bot_headers(stranger))
+    assert refused.status_code == 404
+    assert (await topics())["food"]["access"] == "closed"

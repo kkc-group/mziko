@@ -151,6 +151,15 @@ class TopicProgressOut(BaseModel):
     learned: int
     total: int
     words: list[WordProgressOut]
+    # The parent's say ("auto": the usual order) and what it comes to for the child today.
+    access: Literal["auto", "open", "closed"] = "auto"
+    status: Literal["open", "today", "locked"] = "open"
+    # Locked by the order: the title of the topic to finish first. Locked without it: tomorrow.
+    waits_for: str | None = None
+
+
+class TopicAccessIn(BaseModel):
+    access: Literal["auto", "open", "closed"]
 
 
 class ProgressOut(BaseModel):
