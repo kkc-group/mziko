@@ -172,9 +172,9 @@ async def test_full_lesson_flow_over_http(
     restarted = await client.post("/api/topics/basics/restart", headers=headers)
     assert restarted.status_code == 200, restarted.text
     assert [s["word"]["slug"] for s in restarted.json()["steps"] if s["type"] == "intro"] == [
-        "dog",
-        "cat",
         "apple",
+        "sun",
+        "bread",
     ]
     assert (await client.post("/api/topics/colors/restart", headers=headers)).status_code == 409
     assert (await client.post("/api/topics/nope/restart", headers=headers)).status_code == 404

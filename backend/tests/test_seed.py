@@ -51,13 +51,15 @@ async def test_seed_updates_changed_fields(db: AsyncSession) -> None:
 
     basics = next(t for t in topics if t.slug == "basics")
     original = basics.words[0].ru
-    basics.words[0].ru = "пёс"
+    basics.words[0].ru = "яблочко"
     await seed_topics(db, topics)
 
-    dog = (
-        await db.execute(select(Word).join(Topic).where(Topic.slug == "basics", Word.slug == "dog"))
+    apple = (
+        await db.execute(
+            select(Word).join(Topic).where(Topic.slug == "basics", Word.slug == "apple")
+        )
     ).scalar_one()
-    assert dog.ru == "пёс"
+    assert apple.ru == "яблочко"
 
     basics.words[0].ru = original
     await seed_topics(db, topics)

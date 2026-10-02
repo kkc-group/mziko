@@ -1,0 +1,85 @@
+slug: domestic-animals
+title_ru: Домашние животные
+title_ka: შინაური ცხოველები
+icon: "🐄"
+words:
+  - slug: cat
+    ka: კატა
+    tr: ката
+    ru: кошка
+    image: {kind: file, value: /media/images/domestic-animals/cat.png}
+  - slug: dog
+    ka: ძაღლი
+    tr: дзагли
+    ru: собака
+    image: {kind: file, value: /media/images/domestic-animals/dog.png}
+  - slug: cow
+    ka: ძროხა
+    tr: дзроха
+    ru: корова
+    image: {kind: file, value: /media/images/domestic-animals/cow.png}
+  - slug: pig
+    ka: ღორი
+    tr: гори
+    ru: свинья
+    image: {kind: file, value: /media/images/domestic-animals/pig.png}
+  - slug: goat
+    ka: თხა
+    tr: тха
+    ru: коза
+    image: {kind: file, value: /media/images/domestic-animals/goat.png}
+  - slug: sheep
+    ka: ცხვარი
+    tr: цхвари
+    ru: овца
+    image: {kind: file, value: /media/images/domestic-animals/sheep.png}
+  - slug: donkey
+    ka: ვირი
+    tr: вири
+    ru: осёл
+    image: {kind: file, value: /media/images/domestic-animals/donkey.png}
+  - slug: horse
+    ka: ცხენი
+    tr: цхени
+    ru: лошадь
+    image: {kind: file, value: /media/images/domestic-animals/horse.png}
+  - slug: chicken
+    ka: ქათამი
+    tr: катами
+    ru: курица
+    image: {kind: file, value: /media/images/domestic-animals/chicken.png}
+  - slug: bull
+    ka: ხარი
+    tr: хари
+    ru: бык
+    image: {kind: file, value: /media/images/domestic-animals/bull.png}
+  - slug: duck
+    ka: იხვი
+    tr: ихви
+    ru: утка
+    image: {kind: file, value: /media/images/domestic-animals/duck.png}
+  - slug: goose
+    ka: ბატი
+    tr: бати
+    ru: гусь
+    image: {kind: file, value: /media/images/domestic-animals/goose.png}
+  - slug: turkey
+    ka: ინდაური
+    tr: индаури
+    ru: индейка
+    image: {kind: file, value: /media/images/domestic-animals/turkey.png}
+  - slug: hamster
+    ka: ზაზუნა
+    tr: зазуна
+    ru: хомяк
+    image: {kind: file, value: /media/images/domestic-animals/hamster.png}
+  - slug: rooster
+    ka: მამალი
+    tr: мамали
+    ru: петух
+    image: {kind: file, value: /media/images/domestic-animals/rooster.png}
+  - slug: pigeon
+    ka: მტრედი
+    tr: мтреди
+    ru: голубь
+    image: {kind: file, value: /media/images/domestic-animals/pigeon.png}

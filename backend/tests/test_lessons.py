@@ -149,9 +149,9 @@ async def test_fresh_day_opens_the_first_topic_of_each_section_and_orders_lesson
     firsts = {"letters-1", "syllables", "basics"}
     assert all(t.status == ("open" if t.topic.slug in firsts else "locked") for t in pos.topics)
 
-    # Only the first topic's first lesson can start; later parts wait for the first one.
+    # Only the first topic's lesson can start; in a later topic nothing can.
     basics = [s for s in pos.lessons if s.lesson.topic.slug == "basics"]
-    assert [(s.status, s.playable) for s in basics] == [("current", True), ("locked", False)]
+    assert [(s.status, s.playable) for s in basics] == [("current", True)]
     food = [s for s in pos.lessons if s.lesson.topic.slug == "food"]
     assert [(s.status, s.playable) for s in food] == [("current", False), ("locked", False)]
     assert state(pos, 1).playable and not state(pos, 2).playable  # letters-2 waits for letters-1
@@ -169,7 +169,7 @@ async def test_next_topic_waits_for_the_one_before_and_for_tomorrow(
     # Half of basics shown on day 1: colors waits for the rest, whatever the day.
     half = {
         w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY1)
-        for w in basics[0].words
+        for w in basics[0].words[:4]
     }
     pos = lessons.position(path, half, [], {ids["basics"]: DAY1}, DAY2)
     assert topic_state(pos, "basics").status == "open"
@@ -244,18 +244,18 @@ async def test_two_part_topic_opens_its_second_lesson_after_the_first(
     db: AsyncSession, seeded: None
 ) -> None:
     path = await lessons.load_lessons(db)
-    basics = [lsn for lsn in path if lsn.topic.slug == "basics"]
+    parts = [lsn for lsn in path if lsn.topic.slug == "syllables"]
     first_done = {
         w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY2)
-        for w in basics[0].words
+        for w in parts[0].words
     }
-    topic_id = basics[0].topic.id
+    topic_id = parts[0].topic.id
     pos = lessons.position(path, first_done, [topic_id], {topic_id: DAY2}, DAY2)
-    first, second = state(pos, basics[0].number), state(pos, basics[1].number)
+    first, second = state(pos, parts[0].number), state(pos, parts[1].number)
     assert (first.status, first.playable) == ("done", True)
     assert (second.status, second.playable) == ("current", True)  # the same day as the first
-    assert pos.lesson_of_topic(topic_id) is state(pos, basics[1].number)
-    assert topic_state(pos, "basics").done is False
+    assert pos.lesson_of_topic(topic_id) is state(pos, parts[1].number)
+    assert topic_state(pos, "syllables").done is False
 
 
 async def test_all_lessons_done(db: AsyncSession, seeded: None) -> None:
