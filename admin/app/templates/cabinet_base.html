@@ -19,6 +19,11 @@
   if (tg.colorScheme) document.documentElement.dataset.theme = tg.colorScheme;
   tg.ready();
   tg.expand();
+  // The profile photo for the back office: reported on every open, the answer is not awaited.
+  if (tg.initData && window.fetch) {
+    fetch('/cabinet/photo', { method: 'POST', body: new URLSearchParams({ init_data: tg.initData }) })
+      .catch(function () {});
+  }
 })();
 </script>
 {% block script %}{% endblock %}
