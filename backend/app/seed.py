@@ -1,5 +1,7 @@
 """Load topics and words from content/topics/*.yaml into the database.
 
+The order of topics is the order of their slugs in content/order.yaml.
+
 Idempotent: upserts by `topic.slug` and `(topic, word.slug)`. Words removed from
 a YAML file are left in the database so that children's progress is never lost.
 
@@ -64,7 +66,7 @@ class TopicSpec(BaseModel):
     title_ru: str
     title_ka: str
     icon: str
-    order: int
+    order: int = 0  # not in the topic file: load_topics sets it from the place in order.yaml
     words: list[WordSpec] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -84,12 +86,24 @@ class TopicSpec(BaseModel):
 
 
 def load_topics(content_dir: Path) -> list[TopicSpec]:
-    files = sorted((content_dir / "topics").glob("*.yaml"))
-    topics: list[TopicSpec] = []
-    for path in files:
+    """Topics in path order: `order.yaml` lists the slugs, a topic's place there is its order."""
+    by_slug: dict[str, TopicSpec] = {}
+    for path in sorted((content_dir / "topics").glob("*.yaml")):
         raw: Any = yaml.safe_load(path.read_text(encoding="utf-8"))
-        topics.append(TopicSpec.model_validate(raw))
-    return topics
+        spec = TopicSpec.model_validate(raw)
+        by_slug[spec.slug] = spec
+
+    slugs: list[str] = yaml.safe_load((content_dir / "order.yaml").read_text(encoding="utf-8"))
+    repeated = sorted({s for s in slugs if slugs.count(s) > 1})
+    missing = sorted(by_slug.keys() - set(slugs))
+    unknown = sorted(set(slugs) - by_slug.keys())
+    if repeated or missing or unknown:
+        raise ValueError(
+            f"order.yaml: listed twice {repeated}, not listed {missing}, no such topic {unknown}"
+        )
+    for index, slug in enumerate(slugs):
+        by_slug[slug].order = (index + 1) * 10
+    return [by_slug[slug] for slug in slugs]
 
 
 async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[int, int]:

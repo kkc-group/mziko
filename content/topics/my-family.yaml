@@ -2,7 +2,6 @@ slug: my-family
 title_ru: Моя семья
 title_ka: ჩემი ოჯახი
 icon: "🏡"
-order: 77  # right after school-items (75), before greetings (80)
 words:
   - slug: my
     ka: ჩემი

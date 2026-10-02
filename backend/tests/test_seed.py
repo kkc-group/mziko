@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 from pydantic import ValidationError
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,11 +63,26 @@ async def test_seed_updates_changed_fields(db: AsyncSession) -> None:
     await seed_topics(db, topics)
 
 
-def test_content_has_no_repeated_words_or_topic_orders() -> None:
+def test_topic_order_comes_from_the_order_file(tmp_path: Path) -> None:
+    (tmp_path / "topics").mkdir()
+    for slug in ("a", "b", "c"):
+        spec = {**letters_spec("ბ"), "slug": slug}
+        del spec["order"]
+        (tmp_path / "topics" / f"{slug}.yaml").write_text(yaml.safe_dump(spec), encoding="utf-8")
+    order_file = tmp_path / "order.yaml"
+
+    order_file.write_text("- b\n- c\n- a\n", encoding="utf-8")  # "c" inserted after "b"
+    assert [(t.slug, t.order) for t in load_topics(tmp_path)] == [("b", 10), ("c", 20), ("a", 30)]
+
+    for broken in ("- b\n- a\n", "- b\n- c\n- a\n- b\n", "- b\n- c\n- a\n- nope\n"):
+        order_file.write_text(broken, encoding="utf-8")
+        with pytest.raises(ValueError, match="order.yaml"):
+            load_topics(tmp_path)
+
+
+def test_content_has_no_repeated_words() -> None:
     """Each word is learned once: the same Georgian word must not appear in two topics."""
     topics = load_topics(CONTENT_DIR)
-    orders = [t.order for t in topics]
-    assert len(set(orders)) == len(orders)
     seen: dict[str, str] = {}
     for topic in topics:
         if topic.slug == "syllables":

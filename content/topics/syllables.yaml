@@ -4,7 +4,6 @@ slug: syllables
 title_ru: Слоги
 title_ka: მარცვლები
 icon: "🧩"
-order: 50
 words:
   - {slug: ba, ka: ბა, tr: ба, ru: слог ба, image: {kind: text, value: ბა}}
   - {slug: be, ka: ბე, tr: бэ, ru: слог бэ, image: {kind: text, value: ბე}}

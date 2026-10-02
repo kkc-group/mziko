@@ -12,7 +12,6 @@ slug: colors
 title_ru: Цвета
 title_ka: ფერები
 icon: "🎨"
-order: 70          # topics go in tens: a new topic slots in between without renumbering
 words:
   - slug: red
     ka: წითელი
@@ -28,10 +27,13 @@ the value, a letter or the word itself, is drawn as large Georgian text).
 
 ## Adding a topic
 
-1. Write `topics/<slug>.yaml`. Pick `order` between its neighbours: topics go
-   in tens, so "after colors (70), before greetings (80)" is `75`. The section
+1. Write `topics/<slug>.yaml` and add the slug to `order.yaml` on the line
+   below the topic it should follow. `order.yaml` is the whole path, top to
+   bottom; to move a topic, move its line. The seed refuses a topic file that
+   is not listed, a slug listed twice and a slug without a file. The section
    on the lessons screen comes from the slug (`letters-*`, `syllables`, the
-   rest are words); nothing else needs to know about the topic.
+   rest are words); nothing else needs to know about the topic. A topic is
+   cut into lessons by itself: equal parts of at most 10 words.
 2. Pictures: an emoji per word where Unicode has one; otherwise drop a PNG with
    a transparent background into `media/images/<slug>/<word slug>.png` (any
    size, the object anywhere in the frame) and point `image` at it:

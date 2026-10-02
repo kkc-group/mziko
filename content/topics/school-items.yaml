@@ -2,7 +2,6 @@ slug: school-items
 title_ru: Школьные предметы
 title_ka: სასკოლო ნივთები
 icon: "📚"
-order: 75  # right after colors (70)
 words:
   - slug: desk
     ka: მერხი
