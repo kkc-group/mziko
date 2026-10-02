@@ -13,6 +13,9 @@ order, and a child's position from word progress and today's sessions:
 - a topic not started yet opens when the one before it in its section is done,
   and a section starts at most one new topic a day: the day a topic has its
   first session, the next one waits for tomorrow;
+- a parent may overrule this for one topic: an opened topic can be started at
+  once, a closed one is locked whatever its progress and does not hold up the
+  topic after it;
 - done lessons of an open topic can be replayed as often as the child likes;
 - older words come back only as review steps mixed into any session.
 """
@@ -26,13 +29,14 @@ from typing import Literal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Session, Topic, Word, WordProgress
+from app.models import Session, Topic, TopicAccess, Word, WordProgress
 
 MAX_WORDS_PER_LESSON = 10
 
 Section = Literal["letters", "syllables", "words"]
 TopicStatus = Literal["open", "today", "locked"]
 LessonStatus = Literal["done", "current", "locked"]
+AccessMode = Literal["open", "closed"]  # a parent's say on a topic; no entry is the usual order
 
 
 def section_of(topic: Topic) -> Section:
@@ -147,12 +151,22 @@ async def load_topic_first_days(db: AsyncSession, child_id: int) -> dict[int, da
     }
 
 
+async def load_topic_access(db: AsyncSession, child_id: int) -> dict[int, AccessMode]:
+    """Topic id -> "open" or "closed" for the topics a parent has set for the child."""
+    stmt = select(TopicAccess.topic_id, TopicAccess.mode).where(TopicAccess.child_id == child_id)
+    return {
+        topic_id: "closed" if mode == "closed" else "open"
+        for topic_id, mode in (await db.execute(stmt)).all()
+    }
+
+
 @dataclass(frozen=True)
 class TopicState:
     topic: Topic
     section: Section
     status: TopicStatus
     done: bool  # every lesson of it is done
+    closed: bool = False  # locked by a parent, not by the order or the day
 
 
 @dataclass(frozen=True)
@@ -189,6 +203,7 @@ def position(
     today_topics: Collection[int],
     first_days: Mapping[int, date],
     today: date,
+    access: Mapping[int, AccessMode] | None = None,
 ) -> Position:
     """Where the child stands today: lesson statuses and which topics may be played.
 
@@ -198,7 +213,13 @@ def position(
     not started yet is "locked" while the topic before it in its section is not
     done, or while its section has a topic first started today (one new topic
     a section a day); otherwise it is "open". A done topic is never locked.
+
+    `access` is the parent's say, topic id -> "open" or "closed". A closed topic
+    is "locked" whatever its progress, and the topic after it waits for the one
+    before it instead. An opened topic not started yet is "open" past both the
+    order and the day's limit; once started it is today's new topic like any other.
     """
+    access = access or {}
 
     def introduced(word: Word) -> bool:
         p = progress.get(word.id)
@@ -232,9 +253,14 @@ def position(
         section = section_of(topic)
         if lesson.part != 1:
             continue
+        if access.get(topic.id) == "closed":
+            topic_status[topic.id] = "locked"
+            continue  # out of the queue: the next topic waits for the one before this
         if topic.id in today_topics:
             topic_status[topic.id] = "today"
         elif topic.id in first_days or done_of[topic.id]:
+            topic_status[topic.id] = "open"
+        elif access.get(topic.id) == "open":
             topic_status[topic.id] = "open"
         elif not previous_done.get(section, True) or section in new_today:
             topic_status[topic.id] = "locked"
@@ -252,6 +278,7 @@ def position(
             section=section_of(lesson.topic),
             status=topic_status[lesson.topic.id],
             done=done_of[lesson.topic.id],
+            closed=access.get(lesson.topic.id) == "closed",
         )
         for lesson in lessons
         if lesson.part == lesson.parts

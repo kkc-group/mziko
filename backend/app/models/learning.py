@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     SmallInteger,
+    String,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -97,3 +98,23 @@ class Answer(Base):
     created_at: Mapped[CreatedAt]
 
     session: Mapped[Session] = relationship(back_populates="answers")
+
+
+class TopicAccess(Base):
+    """A parent's say on one topic for one child, set from the cabinet.
+
+    No row means the topic follows the usual order. "open" lets the child start
+    it at once, past the order and the one-new-topic-a-day limit; "closed" locks
+    it whatever its progress.
+    """
+
+    __tablename__ = "topic_access"
+    __table_args__ = (CheckConstraint("mode IN ('open', 'closed')", name="mode_known"),)
+
+    child_id: Mapped[int] = mapped_column(
+        ForeignKey("children.id", ondelete="CASCADE"), primary_key=True
+    )
+    topic_id: Mapped[int] = mapped_column(
+        ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True
+    )
+    mode: Mapped[str] = mapped_column(String(6), nullable=False)

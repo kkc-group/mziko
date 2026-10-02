@@ -110,8 +110,9 @@ async def build_session(
     progress_by_word = await lessons.load_progress(db, child.id)
     today_topics = await lessons.load_today_topics(db, child.id, today)
     first_days = await lessons.load_topic_first_days(db, child.id)
+    access = await lessons.load_topic_access(db, child.id)
     position = lessons.position(
-        await lessons.load_lessons(db), progress_by_word, today_topics, first_days, today
+        await lessons.load_lessons(db), progress_by_word, today_topics, first_days, today, access
     )
 
     lesson: lessons.Lesson | None = None
@@ -238,7 +239,8 @@ async def restart_topic(
     progress_by_word = await lessons.load_progress(db, child.id)
     today_topics = await lessons.load_today_topics(db, child.id, today)
     first_days = await lessons.load_topic_first_days(db, child.id)
-    position = lessons.position(path, progress_by_word, today_topics, first_days, today)
+    access = await lessons.load_topic_access(db, child.id)
+    position = lessons.position(path, progress_by_word, today_topics, first_days, today, access)
     state = position.get(first.number)
     if state is None or not state.playable:
         raise LessonLocked(f"topic {topic_slug} cannot be played today")

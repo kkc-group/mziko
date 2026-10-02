@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Topic, Word, WordProgress
+from app.models import Child, Topic, TopicAccess, Word, WordProgress
 from app.seed import load_topics
 from app.services import lessons
 from tests.conftest import CONTENT_DIR
@@ -265,3 +265,94 @@ async def test_all_lessons_done(db: AsyncSession, seeded: None) -> None:
     assert pos.all_done
     assert all(t.done for t in pos.topics)
     assert all(s.status == "done" and s.playable for s in pos.lessons)  # every topic is a replay
+
+
+async def test_parent_opens_a_topic_past_the_order_and_the_day(
+    db: AsyncSession, seeded: None
+) -> None:
+    path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+    food = next(lsn for lsn in path if lsn.topic.slug == "food")
+
+    # Nothing played yet: food is far down the section, the parent opens it all the same.
+    pos = lessons.position(path, {}, [], {}, DAY1, {ids["food"]: "open"})
+    assert (topic_state(pos, "food").status, topic_state(pos, "food").closed) == ("open", False)
+    assert state(pos, food.number).playable is True
+    assert topic_state(pos, "colors").status == "locked"  # the others keep the order
+
+    # Basics started today: colors waits for tomorrow, the opened topic does not.
+    first_days = {ids["basics"]: DAY1}
+    pos = lessons.position(path, {}, [ids["basics"]], first_days, DAY1, {ids["food"]: "open"})
+    assert topic_state(pos, "food").status == "open"
+
+    # Once the child starts it, it is the section's new topic of the day like any other.
+    done = introduced(path, "basics")
+    first_days = {ids["basics"]: DAY1, ids["food"]: DAY2}
+    pos = lessons.position(path, done, [ids["food"]], first_days, DAY2, {ids["food"]: "open"})
+    assert topic_state(pos, "food").status == "today"
+    assert topic_state(pos, "colors").status == "locked"
+
+
+async def test_parent_closes_a_topic_whatever_its_progress(db: AsyncSession, seeded: None) -> None:
+    path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+    basics = next(lsn for lsn in path if lsn.topic.slug == "basics")
+    closed: dict[int, lessons.AccessMode] = {ids["basics"]: "closed"}
+
+    # Done and replayed today: still locked, the replay included.
+    done = introduced(path, "basics")
+    pos = lessons.position(path, done, [ids["basics"]], {ids["basics"]: DAY1}, DAY2, closed)
+    topic = topic_state(pos, "basics")
+    assert (topic.status, topic.closed, topic.done) == ("locked", True, True)
+    assert state(pos, basics.number).playable is False
+
+    # Started and not finished: locked as well.
+    half = {
+        w.id: WordProgress(word_id=w.id, introduced=True, introduced_on=DAY1)
+        for w in basics.words[:4]
+    }
+    pos = lessons.position(path, half, [], {ids["basics"]: DAY1}, DAY2, closed)
+    assert topic_state(pos, "basics").status == "locked"
+    assert state(pos, basics.number).playable is False
+
+
+async def test_closed_topic_does_not_hold_up_the_one_after_it(
+    db: AsyncSession, seeded: None
+) -> None:
+    path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+
+    # Basics closed before it was ever played: colors takes its place at the head of the section.
+    pos = lessons.position(path, {}, [], {}, DAY1, {ids["basics"]: "closed"})
+    assert topic_state(pos, "basics").status == "locked"
+    assert topic_state(pos, "colors").status == "open"
+    assert topic_state(pos, "school-items").status == "locked"
+
+    # Colors closed in the middle: school-items waits for basics, the topic before the closed one.
+    closed: dict[int, lessons.AccessMode] = {ids["colors"]: "closed"}
+    pos = lessons.position(path, {}, [], {}, DAY1, closed)
+    assert topic_state(pos, "school-items").status == "locked"
+    done = introduced(path, "basics")
+    pos = lessons.position(path, done, [], {ids["basics"]: DAY1}, DAY2, closed)
+    assert topic_state(pos, "school-items").status == "open"
+    assert not any(t.closed for t in pos.topics if t.topic.slug != "colors")
+
+
+async def test_topic_access_is_loaded_per_child(
+    db: AsyncSession, seeded: None, child: Child
+) -> None:
+    path = await lessons.load_lessons(db)
+    ids = {lsn.topic.slug: lsn.topic.id for lsn in path}
+    assert await lessons.load_topic_access(db, child.id) == {}
+    db.add_all(
+        [
+            TopicAccess(child_id=child.id, topic_id=ids["food"], mode="open"),
+            TopicAccess(child_id=child.id, topic_id=ids["colors"], mode="closed"),
+        ]
+    )
+    await db.flush()
+    assert await lessons.load_topic_access(db, child.id) == {
+        ids["food"]: "open",
+        ids["colors"]: "closed",
+    }
+    assert await lessons.load_topic_access(db, child.id + 1) == {}
