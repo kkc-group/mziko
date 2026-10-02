@@ -1,0 +1,23 @@
+# The path: topics in the order a child meets them, top to bottom.
+# To add a topic after another one, put its slug on the line below it.
+# Every file in topics/ must be listed here exactly once (the seed checks).
+- letters-1
+- letters-2
+- letters-3
+- letters-4
+- syllables
+- basics
+- colors
+- school-items
+- my-family
+- greetings
+- numbers
+- family
+- school
+- body
+- animals
+- food
+- clothes
+- home
+- nature
+- actions

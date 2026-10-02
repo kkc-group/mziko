@@ -2,7 +2,6 @@ slug: greetings
 title_ru: Приветствия
 title_ka: მისალმება
 icon: "👋"
-order: 80
 words:
   - slug: hello
     ka: გამარჯობა

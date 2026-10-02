@@ -80,6 +80,55 @@ def introduced(path: list[lessons.Lesson], *slugs: str) -> dict[int, WordProgres
     }
 
 
+def test_topic_inserted_behind_a_child_keeps_progress_and_opens_as_a_new_one() -> None:
+    def topic(id_: int, slug: str, order: int) -> Topic:
+        return Topic(id=id_, slug=slug, title_ru="", title_ka="", icon="", order=order)
+
+    def words(topic_id: int) -> list[Word]:
+        return [
+            Word(
+                id=topic_id * 10 + o,
+                topic_id=topic_id,
+                slug=f"w{o}",
+                ka="",
+                tr="",
+                ru="",
+                image_value="",
+                order=o,
+            )
+            for o in range(3)
+        ]
+
+    old = [topic(1, "a", 10), topic(2, "b", 20), topic(3, "c", 30)]
+    before = lessons.build_lessons(old, [w for t in old for w in words(t.id)])
+    progress = introduced(before, "a", "b")
+    first_days = {1: DAY1, 2: DAY2}
+
+    # "new" goes in after "a", behind the child who has already finished "b".
+    new = topic(4, "new", 15)
+    after = lessons.build_lessons([*old, new], [w for t in [*old, new] for w in words(t.id)])
+    assert [(lsn.number, lsn.topic.slug) for lsn in after] == [
+        (1, "a"),
+        (2, "new"),
+        (3, "b"),
+        (4, "c"),
+    ]
+
+    pos = lessons.position(after, progress, [], first_days, DAY3)
+    assert [(t.topic.slug, t.done, t.status) for t in pos.topics] == [
+        ("a", True, "open"),
+        ("new", False, "open"),
+        ("b", True, "open"),
+        ("c", False, "open"),  # waits for "b", the topic right before it, not for "new"
+    ]
+    assert not pos.all_done
+
+    # Once "new" is started, the one-new-topic-a-day rule holds "c" until tomorrow.
+    pos = lessons.position(after, progress, [4], {**first_days, 4: DAY3}, DAY3)
+    assert topic_state(pos, "new").status == "today"
+    assert topic_state(pos, "c").status == "locked"
+
+
 def test_sections_come_from_the_slug() -> None:
     def topic(slug: str) -> Topic:
         return Topic(id=1, slug=slug, title_ru="", title_ka="", icon="", order=1)
