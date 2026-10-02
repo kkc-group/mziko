@@ -119,6 +119,7 @@ def fake_api(
     *,
     known: bool = True,
     photos: list[str] | None = None,
+    saved: list[tuple[str, str]] | None = None,
 ) -> ParentApi:
     """An API that answers only with the shared token, only for the known parent."""
 
@@ -134,6 +135,14 @@ def fake_api(
             return httpx.Response(204)
         if request.url.path == "/api/parent/children":
             return httpx.Response(200, json=children or [])
+        if request.method == "PUT":  # /children/10/topics/<slug>/access
+            # ["", "api", "parent", "children", "10", "topics", slug, "access"]
+            parts = request.url.path.split("/")
+            assert parts[:6] + parts[7:] == [*"/api/parent/children/10/topics".split("/"), "access"]
+            if saved is None:
+                return httpx.Response(500, json={"detail": "boom"})
+            saved.append((parts[6], json.loads(request.content)["access"]))
+            return httpx.Response(204)
         assert request.url.path == "/api/parent/children/10/progress"
         return httpx.Response(
             200, json={"child": CHILDREN[0], "topics": topics, "lessons_done": LESSONS_DONE}
@@ -346,3 +355,70 @@ def test_idle_mark_only_on_started_unfinished_topics() -> None:
     # A topic met but never answered right: idle counts from the day it was shown.
     all_wrong = [topic("greetings", "words", "Приветствия", [word("კი", "да", 0, shown=LONG_AGO)])]
     assert build_sections(all_wrong, TODAY)[2].topics[0].idle_days == 12
+
+
+# --- topic access ---------------------------------------------------------------------
+
+
+async def test_topic_switch_shows_the_access_and_what_it_means(client: AsyncClient) -> None:
+    topics = [
+        TOPICS[0],
+        {**TOPICS[1], "access": "closed", "status": "locked"},  # started 12 days ago
+        TOPICS[2],
+        {**TOPICS[3], "status": "locked", "waits_for": "Первые слова"},
+        {**topic("food", "words", "Еда", [word("პური", "хлеб", 0)]), "access": "open"},
+        {**topic("home", "words", "Дом", [word("კარი", "дверь", 0)]), "status": "locked"},
+    ]
+    client.app.state.parent_api = fake_api(topics=topics)  # type: ignore[attr-defined]
+    await enter(client)
+    html = (await client.get("/cabinet/?open=colors")).text
+
+    assert html.count('<form class="acc" method="post"') == len(topics)
+    assert 'action="/cabinet/topics/colors/access"' in html
+    assert '<input type="hidden" name="child" value="10">' in html
+    assert '<details class="topic" id="t-colors" open>' in html
+    assert '<details class="topic" id="t-food">' in html
+    assert html.count('value="closed" class="on" aria-pressed="true"') == 1
+    assert html.count('value="open" class="on" aria-pressed="true"') == 1
+
+    # A closed topic says so in the row and loses the idle mark; an opened one says so too.
+    assert html.count("закрыта вручную") == 1 and html.count("открыта вручную") == 1
+    assert "без продвижения" not in html
+    assert "У ребёнка на теме замок, «Повторить» тоже недоступно." in html
+    assert "Ребёнок может начать тему сразу" in html
+    assert "Тема идёт по порядку. Сейчас открыта." in html
+    assert "Откроется после темы «Первые слова»." in html
+    assert "Откроется завтра: сегодня в этом разделе уже начата новая тема." in html
+    assert "Не получилось сохранить" not in html
+
+
+async def test_topic_switch_saves_and_comes_back_to_the_topic(client: AsyncClient) -> None:
+    saved: list[tuple[str, str]] = []
+    client.app.state.parent_api = fake_api(saved=saved)  # type: ignore[attr-defined]
+    url = "/cabinet/topics/colors/access"
+
+    # No session: nothing is saved, the entry page takes over.
+    r = await client.post(url, data={"child": "10", "access": "closed"})
+    assert (r.status_code, r.headers["location"], saved) == (303, "/cabinet/", [])
+
+    await enter(client)
+    r = await client.post(url, data={"child": "10", "access": "closed"})
+    assert r.status_code == 303
+    assert r.headers["location"] == "/cabinet/?child=10&open=colors#t-colors"
+    assert saved == [("colors", "closed")]
+
+    # An unknown position or a broken child id never reaches the API.
+    for data in ({"child": "10", "access": "sideways"}, {"child": "x", "access": "open"}, {}):
+        r = await client.post(url, data=data)
+        assert r.status_code == 303 and "&failed=1#t-colors" in r.headers["location"]
+    assert saved == [("colors", "closed")]
+
+
+async def test_topic_switch_failure_is_shown_at_the_topic(client: AsyncClient) -> None:
+    await enter(client)  # the default fake API answers 500 to a write
+    r = await client.post("/cabinet/topics/colors/access", data={"child": "10", "access": "open"})
+    assert r.headers["location"] == "/cabinet/?child=10&open=colors&failed=1#t-colors"
+    html = (await client.get(r.headers["location"])).text
+    assert html.count("Не получилось сохранить.") == 1
+    assert "Тема осталась «По порядку», попробуйте ещё раз." in html
+    assert '<details class="topic" id="t-colors" open>' in html
