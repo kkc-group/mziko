@@ -1,6 +1,7 @@
 import { fmtLari, plural } from '../fx'
 import type { LessonOut, Me, TopicOut } from '../types'
 import { Emoji } from '../components/Emoji'
+import { LockIcon } from '../components/Icons'
 import { JarIcon, Mascot } from '../components/Mascot'
 import { PlayButton } from '../components/PlayButton'
 import { SECTIONS } from '../sections'
@@ -17,10 +18,11 @@ function addDays(iso: string, n: number): string {
 type Section = (typeof SECTIONS)[number]
 
 /** A section's next step today (docs/mockups/home-today.html): a lesson to play, done for today
- *  (its next topic opens tomorrow), or finished for good. */
+ *  (its next topic opens tomorrow), nothing left but topics the parents closed, or finished for good. */
 type SectionStep =
   | { kind: 'play'; section: Section; lesson: LessonOut }
   | { kind: 'rest'; section: Section; next: TopicOut }
+  | { kind: 'closed'; section: Section }
   | { kind: 'finished'; section: Section; count: number }
 
 /** Mirrors backend/app/services/lessons.py position(): the first lesson of the section that may be
@@ -30,10 +32,13 @@ function sectionStep(me: Me, section: Section): SectionStep {
   const topics = me.topics.filter((t) => t.section === section.key)
   const slugs = new Set(topics.map((t) => t.slug))
   const lessons = me.lessons.filter((l) => slugs.has(l.topic_slug))
-  const next = topics.find((t) => !t.done)
-  if (!next) return { kind: 'finished', section, count: lessons.reduce((n, l) => n + l.total, 0) }
   const lesson = lessons.find((l) => l.playable && l.status !== 'done')
-  return lesson ? { kind: 'play', section, lesson } : { kind: 'rest', section, next }
+  if (lesson) return { kind: 'play', section, lesson }
+  // A topic the parents closed is out of the queue: tomorrow's topic is the next one still open.
+  const next = topics.find((t) => !t.done && !t.closed)
+  if (next) return { kind: 'rest', section, next }
+  if (topics.some((t) => !t.done)) return { kind: 'closed', section }
+  return { kind: 'finished', section, count: lessons.reduce((n, l) => n + l.total, 0) }
 }
 
 function count(section: Section, n: number): string {
@@ -93,7 +98,8 @@ function PlayCard({
   )
 }
 
-/** A section under the big card: a row with «Играть», or a mint row that is not a button. */
+/** A section under the big card: a row with «Играть», a mint row that is not a button, or a
+ *  locked one when all that is left of the section was closed by the parents. */
 function StepRow({ step, busy, onPlay }: { step: SectionStep; busy: Busy; onPlay: (lesson: LessonOut) => void }) {
   const { section } = step
   if (step.kind === 'finished') {
@@ -122,6 +128,22 @@ function StepRow({ step, busy, onPlay }: { step: SectionStep; busy: Busy; onPlay
           <small>
             {section.title} · завтра «{step.next.title_ru}»
           </small>
+        </span>
+      </div>
+    )
+  }
+  if (step.kind === 'closed') {
+    return (
+      <div className="lsn lock" aria-disabled="true">
+        <span className="ic">
+          <Emoji value={section.icon} alt="" />
+        </span>
+        <span className="t">
+          Пока всё
+          <small>{section.title} · темы закрыли родители</small>
+        </span>
+        <span className="tmr">
+          <LockIcon />
         </span>
       </div>
     )
