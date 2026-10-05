@@ -1,0 +1,65 @@
+slug: wild-animals
+title_ru: Дикие животные
+title_ka: გარეული ცხოველები
+icon: "🦁"
+words:
+  - slug: bear
+    ka: დათვი
+    tr: датви
+    ru: медведь
+    image: {kind: emoji, value: "🐻"}
+  - slug: hare
+    ka: კურდღელი
+    tr: курдгели
+    ru: заяц
+    image: {kind: emoji, value: "🐰"}
+  - slug: monkey
+    ka: მაიმუნი
+    tr: маимуни
+    ru: обезьяна
+    image: {kind: emoji, value: "🐒"}
+  - slug: fox
+    ka: მელა
+    tr: мела
+    ru: лиса
+    image: {kind: emoji, value: "🦊"}
+  - slug: wolf
+    ka: მგელი
+    tr: мгели
+    ru: волк
+    image: {kind: emoji, value: "🐺"}
+  - slug: elephant
+    ka: სპილო
+    tr: спило
+    ru: слон
+    image: {kind: emoji, value: "🐘"}
+  - slug: lion
+    ka: ლომი
+    tr: ломи
+    ru: лев
+    image: {kind: emoji, value: "🦁"}
+  - slug: tiger
+    ka: ვეფხვი
+    tr: вепхви
+    ru: тигр
+    image: {kind: emoji, value: "🐅"}
+  - slug: boar
+    ka: ტახი
+    tr: тахи
+    ru: кабан
+    image: {kind: emoji, value: "🐗"}
+  - slug: turtle
+    ka: კუ
+    tr: ку
+    ru: черепаха
+    image: {kind: emoji, value: "🐢"}
+  - slug: camel
+    ka: აქლემი
+    tr: аклеми
+    ru: верблюд
+    image: {kind: emoji, value: "🐫"}
+  - slug: giraffe
+    ka: ჟირაფი
+    tr: жирафи
+    ru: жираф
+    image: {kind: emoji, value: "🦒"}
