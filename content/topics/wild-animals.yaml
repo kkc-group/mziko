@@ -1,0 +1,65 @@
+slug: wild-animals
+title_ru: Дикие животные
+title_ka: გარეული ცხოველები
+icon: "🦁"
+words:
+  - slug: bear
+    ka: დათვი
+    tr: датви
+    ru: медведь
+    image: {kind: file, value: /media/images/wild-animals/bear.png}
+  - slug: hare
+    ka: კურდღელი
+    tr: курдгели
+    ru: заяц
+    image: {kind: file, value: /media/images/wild-animals/hare.png}
+  - slug: monkey
+    ka: მაიმუნი
+    tr: маимуни
+    ru: обезьяна
+    image: {kind: file, value: /media/images/wild-animals/monkey.png}
+  - slug: fox
+    ka: მელა
+    tr: мела
+    ru: лиса
+    image: {kind: file, value: /media/images/wild-animals/fox.png}
+  - slug: wolf
+    ka: მგელი
+    tr: мгели
+    ru: волк
+    image: {kind: file, value: /media/images/wild-animals/wolf.png}
+  - slug: elephant
+    ka: სპილო
+    tr: спило
+    ru: слон
+    image: {kind: file, value: /media/images/wild-animals/elephant.png}
+  - slug: lion
+    ka: ლომი
+    tr: ломи
+    ru: лев
+    image: {kind: file, value: /media/images/wild-animals/lion.png}
+  - slug: tiger
+    ka: ვეფხვი
+    tr: вепхви
+    ru: тигр
+    image: {kind: file, value: /media/images/wild-animals/tiger.png}
+  - slug: boar
+    ka: ტახი
+    tr: тахи
+    ru: кабан
+    image: {kind: file, value: /media/images/wild-animals/boar.png}
+  - slug: turtle
+    ka: კუ
+    tr: ку
+    ru: черепаха
+    image: {kind: file, value: /media/images/wild-animals/turtle.png}
+  - slug: camel
+    ka: აქლემი
+    tr: аклеми
+    ru: верблюд
+    image: {kind: file, value: /media/images/wild-animals/camel.png}
+  - slug: giraffe
+    ka: ჟირაფი
+    tr: жирафи
+    ru: жираф
+    image: {kind: file, value: /media/images/wild-animals/giraffe.png}

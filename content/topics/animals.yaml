@@ -3,26 +3,6 @@ title_ru: Животные
 title_ka: ცხოველები
 icon: "🐻"
 words:
-  - slug: bear
-    ka: დათვი
-    tr: датви
-    ru: медведь
-    image: {kind: emoji, value: "🐻"}
-  - slug: wolf
-    ka: მგელი
-    tr: мгели
-    ru: волк
-    image: {kind: emoji, value: "🐺"}
-  - slug: fox
-    ka: მელია
-    tr: мелиа
-    ru: лиса
-    image: {kind: emoji, value: "🦊"}
-  - slug: hare
-    ka: კურდღელი
-    tr: курдгели
-    ru: заяц
-    image: {kind: emoji, value: "🐰"}
   - slug: bird
     ka: ჩიტი
     tr: чити
@@ -43,13 +23,3 @@ words:
     tr: тагви
     ru: мышь
     image: {kind: emoji, value: "🐭"}
-  - slug: lion
-    ka: ლომი
-    tr: ломи
-    ru: лев
-    image: {kind: emoji, value: "🦁"}
-  - slug: elephant
-    ka: სპილო
-    tr: спило
-    ru: слон
-    image: {kind: emoji, value: "🐘"}
