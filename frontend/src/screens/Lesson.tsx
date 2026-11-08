@@ -4,7 +4,7 @@ import { playSfx, type Speaker } from '../audio'
 import { flyCoins, fmtLari, uuid } from '../fx'
 import type { AnchorOut, SessionSummary, Step, WordOut } from '../types'
 import { Emoji } from '../components/Emoji'
-import { JarIcon, Mascot } from '../components/Mascot'
+import { JarIcon, Mascot, SpeakerIcon } from '../components/Mascot'
 import { SpeakButton } from '../components/SpeakButton'
 import { WordImage } from '../components/WordImage'
 import { isLetter, isText, textClass } from '../wordText'
@@ -39,10 +39,10 @@ export function Lesson({
   const step: Step | undefined = steps[idx]
   const finished = idx >= steps.length
 
-  // Auto-play the word when a card or a listen task appears.
+  // Auto-play the word (or the story line) when a card or a listen task appears; the replay plays itself.
   useEffect(() => {
-    if (!step || step.type === 'recall') return
-    const t = setTimeout(() => void speaker.play(step.word), 300)
+    if (!step || step.type === 'recall' || step.type === 'story_replay') return
+    const t = setTimeout(() => void speaker.play(step.prompt ?? step.word), 300)
     return () => clearTimeout(t)
   }, [step, speaker])
 
@@ -91,6 +91,10 @@ export function Lesson({
       <div className="stage">
         {finished ? (
           <Done summary={summary} coins={coins} onHome={onDone} />
+        ) : step.type === 'story_line' ? (
+          <StoryLine key={idx} step={step} speaker={speaker} showHint={showHint} onNext={next} />
+        ) : step.type === 'story_replay' ? (
+          <StoryReplay key={idx} lines={step.lines} speaker={speaker} showHint={showHint} onNext={next} />
         ) : step.type === 'intro' ? (
           <Intro step={step} speaker={speaker} showHint={showHint} onNext={next} />
         ) : (
@@ -191,6 +195,99 @@ function Intro({
   )
 }
 
+/** One line of a story: the scene picture, the line under it, its Cyrillic hint and Russian translation. */
+function StoryLine({
+  step,
+  speaker,
+  showHint,
+  onNext,
+}: {
+  step: Step
+  speaker: Speaker
+  showHint: boolean
+  onNext: () => void
+}) {
+  const { word: line } = step
+  return (
+    <>
+      <div className="scene">
+        <WordImage word={line} />
+      </div>
+      <div className="word line">
+        <span className="ka">{line.ka}</span>
+        {showHint && <span className="tr">{line.tr}</span>}
+        <span className="ru">{line.ru}</span>
+      </div>
+      <SpeakButton word={line} speaker={speaker} label="Послушать ещё раз" />
+      <button type="button" className="next" onClick={onNext}>
+        Дальше
+      </button>
+    </>
+  )
+}
+
+/** The whole story: lines play one after another, the current one highlighted with its scene above. */
+function StoryReplay({
+  lines,
+  speaker,
+  showHint,
+  onNext,
+}: {
+  lines: WordOut[]
+  speaker: Speaker
+  showHint: boolean
+  onNext: () => void
+}) {
+  const [cur, setCur] = useState(0)
+  const [run, setRun] = useState(1) // bumped by the replay button
+  const curRef = useRef<HTMLLIElement>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const play = async () => {
+      await new Promise((r) => setTimeout(r, 300))
+      for (let i = 0; i < lines.length && !cancelled; i++) {
+        setCur(i)
+        const t0 = Date.now()
+        await speaker.playThrough(lines[i], 20000)
+        // No recording (offline, speech synthesis fallback): do not flash through the lines.
+        if (!cancelled && Date.now() - t0 < 600) await new Promise((r) => setTimeout(r, 1500))
+      }
+    }
+    void play()
+    return () => {
+      cancelled = true
+      speaker.stop()
+    }
+  }, [run, lines, speaker])
+
+  useEffect(() => {
+    curRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [cur])
+
+  return (
+    <>
+      <div className="scene sm">
+        <WordImage word={lines[cur]} />
+      </div>
+      <ol className="story-list">
+        {lines.map((l, i) => (
+          <li key={l.slug} ref={i === cur ? curRef : undefined} className={i === cur ? 'now' : undefined}>
+            <span className="ka">{l.ka}</span>
+            {showHint && <small>{l.tr}</small>}
+          </li>
+        ))}
+      </ol>
+      <button type="button" className="speak" aria-label="Послушать ещё раз" onClick={() => setRun((n) => n + 1)}>
+        <SpeakerIcon />
+      </button>
+      <button type="button" className="next" onClick={onNext}>
+        Дальше
+      </button>
+    </>
+  )
+}
+
 /** "ბ as in ⚽ ბურთი": the example word under a letter, its first letter highlighted. */
 export function Anchor({ letter, anchor, showHint }: { letter: string; anchor: AnchorOut; showHint: boolean }) {
   const rest = anchor.ka.startsWith(letter) ? anchor.ka.slice(letter.length) : anchor.ka
@@ -255,7 +352,7 @@ function Quiz({
       <>
         <p className="prompt">Послушай и найди</p>
         <div className={dim}>
-          <SpeakButton word={step.word} speaker={speaker} label="Послушать ещё раз" />
+          <SpeakButton word={step.prompt ?? step.word} speaker={speaker} label="Послушать ещё раз" />
         </div>
         <div className="grid-wrap">
           <div className={`grid${dim}`}>

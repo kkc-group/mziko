@@ -1,0 +1,59 @@
+slug: autumn-story
+title_ru: Осень
+title_ka: შემოდგომა
+icon: "📖"
+# A story: its lines are heard one by one, then its words are learned, then the
+# questions, then the whole story again (see content/README.md, "Stories").
+story:
+  lines:
+    - ka: შემოდგომა მოვიდა,
+      tr: шемодгома мовида
+      ru: Осень пришла,
+      scene: /media/scenes/autumn-story/line-1.webp
+    - ka: ყვითელ-ყვითელ ფერებით,
+      tr: квител-квител перебит
+      ru: жёлтыми-жёлтыми красками,
+      scene: /media/scenes/autumn-story/line-2.webp
+    - ka: მოსავლით აივსო
+      tr: мосавлит аивсо
+      ru: урожаем наполнились
+      scene: /media/scenes/autumn-story/line-3.webp
+    - ka: საქართველოს ველები.
+      tr: сакартвелос велеби
+      ru: поля Грузии.
+      scene: /media/scenes/autumn-story/line-4.webp
+    - ka: შემოდგომაზე გრილა.
+      tr: шемодгомазе грила
+      ru: Осенью прохладно.
+      scene: /media/scenes/autumn-story/line-5.webp
+  questions:
+    - line: 2
+      answer: colors/yellow
+      options: [colors/red, colors/green]
+    - line: 5
+      answer: autumn-story/cool
+      options: [seasons/hot, seasons/summer]
+    - line: 1
+      answer: seasons/autumn
+      options: [seasons/spring, seasons/winter]
+words:
+  - slug: september
+    ka: სექტემბერი
+    tr: сектембери
+    ru: сентябрь
+    image: {kind: file, value: /media/images/autumn-story/september.png}
+  - slug: october
+    ka: ოქტომბერი
+    tr: октомбери
+    ru: октябрь
+    image: {kind: file, value: /media/images/autumn-story/october.png}
+  - slug: november
+    ka: ნოემბერი
+    tr: ноембери
+    ru: ноябрь
+    image: {kind: file, value: /media/images/autumn-story/november.png}
+  - slug: cool
+    ka: გრილა
+    tr: грила
+    ru: прохладно
+    image: {kind: emoji, value: "🌬️"}

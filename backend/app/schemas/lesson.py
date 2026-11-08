@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field, PlainSerializer
 
 from app.models import ImageKind
 
-StepType = Literal["intro", "listen", "recall"]
+StepType = Literal["intro", "listen", "recall", "story_line", "story_replay"]
+# Steps the child only watches and listens to: no answer is sent for them.
+NO_ANSWER_STEPS: tuple[StepType, ...] = ("intro", "story_line", "story_replay")
 
 # GEL amounts are exact decimals internally and plain numbers on the wire.
 Lari = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
@@ -40,10 +42,22 @@ class WordOut(BaseModel):
 
 
 class Step(BaseModel):
+    """One screen of a lesson.
+
+    A story line travels as a WordOut too: slug `line-<n>`, `ka`/`tr`/`ru` the line,
+    `image` the scene picture (kind `file`), `audio_url` the line's recording.
+    - `story_line`: `word` is the line;
+    - `story_replay`: `lines` is the whole story, `word` its first line;
+    - `listen` on a story: `prompt` is the line heard instead of `word`, which
+      stays the correct answer.
+    """
+
     type: StepType
     word: WordOut
     # Empty for `intro`; 4 words for `listen`, 3 for `recall` (correct one included).
     options: list[WordOut] = Field(default_factory=list)
+    prompt: WordOut | None = None
+    lines: list[WordOut] = Field(default_factory=list)
 
 
 class AnswerIn(BaseModel):

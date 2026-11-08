@@ -27,6 +27,9 @@ class Topic(Base):
     title_ka: Mapped[str] = mapped_column(String(100), nullable=False)
     icon: Mapped[str] = mapped_column(String(16), nullable=False)
     order: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Story topics only: the story's lines and comprehension questions, see
+    # app.seed.StorySpec. None for an ordinary topic of words.
+    story: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     words: Mapped[list["Word"]] = relationship(
         back_populates="topic", order_by="Word.order", cascade="all, delete-orphan"

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import TBILISI, local_date
 from app.models import Child, Session, WordProgress
-from app.schemas.lesson import AnswerIn, AnswerResult, Step
+from app.schemas.lesson import NO_ANSWER_STEPS, AnswerIn, AnswerResult, Step
 from app.services import learning, lessons
 
 LONG_AGO = date(2026, 1, 5)
@@ -24,7 +24,7 @@ def steps_of(session: Session) -> list[Step]:
 
 
 def quiz_steps(session: Session) -> list[tuple[int, Step]]:
-    return [(i, s) for i, s in enumerate(steps_of(session)) if s.type != "intro"]
+    return [(i, s) for i, s in enumerate(steps_of(session)) if s.type not in NO_ANSWER_STEPS]
 
 
 async def skip_to(db: AsyncSession, child: Child, topic_slug: str) -> int:

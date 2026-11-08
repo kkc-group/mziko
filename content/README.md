@@ -86,6 +86,41 @@ primer tradition (Deda Ena), not the alphabet; reorder by moving lines.
 
 Slugs `on`, `yes`, `no` must be quoted: bare, YAML reads them as booleans.
 
+## Stories
+
+A story is a topic with a `story` block: lines the child hears one by one, each
+on its own screen with a scene picture, then the topic's `words` as usual, then
+questions on the lines, then the whole story again. It is always one lesson
+(keep it to 10 words or fewer) and it is always told from the start, replays
+included. All of its new words come in at once, not three per session.
+
+```yaml
+slug: autumn-story
+title_ru: Осень
+title_ka: შემოდგომა
+icon: "📖"
+story:
+  lines:
+    - ka: შემოდგომა მოვიდა,
+      tr: шемодгома мовида
+      ru: Осень пришла,
+      scene: /media/scenes/autumn-story/line-1.webp
+  questions:
+    - line: 1                          # the line that is heard
+      answer: seasons/autumn           # <topic>/<word>, any topic
+      options: [seasons/spring, seasons/winter]   # the wrong ones
+words: ...
+```
+
+- A question is "listen and find": the line plays, the child picks a picture.
+  Its words may come from any topic; the answer counts as an answer to that
+  word (coin, stage). The options of one question must differ in picture.
+- Scenes are square pictures with their background: drop PNGs into
+  `media/scenes/<slug>/line-<n>.png` and run `make images`, which turns them
+  into 768 px WebP without cropping and deletes the PNGs.
+- `make tts` also reads every line as `media/audio/<slug>/line-<n>.mp3`, so
+  word slugs `line-…` are not allowed in a story topic.
+
 ## Emoji pictures
 
 Emoji stay plain characters in the YAML (word images, topic `icon`, letter

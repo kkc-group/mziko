@@ -230,6 +230,17 @@ async def main() -> None:
             generated += 1
             print(f"{out.relative_to(REPO_DIR)}  ←  {' … '.join(parts)}")
 
+    for topic_file in sorted(TOPICS_DIR.glob("*.yaml")):
+        topic = yaml.safe_load(topic_file.read_text(encoding="utf-8"))
+        for n, line in enumerate((topic.get("story") or {}).get("lines", []), start=1):
+            out = AUDIO_DIR / topic["slug"] / f"line-{n}.mp3"
+            if out.exists():
+                skipped += 1
+                continue
+            await synthesize(str(line["ka"]), out, args.voice, args.rate)
+            generated += 1
+            print(f"{out.relative_to(REPO_DIR)}  ←  {line['ka']}")
+
     for name, text in PHRASES.items():
         out = AUDIO_DIR / "ui" / f"{name}.mp3"
         if out.exists():

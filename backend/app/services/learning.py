@@ -8,6 +8,7 @@ import random
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +25,7 @@ from app.models import (
     WordProgress,
 )
 from app.schemas.lesson import (
+    NO_ANSWER_STEPS,
     AnchorOut,
     AnswerIn,
     AnswerResult,
@@ -56,6 +58,33 @@ def word_out(word: Word, topic_slug: str) -> WordOut:
         anchor=AnchorOut.model_validate(word.anchor) if word.anchor else None,
         audio_url=f"/media/audio/{topic_slug}/{word.slug}.mp3",
     )
+
+
+def story_lines(topic: Topic) -> list[WordOut]:
+    """The lines of a story topic, each as a word called line-<n> (see schemas.lesson.Step)."""
+    lines = topic.story["lines"] if topic.story else []
+    return [
+        WordOut(
+            slug=f"line-{n}",
+            topic_slug=topic.slug,
+            ka=line["ka"],
+            tr=line["tr"],
+            ru=line["ru"],
+            image=ImageOut(kind=ImageKind.file, value=line["scene"]),
+            audio_url=f"/media/audio/{topic.slug}/line-{n}.mp3",
+        )
+        for n, line in enumerate(lines, 1)
+    ]
+
+
+async def _words_by_ref(
+    db: AsyncSession, topics: dict[int, Topic], refs: Sequence[str]
+) -> dict[str, Word]:
+    """Words referenced as "<topic slug>/<word slug>" (story questions)."""
+    wanted = set(refs)
+    words = (await db.execute(select(Word).where(Word.topic_id.in_(topics.keys())))).scalars()
+    found = {f"{topics[w.topic_id].slug}/{w.slug}": w for w in words}
+    return {ref: found[ref] for ref in wanted if ref in found}
 
 
 async def _topics_by_id(db: AsyncSession) -> dict[int, Topic]:
@@ -132,8 +161,11 @@ async def build_session(
         p = progress_by_word.get(word.id)
         return p is not None and p.last_correct_date == today
 
+    story = lesson.topic if lesson and lesson.topic.story else None
     lesson_words: list[Word] = list(lesson.words) if lesson else []
-    new_words = [w for w in lesson_words if not introduced(w)][:NEW_WORDS_PER_SESSION]
+    new_words = [w for w in lesson_words if not introduced(w)]
+    if story is None:  # a story is told whole, so all its words come in at once
+        new_words = new_words[:NEW_WORDS_PER_SESSION]
     if new_words:  # a lesson being learned keeps to its own words
         own_reviews = [w for w in lesson_words if introduced(w) and not answered_today(w)]
         own_reviews = own_reviews[:REVIEW_WORDS_PER_SESSION]
@@ -207,6 +239,8 @@ async def build_session(
     quiz += [review_step(w) for w in review_words]
     rng.shuffle(quiz)
     steps += quiz
+    if story is not None:
+        steps = await _story_steps(db, story, topics, steps, rng)
 
     session = Session(
         child_id=child.id,
@@ -217,6 +251,46 @@ async def build_session(
     db.add(session)
     await db.flush()
     return session
+
+
+async def _story_steps(
+    db: AsyncSession,
+    story: Topic,
+    topics: dict[int, Topic],
+    word_steps: list[Step],
+    rng: random.Random,
+) -> list[Step]:
+    """A story lesson: the lines one by one, the word steps, the questions, the whole story.
+
+    Played and replayed the same way: the story is always told from the start.
+    """
+    lines = story_lines(story)
+    questions: list[dict[str, Any]] = story.story["questions"] if story.story else []
+    refs = [r for q in questions for r in (q["answer"], *q["options"])]
+    by_ref = await _words_by_ref(db, topics, refs)
+
+    def out(word: Word) -> WordOut:
+        return word_out(word, topics[word.topic_id].slug)
+
+    question_steps: list[Step] = []
+    for q in questions:
+        options = [by_ref[r] for r in (q["answer"], *q["options"])]
+        rng.shuffle(options)
+        question_steps.append(
+            Step(
+                type="listen",
+                word=out(by_ref[q["answer"]]),
+                options=[out(o) for o in options],
+                prompt=lines[q["line"] - 1],
+            )
+        )
+
+    return [
+        *(Step(type="story_line", word=line) for line in lines),
+        *word_steps,
+        *question_steps,
+        Step(type="story_replay", word=lines[0], lines=lines),
+    ]
 
 
 async def restart_topic(
@@ -303,8 +377,8 @@ async def submit_answer(
     if payload.step_index >= len(session.steps):
         raise InvalidStep(f"step {payload.step_index} out of range")
     step = Step.model_validate(session.steps[payload.step_index])
-    if step.type == "intro":
-        raise InvalidStep("intro steps take no answer")
+    if step.type in NO_ANSWER_STEPS:
+        raise InvalidStep(f"{step.type} steps take no answer")
     chosen = next((o for o in step.options if o.slug == payload.word_slug), None)
     if chosen is None:
         raise InvalidStep(f"{payload.word_slug!r} is not an option of step {payload.step_index}")
