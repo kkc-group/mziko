@@ -360,7 +360,11 @@ def test_idle_mark_only_on_started_unfinished_topics() -> None:
 # --- topic access ---------------------------------------------------------------------
 
 
-async def test_topic_switch_shows_the_access_and_what_it_means(client: AsyncClient) -> None:
+async def test_topic_switch_shows_the_access_and_what_it_means(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The fixtures are dated against TODAY, so the page must count idle days from it too.
+    monkeypatch.setattr("app.cabinet.today_tbilisi", lambda: TODAY)
     topics = [
         TOPICS[0],
         {**TOPICS[1], "access": "closed", "status": "locked"},  # started 12 days ago
