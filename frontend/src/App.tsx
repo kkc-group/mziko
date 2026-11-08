@@ -90,6 +90,22 @@ export default function App() {
     if (getToken() && !loginCodeFromUrl()) void loadMe()
   }, [loadMe])
 
+  // Back to the app (another app, a locked phone): ask the server again, quietly, so a topic the
+  // parent opened or closed in the cabinet meanwhile shows as it is now. Not during a lesson; a
+  // failed request keeps the screen as it was, the next tap reports it.
+  useEffect(() => {
+    if (screen.kind !== 'home' || lesson) return
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      api.me().then(
+        (me) => setScreen((s) => (s.kind === 'home' ? { kind: 'home', me } : s)),
+        () => {},
+      )
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [screen.kind, lesson])
+
   // The service worker is registered once the home (or error) screen is up, not
   // at startup, so its precache doesn't compete with the login/me requests; the
   // login screen still has those ahead of it. Idempotent: safe to call again on
