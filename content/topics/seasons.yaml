@@ -1,0 +1,55 @@
+slug: seasons
+title_ru: Времена года
+title_ka: წელიწადის დროები
+icon: "🍂"
+words:
+  - slug: winter
+    ka: ზამთარი
+    tr: замтари
+    ru: зима
+    image: {kind: emoji, value: "🌨️"}
+  - slug: spring
+    ka: გაზაფხული
+    tr: газапхули
+    ru: весна
+    image: {kind: emoji, value: "🌷"}
+  - slug: summer
+    ka: ზაფხული
+    tr: запхули
+    ru: лето
+    image: {kind: emoji, value: "🏖️"}
+  - slug: autumn
+    ka: შემოდგომა
+    tr: шемодгома
+    ru: осень
+    image: {kind: emoji, value: "🍂"}
+  - slug: hot
+    ka: ცხელა
+    tr: цхела
+    ru: жарко
+    image: {kind: emoji, value: "🥵"}
+  - slug: cold
+    ka: ცივა
+    tr: цива
+    ru: холодно
+    image: {kind: emoji, value: "🥶"}
+  - slug: snowman
+    ka: თოვლის კაცი
+    tr: товлис каци
+    ru: снеговик
+    image: {kind: emoji, value: "⛄"}
+  - slug: sled
+    ka: ციგა
+    tr: цига
+    ru: санки
+    image: {kind: emoji, value: "🛷"}
+  - slug: umbrella
+    ka: ქოლგა
+    tr: колга
+    ru: зонт
+    image: {kind: emoji, value: "☂️"}
+  - slug: mushroom
+    ka: სოკო
+    tr: соко
+    ru: гриб
+    image: {kind: emoji, value: "🍄"}
