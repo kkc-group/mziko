@@ -127,7 +127,7 @@ export default function App() {
         await loadMe()
         return
       }
-      const words = s.steps.flatMap((st) => [st.word, ...st.options])
+      const words = s.steps.flatMap((st) => [st.word, ...st.options, ...(st.prompt ? [st.prompt] : []), ...st.lines])
       speaker.preload(words)
       speaker.unlock()
       setLesson({ sessionId: s.session_id, steps: s.steps })

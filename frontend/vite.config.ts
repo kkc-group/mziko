@@ -89,6 +89,15 @@ export default defineConfig({
             },
           },
           {
+            // Story scenes: one picture per line, cached like the word pictures.
+            urlPattern: ({ url }) => url.pathname.startsWith('/media/scenes/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'scenes',
+              expiration: { maxEntries: 400, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+          {
             urlPattern: ({ url }) => url.origin === 'https://fonts.gstatic.com',
             handler: 'CacheFirst',
             options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 3600 } },

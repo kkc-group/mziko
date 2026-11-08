@@ -25,10 +25,13 @@ from PIL import Image
 
 REPO_DIR = Path(__file__).resolve().parents[1]
 IMAGES_DIR = REPO_DIR / "media" / "images"
+SCENES_DIR = REPO_DIR / "media" / "scenes"
 
 SIZE = 384  # card circle is 96 px, so 4x for retina and some zoom
 AIR = 0.04  # padding around the object, a share of the longer side
 ALPHA_MIN = 8  # pixels fainter than this count as background
+SCENE_SIZE = 768  # story scene pictures: opaque background, no cropping
+SCENE_QUALITY = 82
 
 
 def prepare(path: Path) -> bool:
@@ -55,6 +58,17 @@ def prepare(path: Path) -> bool:
     return True
 
 
+def prepare_scene(path: Path) -> Path:
+    """Convert a scene PNG to a 768 px WebP next to it and delete the PNG."""
+    with Image.open(path) as opened:
+        image = opened.convert("RGB")
+    image = image.resize((SCENE_SIZE, SCENE_SIZE), Image.Resampling.LANCZOS)
+    out = path.with_suffix(".webp")
+    image.save(out, "WEBP", quality=SCENE_QUALITY, method=6)
+    path.unlink()
+    return out
+
+
 def main() -> None:
     done = skipped = 0
     for path in sorted(IMAGES_DIR.rglob("*.png")):
@@ -63,6 +77,10 @@ def main() -> None:
             print(f"{path.relative_to(REPO_DIR)}  ←  cropped and shrunk to {SIZE} px")
         else:
             skipped += 1
+    for path in sorted(SCENES_DIR.rglob("*.png")):
+        out = prepare_scene(path)
+        done += 1
+        print(f"{out.relative_to(REPO_DIR)}  ←  scene, {SCENE_SIZE} px WebP")
     print(f"done: {done} prepared, {skipped} skipped (already prepared)")
 
 

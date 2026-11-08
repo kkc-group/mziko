@@ -56,12 +56,12 @@ export class Speaker {
     speak(word)
   }
 
-  /** Play the word's audio to the end (about a second), so a phrase can follow it. */
-  async playThrough(word: WordOut): Promise<void> {
+  /** Play the word's audio to the end (about a second; `guardMs` for a longer story line), so a phrase can follow it. */
+  async playThrough(word: WordOut, guardMs = 4000): Promise<void> {
     this.stop()
     const audio = this.cache.get(key(word))
     if (audio && (await this.start(key(word)))) {
-      await ended(audio)
+      await ended(audio, guardMs)
       return
     }
     speak(word)
@@ -99,7 +99,7 @@ export class Speaker {
 }
 
 /** Resolves when the element stops (ended, paused by stop(), or failed); never hangs. */
-function ended(audio: HTMLAudioElement): Promise<void> {
+function ended(audio: HTMLAudioElement, guardMs = 4000): Promise<void> {
   if (audio.paused || audio.ended) return Promise.resolve()
   return new Promise((resolve) => {
     const done = () => {
@@ -108,7 +108,7 @@ function ended(audio: HTMLAudioElement): Promise<void> {
       resolve()
     }
     for (const ev of ['ended', 'pause', 'error']) audio.addEventListener(ev, done)
-    const guard = setTimeout(done, 4000)
+    const guard = setTimeout(done, guardMs)
   })
 }
 

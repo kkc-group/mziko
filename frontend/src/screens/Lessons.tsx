@@ -21,6 +21,11 @@ function count(section: Section, n: number): string {
   return `${n} ${plural(n, ...section.unit)}`
 }
 
+/** «рассказ · 5 слов» for a story topic, plain count otherwise. */
+function storyCount(topic: TopicOut, section: Section, n: number): string {
+  return topic.story ? `рассказ · ${count(section, n)}` : count(section, n)
+}
+
 function topicLessons(me: Me, slug: string): LessonOut[] {
   return me.lessons.filter((l) => l.topic_slug === slug)
 }
@@ -30,9 +35,10 @@ function topicLesson(lessons: LessonOut[]): LessonOut {
   return lessons.find((l) => l.status !== 'done') ?? lessons[lessons.length - 1]
 }
 
-function topicMeta(section: Section, lessons: LessonOut[]): string {
+function topicMeta(section: Section, topic: TopicOut, lessons: LessonOut[]): string {
   const n = lessons.reduce((a, l) => a + l.total, 0)
-  return lessons.length > 1 ? `${lessonsW(lessons.length)} · ${count(section, n)}` : count(section, n)
+  const c = storyCount(topic, section, n)
+  return lessons.length > 1 ? `${lessonsW(lessons.length)} · ${c}` : c
 }
 
 function LessonTitle({ lesson }: { lesson: LessonOut }) {
@@ -78,7 +84,7 @@ function OpenRow({
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
-        <small>{topicMeta(section, lessons)}</small>
+        <small>{topicMeta(section, topic, lessons)}</small>
       </span>
       <span className={`mini-play${mine ? ' busy' : ''}`}>
         {mine ? <BusyLabel /> : topic.done ? 'Повторить' : 'Играть'}
@@ -103,7 +109,7 @@ function LockedRow({
       <IconWithCheck icon={topic.icon} done={topic.done} />
       <span className="t">
         {topic.title_ru}
-        <small>{topicMeta(section, lessons)}</small>
+        <small>{topicMeta(section, topic, lessons)}</small>
       </span>
       <span className="tmr">
         <LockIcon />
@@ -138,7 +144,7 @@ function TodayCard({
       ? `показано ${l.total} из ${l.total}`
       : shown
         ? `показано ${l.introduced} из ${l.total}`
-        : count(section, l.total)
+        : storyCount(topic, section, l.total)
     const pct = finished ? 100 : Math.round((l.introduced / l.total) * 100)
     return (
       <div className="cur">
@@ -171,7 +177,7 @@ function TodayCard({
         <IconWithCheck icon={topic.icon} done={topic.done} />
         <div className="cur-t">
           <b>{topic.title_ru}</b>
-          <small>{topicMeta(section, lessons)}</small>
+          <small>{topicMeta(section, topic, lessons)}</small>
         </div>
       </div>
       {lessons.map((l, i) => {

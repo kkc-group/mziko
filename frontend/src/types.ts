@@ -22,12 +22,17 @@ export interface WordOut {
   audio_url: string
 }
 
-export type StepType = 'intro' | 'listen' | 'recall'
+/** `story_line` and `story_replay` take no answer, like `intro`. */
+export type StepType = 'intro' | 'listen' | 'recall' | 'story_line' | 'story_replay'
 
 export interface Step {
   type: StepType
   word: WordOut
   options: WordOut[]
+  /** A story line heard instead of `word` in a listen step; `word` stays the answer. */
+  prompt: WordOut | null
+  /** The whole story, for `story_replay`. */
+  lines: WordOut[]
 }
 
 /** One step of the child's path: a topic, or a part of a bigger one. */
@@ -54,6 +59,8 @@ export interface TopicOut {
   done: boolean
   /** Locked by a parent from the cabinet, whatever the progress. */
   closed: boolean
+  /** A story topic: lines to listen to, then its words. */
+  story: boolean
 }
 
 export interface Me {

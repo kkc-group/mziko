@@ -104,6 +104,18 @@ def test_file_pictures_exist_under_media() -> None:
                 assert path.is_file(), f"{topic.slug}/{word.slug}: {word.image.value} is missing"
 
 
+def test_story_scenes_exist_under_media() -> None:
+    """Each story line shows a scene picture: a committed file under /media/scenes."""
+    stories = [t for t in load_topics(CONTENT_DIR) if t.story is not None]
+    assert stories
+    for topic in stories:
+        assert topic.story is not None
+        for n, line in enumerate(topic.story.lines, 1):
+            assert line.scene.startswith(f"/media/scenes/{topic.slug}/"), f"{topic.slug} line {n}"
+            path = CONTENT_DIR.parent / line.scene.lstrip("/")
+            assert path.is_file(), f"{topic.slug} line {n}: {line.scene} is missing"
+
+
 def letters_spec(text: str) -> dict[str, object]:
     return {
         "slug": "letters-test",

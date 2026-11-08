@@ -177,6 +177,19 @@ button:disabled { cursor: default; }
 .word { text-align: center; }
 .word .ka { font-size: 54px; line-height: 1.2; color: var(--word-color); display: block; }
 .word .tr { font-size: 18px; color: var(--muted); font-weight: 700; }
+/* Story scene: a rounded square, not the circle .pic, so the picture's corners survive. */
+.scene { width: min(100%, 280px); aspect-ratio: 1 / 1; margin: 0 auto; border-radius: 26px; background: var(--surface); border: 3px solid var(--line); overflow: hidden; flex: none; }
+.scene .pic-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scene.sm { width: min(100%, 180px); }
+/* A story line is a sentence: smaller than a single word, wraps at spaces. */
+.word.line .ka { font-size: 28px; line-height: 1.3; text-wrap: balance; overflow-wrap: break-word; }
+.word.line .tr { display: block; margin-top: 2px; }
+.word.line .ru { display: block; margin-top: 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.story-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+.story-list li { padding: 8px 14px; border-radius: 16px; border: 2px solid transparent; text-align: center; }
+.story-list li.now { background: var(--pom-soft); border-color: var(--word-color); }
+.story-list .ka { display: block; font-size: 20px; line-height: 1.3; color: var(--word-color); overflow-wrap: break-word; }
+.story-list small { display: block; color: var(--muted); font-weight: 700; font-size: 15px; }
 .speak { width: 84px; height: 84px; margin: 0 auto; border-radius: 50%; background: var(--sun); box-shadow: 0 5px 0 var(--sun-dark); display: grid; place-items: center; flex: none; }
 .speak svg { width: 40px; height: 40px; }
 .speak.sm { width: 56px; height: 56px; margin: 0; box-shadow: 0 3px 0 var(--sun-dark); }
@@ -267,6 +280,10 @@ button:disabled { cursor: default; }
   .pic { width: 120px; height: 120px; --s: 68px; }
   .pic .blob { --s: 84px; }
   .word .ka { font-size: 42px; }
+  .scene { width: 150px; }
+  .scene.sm { width: 110px; }
+  .word.line .ka { font-size: 24px; }
+  .story-list li { padding: 4px 12px; }
   .speak { width: 64px; height: 64px; }
   .grid { grid-template-columns: repeat(4, 1fr); }
   /* the grid is one row about 126 px tall: a smaller sticker, and the letter card lies down */

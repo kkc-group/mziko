@@ -84,6 +84,7 @@ async def build_me(db: AsyncSession, child: Child, now: datetime) -> MeOut:
             status=t.status,
             done=t.done,
             closed=t.closed,
+            story=t.topic.story is not None,
         )
         for t in position.topics
     ]

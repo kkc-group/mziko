@@ -429,3 +429,68 @@ async def test_finish_marks_study_day_and_is_idempotent(db: AsyncSession, child:
     assert stored.finished_at == at(DAY1, 12, 5)
     assert stored.study_date == DAY1
     assert first == second
+
+
+# --- stories ----------------------------------------------------------------
+
+
+async def test_a_story_is_told_then_its_words_then_questions_then_told_again(
+    db: AsyncSession, child: Child
+) -> None:
+    session = await build_for_topic(db, child, "autumn-story", at(DAY1), random.Random(5))
+    assert session is not None
+    steps = steps_of(session)
+    types = [s.type for s in steps]
+    # all four words come in at once, unlike the usual three per session
+    assert types[:9] == ["story_line"] * 5 + ["intro"] * 4
+    assert types[-1] == "story_replay"
+    lines = [s.word for s in steps[:5]]
+    assert [w.slug for w in lines] == [f"line-{n}" for n in range(1, 6)]
+    assert lines[0].audio_url == "/media/audio/autumn-story/line-1.mp3"
+    assert lines[0].image.value == "/media/scenes/autumn-story/line-1.webp"
+    assert steps[-1].lines == lines
+
+    questions = [s for s in steps if s.prompt is not None]
+    assert steps[-1 - len(questions) : -1] == questions  # right before the replay
+    first = questions[0]
+    assert first.type == "listen"
+    assert first.prompt == lines[1]
+    assert (first.word.topic_slug, first.word.slug) == ("colors", "yellow")
+    assert sorted(o.slug for o in first.options) == ["green", "red", "yellow"]
+
+
+async def test_story_lines_take_no_answer_and_questions_pay_the_answer_word(
+    db: AsyncSession, child: Child
+) -> None:
+    session = await build_for_topic(db, child, "autumn-story", at(DAY1), random.Random(5))
+    assert session is not None
+    steps = steps_of(session)
+    for index in (0, len(steps) - 1):  # a line and the replay
+        with pytest.raises(InvalidStep):
+            await learning.submit_answer(
+                db,
+                child,
+                session.id,
+                AnswerIn(
+                    step_index=index,
+                    word_slug=steps[index].word.slug,
+                    attempt=1,
+                    client_answer_id=uuid.uuid4(),
+                ),
+                at(DAY1),
+            )
+    question = next(i for i, s in enumerate(steps) if s.prompt is not None)
+    result = await answer_correctly(db, child, session, question, at(DAY1))
+    assert result.correct
+    assert result.coins_gained == learning.COINS_PER_ANSWER
+
+
+async def test_a_replayed_story_is_told_from_the_start(db: AsyncSession, child: Child) -> None:
+    first = await play_day(db, child, "autumn-story", at(DAY1))
+    assert first is not None
+    replay = await build_for_topic(db, child, "autumn-story", at(DAY1, 15), random.Random(2))
+    assert replay is not None
+    types = [s.type for s in steps_of(replay)]
+    assert types[:5] == ["story_line"] * 5
+    assert "intro" not in types
+    assert types[-1] == "story_replay"

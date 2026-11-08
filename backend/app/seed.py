@@ -61,12 +61,56 @@ class WordSpec(BaseModel):
     anchor: AnchorSpec | None = None
 
 
+class StoryLineSpec(BaseModel):
+    """One line of a story: one screen with a scene picture, heard as `line-<n>.mp3`."""
+
+    ka: str
+    tr: str
+    ru: str
+    scene: str  # URL of the picture, /media/scenes/<topic>/<file>
+
+
+class QuestionSpec(BaseModel):
+    """Listen and find on a story line: the line is heard, the child picks `answer`.
+
+    Words are referenced as "<topic slug>/<word slug>" and may come from any topic.
+    """
+
+    line: int = Field(ge=1)  # 1-based number of the line that is played
+    answer: str
+    options: list[str] = Field(min_length=1)  # the wrong options
+
+
+class StorySpec(BaseModel):
+    lines: list[StoryLineSpec] = Field(min_length=1)
+    questions: list[QuestionSpec] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def questions_point_at_lines(self) -> "StorySpec":
+        for q in self.questions:
+            if q.line > len(self.lines):
+                raise ValueError(f"question on line {q.line}: the story has {len(self.lines)}")
+            refs = [q.answer, *q.options]
+            if len(set(refs)) != len(refs):
+                raise ValueError(f"question on line {q.line}: repeated option {refs}")
+        return self
+
+
+def word_ref(ref: str) -> tuple[str, str]:
+    """Split "colors/yellow" into ("colors", "yellow")."""
+    topic, _, word = ref.partition("/")
+    if not topic or not word:
+        raise ValueError(f"word reference {ref!r} is not <topic>/<word>")
+    return topic, word
+
+
 class TopicSpec(BaseModel):
     slug: str
     title_ru: str
     title_ka: str
     icon: str
     order: int = 0  # not in the topic file: load_topics sets it from the place in order.yaml
+    story: StorySpec | None = None
     words: list[WordSpec] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -82,6 +126,11 @@ class TopicSpec(BaseModel):
         dups = sorted({p for p in pictures if pictures.count(p) > 1})
         if dups:
             raise ValueError(f"topic {self.slug!r}: several words share the picture {dups}")
+        # A story line is sent as a word called line-<n> (its audio is line-<n>.mp3).
+        if self.story is not None:
+            clash = [w.slug for w in self.words if w.slug.startswith("line-")]
+            if clash:
+                raise ValueError(f"topic {self.slug!r}: word slugs {clash} are kept for lines")
         return self
 
 
@@ -103,6 +152,23 @@ def load_topics(content_dir: Path) -> list[TopicSpec]:
         )
     for index, slug in enumerate(slugs):
         by_slug[slug].order = (index + 1) * 10
+
+    # Story questions may use words of any topic; each must exist, and the options
+    # of one question must look and sound different.
+    words = {(t.slug, w.slug): w for t in by_slug.values() for w in t.words}
+    for topic in by_slug.values():
+        for q in topic.story.questions if topic.story else []:
+            refs = [word_ref(r) for r in (q.answer, *q.options)]
+            unknown_refs = [f"{t}/{w}" for t, w in refs if (t, w) not in words]
+            if unknown_refs:
+                raise ValueError(f"topic {topic.slug!r}: no such words {unknown_refs}")
+            options = [words[r] for r in refs]
+            for field in ("slug", "ka"):
+                values = [getattr(w, field) for w in options]
+                if len(set(values)) != len(values):
+                    raise ValueError(f"topic {topic.slug!r}: question {q.line} repeats a {field}")
+            if len({w.image.value for w in options}) != len(options):
+                raise ValueError(f"topic {topic.slug!r}: question {q.line} repeats a picture")
     return [by_slug[slug] for slug in slugs]
 
 
@@ -110,6 +176,7 @@ async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[i
     """Upsert everything; returns (topics, words) counts written."""
     n_words = 0
     for spec in topics:
+        story = spec.story.model_dump() if spec.story else None
         topic_stmt = (
             insert(Topic)
             .values(
@@ -118,6 +185,7 @@ async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[i
                 title_ka=spec.title_ka,
                 icon=spec.icon,
                 order=spec.order,
+                story=story,
             )
             .on_conflict_do_update(
                 index_elements=[Topic.slug],
@@ -126,6 +194,7 @@ async def seed_topics(session: AsyncSession, topics: list[TopicSpec]) -> tuple[i
                     "title_ka": spec.title_ka,
                     "icon": spec.icon,
                     "order": spec.order,
+                    "story": story,
                 },
             )
             .returning(Topic.id)
